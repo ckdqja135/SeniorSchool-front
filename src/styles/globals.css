@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body, html {
+  background-color: white;
+  margin: 0;
+}
+
+/* 추후 삭제 */
+@layer components {
+  /* admin페이지에서 사용할 전역 CSS */
+  .admin-layout {
+    background-color: white;
+  }
+
+  .service-layout {
+    background-color: black;
+  }
+}
