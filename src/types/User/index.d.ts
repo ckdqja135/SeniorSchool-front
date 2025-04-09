@@ -4,7 +4,9 @@ export interface UserProps {
   email: string;
 }
 
-export interface SignInProps extends UserProps {
+export interface SignInProps {
+  username: string;
+  password: string;
   setUsername: (value: string) => void;
   setPassword: (value: string) => void;
   handleSignIn?: () => void;
