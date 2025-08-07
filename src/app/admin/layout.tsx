@@ -1,22 +1,25 @@
-import "@/styles/globals.css";
-import AdminHeader from "@/components/feature/admin/Header";
-import React from "react";
+"use client";
 
-export const metadata = {
-  title: "Admin",
-};
+import "@/styles/globals.css";
+import DashboardLayout from "@/components/feature/admin/DashboardLayout";
+import { usePathname } from "next/navigation";
+import React from "react";
 
 export default function AdminLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const pathname = usePathname();
+  
+  // 로그인 페이지에서는 DashboardLayout을 사용하지 않음
+  if (pathname === "/admin/sign-in") {
+    return <>{children}</>;
+  }
+
   return (
-    <div>
-      <AdminHeader />
-      <div className='admin-layout relative flex h-screen flex-col'>
-        {children}
-      </div>
-    </div>
+    <DashboardLayout>
+      {children}
+    </DashboardLayout>
   );
 }
