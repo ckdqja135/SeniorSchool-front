@@ -27,7 +27,7 @@ const SignInInput = ({
         className={signInInputClassName}
         placeholder='******'
         value={password}
-        onChange={(e: any) => setPassword(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
         error={error}
       />
     </>

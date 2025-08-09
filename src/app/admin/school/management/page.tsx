@@ -105,7 +105,7 @@ const SchoolManagementPage = () => {
   // 검색 실행
   const handleSearch = () => {
     setCurrentPage(1);
-    searchSchools(searchKeyword, 1);
+    searchSchools(searchKeyword);
   };
 
   // 체크박스 선택
@@ -160,7 +160,7 @@ const SchoolManagementPage = () => {
           univMapIMG: "",
           univStatus: 1
         });
-        searchSchools(searchKeyword, currentPage);
+        searchSchools(searchKeyword);
       }
     } catch (error) {
       console.error("학교 추가 실패:", error);
@@ -189,7 +189,7 @@ const SchoolManagementPage = () => {
       if (response.ok) {
         setShowDeleteModal(true);
         setSelectedSchools([]);
-        searchSchools(searchKeyword, currentPage);
+        searchSchools(searchKeyword);
       }
     } catch (error) {
       console.error("학교 삭제 실패:", error);
@@ -200,7 +200,7 @@ const SchoolManagementPage = () => {
   // 페이지 이동
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
-      searchSchools(searchKeyword, page);
+      searchSchools(searchKeyword);
     }
   };
 
@@ -233,7 +233,7 @@ const SchoolManagementPage = () => {
   };
 
   // 편집 데이터 변경
-  const handleEditChange = (field: keyof UnivData, value: any) => {
+  const handleEditChange = (field: keyof UnivData, value: string | number) => {
     if (editingSchool && selectedSchool) {
       const updatedSchool = { ...editingSchool, [field]: value };
       setEditingSchool(updatedSchool);
@@ -252,10 +252,11 @@ const SchoolManagementPage = () => {
       const accessToken = localStorage.getItem("accessToken");
       
       // 변경된 필드만 추출
-      const changedData: any = { univIdx: editingSchool.univIdx };
+      const changedData: Partial<UnivData> = { univIdx: editingSchool.univIdx };
       Object.keys(editingSchool).forEach(key => {
-        if (editingSchool[key as keyof UnivData] !== selectedSchool[key as keyof UnivData]) {
-          changedData[key] = editingSchool[key as keyof UnivData];
+        const typedKey = key as keyof UnivData;
+        if (editingSchool[typedKey] !== selectedSchool[typedKey]) {
+          (changedData as Record<string, string | number>)[key] = editingSchool[typedKey];
         }
       });
 
@@ -274,7 +275,7 @@ const SchoolManagementPage = () => {
         setIsEditMode(false);
         setEditingSchool(null);
         setHasChanges(false);
-        searchSchools(searchKeyword, currentPage);
+        searchSchools(searchKeyword);
       }
     } catch (error) {
       console.error("학교 수정 실패:", error);
@@ -304,7 +305,7 @@ const SchoolManagementPage = () => {
         setIsEditMode(false);
         setEditingSchool(null);
         setHasChanges(false);
-        searchSchools(searchKeyword, currentPage);
+        searchSchools(searchKeyword);
       }
     } catch (error) {
       console.error("학교 삭제 실패:", error);
