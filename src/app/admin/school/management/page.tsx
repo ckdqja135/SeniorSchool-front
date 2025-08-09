@@ -61,7 +61,7 @@ const SchoolManagementPage = () => {
   });
 
   // 학교 검색
-  const searchSchools = async (keyword = "", page = 1) => {
+  const searchSchools = async (keyword = "") => {
     setLoading(true);
     try {
       const url = keyword 
