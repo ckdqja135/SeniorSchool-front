@@ -2,6 +2,7 @@
 
 import "@/styles/globals.css";
 import DashboardLayout from "@/components/feature/admin/DashboardLayout";
+import AuthGuard from "@/components/feature/admin/AuthGuard";
 import { usePathname } from "next/navigation";
 import React from "react";
 
@@ -18,8 +19,10 @@ export default function AdminLayout({
   }
 
   return (
-    <DashboardLayout>
-      {children}
-    </DashboardLayout>
+    <AuthGuard>
+      <DashboardLayout>
+        {children}
+      </DashboardLayout>
+    </AuthGuard>
   );
 }
