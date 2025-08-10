@@ -260,7 +260,7 @@ const SchoolManagementPage = () => {
         }
       });
 
-      const response = await fetch("https://api.reviewhub.life/admin/univ/putUnivData", {
+      const response = await fetch("https://api.reviewhub.life/admin/univ/putUnivStatus", {
         method: "PUT",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
