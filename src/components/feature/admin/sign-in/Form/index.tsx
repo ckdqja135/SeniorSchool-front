@@ -8,8 +8,15 @@ const SignInForm = () => {
   const { username, setUsername, password, setPassword, handleSignIn, error } =
     useSignIn();
 
+  // 엔터 키 이벤트 핸들러
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSignIn();
+    }
+  };
+
   return (
-    <div className='flex flex-col gap-4'>
+    <div className='flex flex-col gap-4' onKeyPress={handleKeyPress}>
       <SignInInput
         username={username}
         setUsername={setUsername}
