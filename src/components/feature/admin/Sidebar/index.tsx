@@ -40,6 +40,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
       href: "/admin/work-life",
       subItems: [],
     },
+    {
+      icon: "👥",
+      label: "관리자 관리",
+      href: "/admin/admin",
+      subItems: [],
+    }
   ];
 
   const [expandedItem, setExpandedItem] = useState<string | null>(null);

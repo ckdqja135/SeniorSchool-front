@@ -624,15 +624,17 @@ const SchoolManagementPage = () => {
                   <div className="flex gap-2">
                     <button
                       onClick={handleEditStart}
-                      className="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm"
+                      className="w-8 h-8 bg-blue-500 text-white rounded-md hover:bg-blue-600 flex items-center justify-center"
+                      title="수정"
                     >
-                      수정
+                      ✏️
                     </button>
                     <button
                       onClick={handleDeleteSingleSchool}
-                      className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 text-sm"
+                      className="w-8 h-8 bg-red-500 text-white rounded-md hover:bg-red-600 flex items-center justify-center"
+                      title="삭제"
                     >
-                      삭제
+                      🗑️
                     </button>
                   </div>
                 )}
