@@ -13,9 +13,9 @@ interface AdminData {
   accessToken: string;
 }
 
-interface ApiResponse {
-  data: AdminData[];
-}
+// interface ApiResponse {
+//   data: AdminData[];
+// }
 
 const AdminManagementPage = () => {
   const [admins, setAdmins] = useState<AdminData[]>([]);
