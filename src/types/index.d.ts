@@ -17,6 +17,18 @@ export interface ButtonProps {
   className: string;
 }
 
+// 댓글 타입 정의
+export interface Comment {
+  commentIdx: number;
+  boardIdx: number;
+  commentLike: number;
+  commentDepth: number;
+  writerId: string;
+  commentPerent: number;
+  commentContent: string;
+  replies?: Comment[];
+}
+
 // 카카오맵 타입 정의
 declare global {
   interface Window {

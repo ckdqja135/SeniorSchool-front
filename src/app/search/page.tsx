@@ -28,8 +28,8 @@ export default function SearchPage() {
     setError(null);
     
     try {
-      // 백엔드는 포트 3001에서 실행
-      const backendURL = `${window.location.protocol}//${window.location.hostname}:3001`;
+      // 백엔드 API URL
+      const backendURL = 'https://api.reviewhub.life';
 
       const response = await fetch(`${backendURL}/search?name=${encodeURIComponent(term)}`);
       
