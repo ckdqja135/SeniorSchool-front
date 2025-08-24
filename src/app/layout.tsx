@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "../styles/globals.css";
 
 export const metadata: Metadata = {
-  title: "대학 오빠 - 세상 모든 대학교 정보",
-  description: "세상 모든 대학교 정보, 학교선배가 알려줄게",
-};
+  title: "오리(오늘의 리뷰)",
+  description: "오늘의 리뷰",
+};  
 
 export default function RootLayout({
   children,
