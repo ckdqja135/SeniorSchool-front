@@ -281,6 +281,8 @@ export default function BoardDetailPage() {
   
   const [activeCommentMenu, setActiveCommentMenu] = useState<number | null>(null);
   const [showReplyInput, setShowReplyInput] = useState<number | null>(null);
+  const [isLiked, setIsLiked] = useState(false); // 좋아요 상태
+  const [isLikeLoading, setIsLikeLoading] = useState(false); // 좋아요 로딩 상태
   
   // ID 기반 더보기 방식 페이징 관련 상태
   const [visibleIds, setVisibleIds] = useState<Set<number>>(new Set());
@@ -381,9 +383,14 @@ export default function BoardDetailPage() {
 
   // 게시글 정보 가져오기
   useEffect(() => {
+    console.log('useEffect 실행 - boardId:', boardId, '타입:', typeof boardId);
+    
     if (boardId) {
       fetchBoardPost();
       fetchComments();
+      fetchLikeCount(); // 좋아요 수도 함께 가져오기
+    } else {
+      console.error('boardId가 없습니다:', boardId);
     }
   }, [boardId]);
 
@@ -436,8 +443,8 @@ export default function BoardDetailPage() {
         boardPassword: password
       };
 
-      const response = await fetch(`${backendURL}/board/update`, {
-        method: 'POST',
+      const response = await fetch(`${backendURL}/board/correct`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -467,7 +474,7 @@ export default function BoardDetailPage() {
       };
 
       const response = await fetch(`${backendURL}/board/delete`, {
-        method: 'POST',
+        method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -487,17 +494,96 @@ export default function BoardDetailPage() {
   };
 
   const handleLike = async () => {
+    // 이미 로딩 중이거나 좋아요 처리 중이면 무시
+    if (isLikeLoading) {
+      return;
+    }
+
+    // boardId 유효성 검사
+    if (!boardId || isNaN(parseInt(boardId))) {
+      console.error('유효하지 않은 boardId:', boardId);
+      return;
+    }
+
     try {
+      setIsLikeLoading(true); // 로딩 시작
+      
       const backendURL = 'https://api.reviewhub.life';
-      const response = await fetch(`${backendURL}/board/like?boardIdx=${boardId}`, {
-        method: 'POST'
+      const parsedBoardId = parseInt(boardId);
+      const requestBody = { 
+        boardIdx: parsedBoardId,
+        isLiked: !isLiked // 현재 상태의 반대값을 전송 (토글)
+      };
+      
+      console.log('좋아요 요청 데이터:', {
+        boardId,
+        boardIdType: typeof boardId,
+        parsedBoardId,
+        parsedBoardIdType: typeof parsedBoardId,
+        currentIsLiked: isLiked,
+        requestBody,
+        requestBodyString: JSON.stringify(requestBody)
+      });
+      
+      const response = await fetch(`${backendURL}/board/like`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      console.log('좋아요 API 응답:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
       });
 
       if (response.ok) {
-        fetchBoardPost();
+        // 좋아요 상태 토글
+        setIsLiked(!isLiked);
+        console.log('좋아요 상태 변경:', !isLiked);
+        // 백엔드에서 최신 상태를 가져와서 동기화
+        await fetchLikeCount();
+      } else {
+        // 400 에러 시 응답 내용도 확인
+        if (response.status === 400) {
+          try {
+            const errorData = await response.json();
+            console.error('400 에러 상세:', errorData);
+          } catch (e) {
+            console.error('400 에러 응답 파싱 실패:', e);
+          }
+        }
+        console.error('좋아요 API 오류:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('좋아요 오류:', error);
+    } finally {
+      setIsLikeLoading(false); // 로딩 완료
+    }
+  };
+
+  // 좋아요 수 조회
+  const fetchLikeCount = async () => {
+    try {
+      const backendURL = 'https://api.reviewhub.life';
+      const response = await fetch(`${backendURL}/board/like/${boardId}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('좋아요 API 응답:', data); // 디버깅용 로그
+        
+        // 좋아요 수만 업데이트
+        if (boardPost) {
+          setBoardPost({
+            ...boardPost,
+            boardLike: data.likeCount || data.count || 0
+          });
+        }
+      }
+    } catch (error) {
+      console.error('좋아요 수 조회 오류:', error);
     }
   };
 
@@ -788,12 +874,23 @@ export default function BoardDetailPage() {
               <span className="text-xs text-orange-700 font-bold uppercase tracking-wider mb-1 block">좋아요</span>
               <button 
                 onClick={handleLike} 
-                className="text-sm font-semibold text-gray-900 hover:text-red-500 transition-colors flex items-center space-x-1"
+                disabled={isLikeLoading}
+                className={`text-sm font-semibold transition-colors flex items-center space-x-1 ${
+                  isLiked 
+                    ? 'text-red-500' 
+                    : 'text-gray-900 hover:text-red-500'
+                } ${isLikeLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-4 h-4 ${isLiked ? 'fill-current' : 'fill-none stroke-current'}`} viewBox="0 0 24 24">
                   <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                 </svg>
-                <span>{boardPost.boardLike || boardPost.like || 0}</span>
+                <span>
+                  {isLikeLoading ? (
+                    <span className="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+                  ) : (
+                    boardPost.boardLike || boardPost.like || 0
+                  )}
+                </span>
               </button>
           </div>  
         </div>

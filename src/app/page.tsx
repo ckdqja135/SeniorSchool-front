@@ -20,9 +20,15 @@ export default function HomePage() {
 
   // 자동완성 검색어 가져오기
   const fetchSuggestions = async (keyword: string) => {
-    if (!keyword.trim()) {
+    // 최소 2글자 이상일 때만 API 호출
+    if (!keyword.trim() || keyword.trim().length < 2) {
       setSuggestions([]);
       setError(null);
+      return;
+    }
+
+    // 이미 로딩 중이면 추가 호출 방지
+    if (isLoading) {
       return;
     }
 
@@ -36,7 +42,12 @@ export default function HomePage() {
       const response = await fetch(`${backendURL}/search/auto?keyword=${encodeURIComponent(keyword)}`);
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        if (response.status === 429) {
+          setError('요청이 너무 많습니다. 잠시 후 다시 시도해주세요.');
+        } else {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return;
       }
       
       const data = await response.json();
@@ -65,7 +76,7 @@ export default function HomePage() {
         setSuggestions([]);
         setError(null);
       }
-    }, 300);
+    }, 800); // 500ms → 800ms로 증가
 
     return () => clearTimeout(timer);
   }, [searchTerm]);
@@ -91,7 +102,8 @@ export default function HomePage() {
     const value = e.target.value;
     setSearchTerm(value);
     
-    if (value.trim()) {
+    // 최소 2글자 이상일 때만 자동완성 표시
+    if (value.trim().length >= 2) {
       setShowSuggestions(true);
     } else {
       setShowSuggestions(false);
