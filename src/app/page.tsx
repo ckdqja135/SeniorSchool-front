@@ -20,15 +20,9 @@ export default function HomePage() {
 
   // 자동완성 검색어 가져오기
   const fetchSuggestions = async (keyword: string) => {
-    // 최소 2글자 이상일 때만 API 호출
-    if (!keyword.trim() || keyword.trim().length < 2) {
+    if (!keyword.trim()) {
       setSuggestions([]);
       setError(null);
-      return;
-    }
-
-    // 이미 로딩 중이면 추가 호출 방지
-    if (isLoading) {
       return;
     }
 
@@ -42,12 +36,7 @@ export default function HomePage() {
       const response = await fetch(`${backendURL}/search/auto?keyword=${encodeURIComponent(keyword)}`);
       
       if (!response.ok) {
-        if (response.status === 429) {
-          setError('요청이 너무 많습니다. 잠시 후 다시 시도해주세요.');
-        } else {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return;
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const data = await response.json();
@@ -76,7 +65,7 @@ export default function HomePage() {
         setSuggestions([]);
         setError(null);
       }
-    }, 800); // 500ms → 800ms로 증가
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [searchTerm]);
@@ -102,8 +91,7 @@ export default function HomePage() {
     const value = e.target.value;
     setSearchTerm(value);
     
-    // 최소 2글자 이상일 때만 자동완성 표시
-    if (value.trim().length >= 2) {
+    if (value.trim()) {
       setShowSuggestions(true);
     } else {
       setShowSuggestions(false);
@@ -158,29 +146,41 @@ export default function HomePage() {
               세상 모든 대학교 정보, 학교선배가 알려줄게
             </h1>
             
-            {/* 검색 폼 */}
-            <form onSubmit={handleSearch} className="max-w-md mx-auto">
-              <div className="relative" ref={searchRef}>
-                <div className="flex">
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={handleInputChange}
-                    onFocus={handleInputFocus}
-                    onKeyDown={handleKeyDown}
-                    placeholder="대학교 이름을 입력하세요..."
-                    required
-                    className="flex-1 px-4 py-3 text-lg font-light text-gray-900 border-0 rounded-l-md focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-opacity-50"
-                    autoComplete="off"
-                  />
-                  <button
-                    type="submit"
-                    className="px-6 py-3 bg-green-600 text-white font-light text-lg rounded-r-md hover:bg-green-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500"
-                  >
-                    <i className="fa fa-search mr-3" aria-hidden="true"></i>
-                    검색
-                  </button>
-                </div>
+                         {/* 검색 폼 */}
+             <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
+               <div className="relative" ref={searchRef}>
+                 <div className="flex items-center bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/20 overflow-hidden">
+                   {/* 검색 아이콘 */}
+                   <div className="pl-6 pr-4 text-gray-400">
+                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                     </svg>
+                   </div>
+                   
+                   {/* 검색 입력창 */}
+                   <input
+                     type="text"
+                     value={searchTerm}
+                     onChange={handleInputChange}
+                     onFocus={handleInputFocus}
+                     onKeyDown={handleKeyDown}
+                     placeholder="찾고 싶은 대학교를 입력해보세요..."
+                     required
+                     className="flex-1 px-4 py-5 text-lg font-medium text-gray-900 bg-transparent border-0 focus:outline-none focus:ring-0 placeholder-gray-400"
+                     autoComplete="off"
+                   />
+                   
+                   {/* 검색 버튼 */}
+                   <button
+                     type="submit"
+                     className="px-8 py-5 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold text-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2 flex items-center space-x-2"
+                   >
+                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                     </svg>
+                     <span>검색</span>
+                   </button>
+                 </div>
 
                 {/* 자동완성 드롭다운 */}
                 {showSuggestions && (suggestions.length > 0 || isLoading || error || searchTerm.trim()) && (

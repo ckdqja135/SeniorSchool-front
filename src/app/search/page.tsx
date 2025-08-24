@@ -31,25 +31,14 @@ export default function SearchPage() {
       // 백엔드 API URL
       const backendURL = 'https://api.reviewhub.life';
 
-      const response = await fetch(`${backendURL}/search/school?univName=${encodeURIComponent(term)}`);
+      const response = await fetch(`${backendURL}/search?name=${encodeURIComponent(term)}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const data = await response.json();
-      // console.log('API 응답 데이터:', data); // 디버깅용 로그
-      
-      // data가 배열인지 확인하고 배열이 아니면 빈 배열로 설정
-      if (Array.isArray(data)) {
-        setResults(data);
-      } else if (data && Array.isArray(data.data)) {
-        // data.data 형태로 배열이 들어있는 경우
-        setResults(data.data);
-      } else {
-        console.warn('예상하지 못한 응답 형식:', data);
-        setResults([]);
-      }
+      setResults(data);
     } catch (error) {
       console.error('검색 오류:', error);
       setError('검색 중 오류가 발생했습니다.');
