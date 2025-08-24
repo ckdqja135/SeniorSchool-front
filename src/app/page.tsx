@@ -182,44 +182,62 @@ export default function HomePage() {
                    </button>
                  </div>
 
-                {/* 자동완성 드롭다운 */}
-                {showSuggestions && (suggestions.length > 0 || isLoading || error || searchTerm.trim()) && (
-                  <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto">
-                    {/* 로딩 표시 */}
-                    {isLoading && (
-                      <div className="px-4 py-3 text-center text-gray-500">
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-600 mx-auto mb-2"></div>
-                        검색 중...
-                      </div>
-                    )}
-                    
-                    {/* 에러 표시 */}
-                    {error && !isLoading && (
-                      <div className="px-4 py-3 text-center text-red-500 text-sm">
-                        {error}
-                      </div>
-                    )}
-                    
-                    {/* 자동완성 결과 */}
-                    {suggestions.map((suggestion, index) => (
-                      <div
-                        key={index}
-                        onClick={() => handleSuggestionClick(suggestion)}
-                        className="px-4 py-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors duration-150"
-                      >
-                        <div className="font-medium text-gray-900">{suggestion.univName}</div>
-                        <div className="text-sm text-gray-500">{suggestion.univLocate}</div>
-                      </div>
-                    ))}
-                    
-                    {/* 결과가 없을 때 */}
-                    {!isLoading && !error && suggestions.length === 0 && searchTerm.trim() && (
-                      <div className="px-4 py-3 text-center text-gray-500 text-sm">
-                        검색 결과가 없습니다
-                      </div>
-                    )}
-                  </div>
-                )}
+                                 {/* 자동완성 드롭다운 */}
+                 {showSuggestions && (suggestions.length > 0 || isLoading || error || searchTerm.trim()) && (
+                   <div className="absolute top-full left-0 right-0 mt-3 bg-white/95 backdrop-blur-sm border border-white/30 rounded-2xl shadow-2xl z-10 max-h-80 overflow-hidden">
+                     {/* 로딩 표시 */}
+                     {isLoading && (
+                       <div className="px-6 py-8 text-center">
+                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mx-auto mb-3"></div>
+                         <div className="text-gray-600 font-medium">검색 중...</div>
+                         <div className="text-gray-400 text-sm mt-1">잠시만 기다려주세요</div>
+                       </div>
+                     )}
+                     
+                     {/* 에러 표시 */}
+                     {error && !isLoading && (
+                       <div className="px-6 py-6 text-center">
+                         <div className="text-red-500 text-lg mb-2">⚠️</div>
+                         <div className="text-red-600 font-medium">{error}</div>
+                       </div>
+                     )}
+                     
+                     {/* 자동완성 결과 */}
+                     {suggestions.map((suggestion, index) => (
+                       <div
+                         key={index}
+                         onClick={() => handleSuggestionClick(suggestion)}
+                         className="px-6 py-4 cursor-pointer border-b border-gray-100/50 last:border-b-0 transition-all duration-200 group"
+                       >
+                         <div className="flex items-center space-x-3">
+                           <div className="w-10 h-10 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center">
+                             <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                             </svg>
+                           </div>
+                           <div className="flex-1">
+                             <div className="font-semibold text-gray-900">{suggestion.univName}</div>
+                             <div className="text-sm text-gray-500">📍 {suggestion.univLocate}</div>
+                           </div>
+                           <div className="text-green-400 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                             </svg>
+                           </div>
+                         </div>
+                       </div>
+                     ))}
+                     
+                     {/* 결과가 없을 때 */}
+                     {!isLoading && !error && suggestions.length === 0 && searchTerm.trim() && (
+                       <div className="px-6 py-8 text-center">
+                         <div className="text-gray-400 text-4xl mb-3">🔍</div>
+                         <div className="text-gray-600 font-medium">검색 결과가 없습니다</div>
+                         <div className="text-gray-400 text-sm mt-1">다른 검색어를 시도해보세요</div>
+                       </div>
+                     )}
+                   </div>
+                 )}
               </div>
             </form>
           </div>
