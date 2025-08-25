@@ -19,6 +19,12 @@ interface BoardPost {
   boardLike?: number;
   like?: number;
   univIdx: number;
+  university?: {
+    univName: string;
+    univLocate: string;
+    univType: string;
+    univCampos: string;
+  };
 }
 
 interface Comment {
@@ -805,11 +811,11 @@ export default function BoardDetailPage() {
       <nav className="bg-gray-800 text-white shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <Link href="/" className="text-2xl font-bold text-green-400">
+            <Link href="/school" className="text-2xl font-bold text-green-400">
               대학 오빠
             </Link>
             <div className="text-gray-300">
-              입학 후기
+              {boardPost.university?.univName ? `${boardPost.university.univName} 입학 후기` : '입학 후기'}
             </div>
           </div>
         </div>
@@ -817,17 +823,24 @@ export default function BoardDetailPage() {
 
              <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
          {/* 뒤로가기 버튼 - 상단에 배치 */}
-         <div className="mb-6">
-           <button 
-             onClick={() => router.back()}
-             className="flex items-center text-gray-600 hover:text-gray-800 transition-colors"
-           >
-             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-             </svg>
-             뒤로가기
-           </button>
-         </div>
+                   <div className="mb-6">
+            <button 
+              onClick={() => {
+                // 대학교 이름이 있으면 검색 페이지로, 없으면 뒤로가기
+                if (boardPost.university?.univName) {
+                  router.push(`/search?name=${encodeURIComponent(boardPost.university.univName)}`);
+                } else {
+                  router.back();
+                }
+              }}
+              className="flex items-center text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              뒤로가기
+            </button>
+          </div>
 
          {/* 게시글 헤더 */}
          <div className="bg-white rounded-lg shadow-md p-6 mb-6">

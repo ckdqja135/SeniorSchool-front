@@ -83,7 +83,8 @@ export default function SchoolPage() {
     setSearchTerm(suggestion.univName);
     setShowSuggestions(false);
     setError(null);
-    router.push(`/school/${encodeURIComponent(suggestion.univName)}`);
+    // 검색 결과 페이지로 이동 (검색어를 URL 파라미터로 전달)
+    router.push(`/search?name=${encodeURIComponent(suggestion.univName)}`);
   };
 
   // 검색어 입력 처리
