@@ -51,7 +51,7 @@ export default function SearchContent() {
       }
       
       const data = await response.json();
-      console.log('API 응답 데이터:', data);
+      // console.log('API 응답 데이터:', data);
       
              // 정확한 학교를 찾았으면 바로 해당 학교 상세 페이지로 이동
        if (data && typeof data === 'object' && data.univName) {

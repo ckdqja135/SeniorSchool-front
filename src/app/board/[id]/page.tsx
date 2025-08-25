@@ -340,7 +340,7 @@ export default function BoardDetailPage() {
       
       if (response.ok) {
         const data = await response.json();
-        console.log('댓글 API 응답 데이터:', data);
+        // console.log('댓글 API 응답 데이터:', data);
         
         // 데이터가 배열인지 확인하고 안전하게 설정
         if (Array.isArray(data)) {
