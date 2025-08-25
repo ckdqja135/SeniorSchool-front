@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link'; // Added Link import
 
 interface University {
   univName: string;
@@ -130,6 +131,31 @@ export default function SchoolPage() {
 
   return (
     <div className="relative">
+      {/* 뒤로가기 버튼 - 좌측 상단 */}
+      <div className="absolute top-6 left-6 z-20">
+        <Link 
+          href="/" 
+          className="flex items-center space-x-2 px-4 py-3 bg-white/90 backdrop-blur-sm hover:bg-white/95 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group border border-white/20"
+        >
+          <svg 
+            className="w-5 h-5 text-gray-600 group-hover:text-gray-800 transition-colors duration-200" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2} 
+              d="M10 19l-7-7m0 0l7-7m-7 7h18" 
+            />
+          </svg>
+          <span className="text-sm font-semibold text-gray-700 group-hover:text-gray-900 transition-colors duration-200">
+            Ori
+          </span>
+        </Link>
+      </div>
+
       {/* 배경 이미지 */}
       <div className="relative w-full h-[330px]">
         <Image
