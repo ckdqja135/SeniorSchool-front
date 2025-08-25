@@ -538,7 +538,7 @@ export default function SchoolPage() {
       <nav className="bg-gray-800 text-white shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <Link href="/school" className="text-2xl font-bold text-green-400">
+            <Link href="/univ-mentor" className="text-2xl font-bold text-green-400">
               대학 오빠
             </Link>
             <div className="text-gray-300">

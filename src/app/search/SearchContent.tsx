@@ -53,18 +53,18 @@ export default function SearchContent() {
       const data = await response.json();
       console.log('API 응답 데이터:', data);
       
-      // 정확한 학교를 찾았으면 바로 해당 학교 상세 페이지로 이동
-      if (data && typeof data === 'object' && data.univName) {
-        router.push(`/school/${encodeURIComponent(data.univName)}`);
-        return;
-      }
-      
-      // 배열인 경우 (여러 결과가 있을 수 있음)
-      if (Array.isArray(data) && data.length > 0) {
-        // 첫 번째 결과로 이동
-        router.push(`/school/${encodeURIComponent(data[0].univName)}`);
-        return;
-      }
+             // 정확한 학교를 찾았으면 바로 해당 학교 상세 페이지로 이동
+       if (data && typeof data === 'object' && data.univName) {
+         router.push(`/univ-mentor/${encodeURIComponent(data.univName)}`);
+         return;
+       }
+
+       // 배열인 경우 (여러 결과가 있을 수 있음)
+       if (Array.isArray(data) && data.length > 0) {
+         // 첫 번째 결과로 이동
+         router.push(`/univ-mentor/${encodeURIComponent(data[0].univName)}`);
+         return;
+       }
       
       // 결과가 없으면 에러 처리
       setError('해당하는 학교를 찾을 수 없습니다.');
@@ -108,9 +108,9 @@ export default function SearchContent() {
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <Link href="/" className="text-2xl font-bold text-green-600">
-              대학 오빠
-            </Link>
+                         <Link href="/univ-mentor" className="text-2xl font-bold text-green-600">
+               대학 오빠
+             </Link>
             <div className="text-gray-600">
               "{searchTerm}" 검색 결과
             </div>
