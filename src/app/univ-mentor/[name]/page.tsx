@@ -58,6 +58,11 @@ export default function SchoolPage() {
   // 정렬 관련 상태
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc'); // desc: 최신순, asc: 오래된순
 
+  // 검색 관련 상태
+  const [searchType, setSearchType] = useState<'id' | 'title' | 'content'>('title');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+
   // 카카오맵 API 동적 로딩
   useEffect(() => {
     
@@ -506,6 +511,95 @@ export default function SchoolPage() {
     }
   };
 
+  // 검색 함수
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!university) return;
+    
+    setIsSearching(true);
+    try {
+      const backendURL = 'https://api.reviewhub.life';
+      const url = searchQuery.trim() 
+        ? `${backendURL}/board?univIdx=${university.univIdx}&${searchType}=${encodeURIComponent(searchQuery.trim())}`
+        : `${backendURL}/board?univIdx=${university.univIdx}`;
+      
+      const response = await fetch(url);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setReviews(data);
+        setCurrentPage(1); // 검색 시 첫 페이지로 이동
+      } else {
+        console.error('검색 API 오류:', response.status);
+        alert('검색 중 오류가 발생했습니다.');
+      }
+    } catch (error) {
+      console.error('검색 오류:', error);
+      alert('검색 중 오류가 발생했습니다.');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // 검색 초기화 함수
+  const handleSearchReset = async () => {
+    if (!university) return;
+    
+    setSearchQuery('');
+    setSearchType('title');
+    setIsSearching(true);
+    
+    try {
+      const backendURL = 'https://api.reviewhub.life';
+      const response = await fetch(`${backendURL}/board?univIdx=${university.univIdx}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setReviews(data);
+        setCurrentPage(1);
+      }
+    } catch (error) {
+      console.error('검색 초기화 오류:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // 검색어가 변경될 때마다 API 호출 - 제거됨
+  // useEffect(() => {
+  //   if (!university) return;
+    
+  //   const fetchReviews = async () => {
+  //     setIsSearching(true);
+  //     try {
+  //       const backendURL = 'https://api.reviewhub.life';
+  //       const url = searchQuery.trim() 
+  //         ? `${backendURL}/board?univIdx=${university.univIdx}&searchQuery=${encodeURIComponent(searchQuery.trim())}`
+  //         : `${backendURL}/board?univIdx=${university.univIdx}`;
+        
+  //       const response = await fetch(url);
+        
+  //       if (response.ok) {
+  //         const data = await response.json();
+  //         setReviews(data);
+  //         setCurrentPage(1);
+  //       } else {
+  //         console.error('후기 조회 API 오류:', response.status);
+  //         setError('후기를 불러오는 중 오류가 발생했습니다.');
+  //       }
+  //     } catch (error) {
+  //       console.error('후기 조회 오류:', error);
+  //       setError('후기를 불러오는 중 오류가 발생했습니다.');
+  //     } finally {
+  //       setIsSearching(false);
+  //     }
+  //   };
+
+  //   // 디바운싱 적용 (300ms)
+  //   const timer = setTimeout(fetchReviews, 300);
+  //   return () => clearTimeout(timer);
+  // }, [university, searchQuery]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -683,16 +777,6 @@ export default function SchoolPage() {
                      </span>
                    </button>
                    
-                   {/* 추가 필터 버튼 (향후 확장용) */}
-                   <button
-                     className="p-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 hover:text-gray-800 transition-all duration-200"
-                     title="더보기 옵션"
-                   >
-                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                     </svg>
-                   </button>
-                   
                    <button
                      onClick={() => setShowReviewModal(true)}
                      className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center space-x-2"
@@ -767,15 +851,63 @@ export default function SchoolPage() {
                          </button>
                        </div>
                      )}
-                  </>
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    아직 입학 후기가 없습니다.
-                    <br />
-                    첫 번째 후기를 작성해보세요!
-                  </div>
-                )}
-              </div>
+                   </>
+                 ) : (
+                   <div className="text-center py-8 text-gray-500">
+                     {searchQuery ? '빈 입학 후기' : '아직 입학 후기가 없습니다.\n첫 번째 후기를 작성해보세요!'}
+                   </div>
+                 )}
+
+                 {/* 검색창 - 항상 표시 */}
+                 <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                   <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
+                     {/* 검색 타입 선택 */}
+                     <select
+                       value={searchType}
+                       onChange={(e) => setSearchType(e.target.value as 'id' | 'title' | 'content')}
+                       className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                     >
+                       <option value="title">제목</option>
+                       <option value="content">내용</option>
+                       <option value="id">작성자</option>
+                     </select>
+                     
+                     {/* 검색어 입력 */}
+                     <input
+                       type="text"
+                       value={searchQuery}
+                       onChange={(e) => setSearchQuery(e.target.value)}
+                       placeholder="검색어를 입력하세요"
+                       className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                       onKeyPress={(e) => e.key === 'Enter' && handleSearch(e as any)}
+                     />
+                     
+                     {/* 검색 버튼 */}
+                     <button
+                       type="submit"
+                       disabled={isSearching}
+                       className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2 min-w-[100px] justify-center"
+                     >
+                       {isSearching ? (
+                         <>
+                           <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                           </svg>
+                           <span>검색중...</span>
+                         </>
+                       ) : (
+                         <>
+                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                           </svg>
+                           <span>검색</span>
+                         </>
+                       )}
+                     </button>
+                   </form>
+                 </div>
+               </div>
             </div>
           </div>
         </div>
