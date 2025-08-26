@@ -19,6 +19,7 @@ interface BoardPost {
   boardLike?: number;
   like?: number;
   univIdx: number;
+  writerPw?: string;
   university?: {
     univName: string;
     univLocate: string;
@@ -253,6 +254,7 @@ export default function BoardDetailPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
   const [password, setPassword] = useState('');
   const [editForm, setEditForm] = useState({
     title: '',
@@ -440,62 +442,69 @@ export default function BoardDetailPage() {
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!boardPost) return;
+    
     try {
       const backendURL = 'https://api.reviewhub.life';
-      const editData = {
-        boardIdx: parseInt(boardId),
-        boardTitle: editForm.title.trim(),
-        boardContent: editForm.content.trim(),
-        boardPassword: password
-      };
-
       const response = await fetch(`${backendURL}/board/correct`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(editData),
+        body: JSON.stringify({
+          boardIdx: boardPost.boardIdx,
+          boardTitle: editForm.title,
+          boardContent: editForm.content,
+          writerPw: password
+        }),
       });
 
       if (response.ok) {
+        alert('게시글이 수정되었습니다.');
         setShowEditModal(false);
-        setShowPasswordModal(false);
         setPassword('');
-        setEditForm({ title: '', content: '' });
-        fetchBoardPost();
+        fetchBoardPost(); // 게시글 다시 불러오기
       } else {
-        alert('비밀번호가 일치하지 않습니다.');
+        const errorData = await response.json();
+        alert(errorData.message || '게시글 수정에 실패했습니다.');
       }
     } catch (error) {
       console.error('게시글 수정 오류:', error);
+      alert('게시글 수정 중 오류가 발생했습니다.');
     }
   };
 
-  const handleDelete = async () => {
+  const handleDeletePost = async () => {
+    if (!boardPost) return;
+    
     try {
       const backendURL = 'https://api.reviewhub.life';
-      const deleteData = {
-        boardIdx: parseInt(boardId),
-        boardPassword: password
-      };
-
       const response = await fetch(`${backendURL}/board/delete`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(deleteData),
+        body: JSON.stringify({
+          boardIdx: boardPost.boardIdx,
+          writerPw: password
+        }),
       });
 
       if (response.ok) {
-        setShowDeleteModal(false);
-        setPassword('');
-        router.back();
+        alert('게시글이 삭제되었습니다.');
+        // 대학교 이름이 있으면 검색 페이지로, 없으면 뒤로가기
+        if (boardPost.university?.univName) {
+          router.push(`/search?name=${encodeURIComponent(boardPost.university.univName)}`);
+        } else {
+          router.back();
+        }
       } else {
-        alert('비밀번호가 일치하지 않습니다.');
+        const errorData = await response.json();
+        alert(errorData.message || '게시글 삭제에 실패했습니다.');
       }
     } catch (error) {
       console.error('게시글 삭제 오류:', error);
+      alert('게시글 삭제 중 오류가 발생했습니다.');
     }
   };
 
@@ -857,6 +866,33 @@ export default function BoardDetailPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                 </svg>
               </button>
+              
+              {/* 드롭다운 메뉴 */}
+              {showPasswordModal && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+                  <button
+                    onClick={() => {
+                      if (!boardPost) return;
+                      setShowPasswordModal(false);
+                      setPassword('');
+                      setEditForm({ title: boardPost.boardTitle, content: boardPost.boardContent });
+                      setShowEditModal(true);
+                    }}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    수정하기
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowPasswordModal(false);
+                      setShowDeleteConfirmModal(true);
+                    }}
+                    className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    삭제하기
+                  </button>
+                </div>
+              )}
             </div>
         </div>
 
@@ -1045,7 +1081,7 @@ export default function BoardDetailPage() {
                   취소
                 </button>
                 <button 
-                  onClick={handleDelete}
+                  onClick={handleDeletePost}
                   className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                 >
                   삭제
@@ -1056,36 +1092,39 @@ export default function BoardDetailPage() {
         </div>
       )}
 
-      {/* 비밀번호 입력 모달 */}
-      {showPasswordModal && (
+      {/* 비밀번호 모달 제거 - 더 이상 필요하지 않음 */}
+
+      {/* 삭제 확인 모달 */}
+      {showDeleteConfirmModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <div className="text-center">
-              <h3 className="text-xl font-bold text-gray-800 mb-4">비밀번호 입력</h3>
-              <p className="text-gray-600 mb-4">게시글을 수정하려면 비밀번호를 입력하세요.</p>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="비밀번호를 입력하세요"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-bold text-gray-800">게시글 삭제</h3>
+              <p className="text-gray-600 mt-2">정말로 이 게시글을 삭제하시겠습니까?</p>
+            </div>
+            <div className="space-y-4">
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="비밀번호를 입력하세요"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
               />
               <div className="flex space-x-3 justify-center">
                 <button 
-                  onClick={() => setShowPasswordModal(false)}
+                  onClick={() => {
+                    setShowDeleteConfirmModal(false);
+                    setPassword('');
+                  }}
                   className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
                 >
                   취소
                 </button>
                 <button 
-                  onClick={() => {
-                  setShowPasswordModal(false);
-                    setEditForm({ title: boardPost.boardTitle, content: boardPost.boardContent });
-                  setShowEditModal(true);
-                  }}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  onClick={handleDeletePost}
+                  className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                 >
-                  확인
+                  삭제
                 </button>
               </div>
             </div>
@@ -1133,10 +1172,26 @@ export default function BoardDetailPage() {
                    {editForm.content.length}/700
                  </p>
                </div>
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-2">
+                   비밀번호
+                 </label>
+                 <input
+                   type="password"
+                   value={password}
+                   onChange={(e) => setPassword(e.target.value)}
+                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                   placeholder="비밀번호를 입력하세요"
+                   required
+                 />
+               </div>
                <div className="flex space-x-3 justify-center pt-4">
                  <button 
                    type="button"
-                   onClick={() => setShowEditModal(false)}
+                   onClick={() => {
+                     setShowEditModal(false);
+                     setPassword('');
+                   }}
                    className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
                  >
                    취소
