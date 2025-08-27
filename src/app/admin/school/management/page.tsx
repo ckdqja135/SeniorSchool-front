@@ -35,6 +35,7 @@ const SchoolManagementPage = () => {
   const [selectedSchools, setSelectedSchools] = useState<number[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [isAddMode, setIsAddMode] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -61,12 +62,16 @@ const SchoolManagementPage = () => {
   });
 
   // 학교 검색
-  const searchSchools = async (keyword = "") => {
+  const searchSchools = async (keyword = "", page = 1, pageSize = rowsPerPage) => {
     setLoading(true);
+    console.log(`API 호출: keyword="${keyword}", page=${page}, pageSize=${pageSize}`);
+    
     try {
       const url = keyword 
-        ? `https://api.reviewhub.life/admin/univ/searchUniv?keyword=${encodeURIComponent(keyword)}`
-        : `https://api.reviewhub.life/admin/univ/searchUniv`;
+        ? `https://api.reviewhub.life/admin/univ/searchUniv?keyword=${encodeURIComponent(keyword)}&page=${page}&rowsPerPage=${pageSize}`
+        : `https://api.reviewhub.life/admin/univ/searchUniv?page=${page}&rowsPerPage=${pageSize}`;
+      
+      console.log(`요청 URL: ${url}`);
       
       const accessToken = localStorage.getItem("accessToken");
       
@@ -78,20 +83,28 @@ const SchoolManagementPage = () => {
       });
       const data: ApiResponse = await response.json();
       
+      console.log(`API 응답:`, data);
+      
       if (data && data.data) {
         setSchools(data.data || []);
-        setTotalPages(Math.ceil((data.totalCount || 0) / (data.rowsPerPage || 10)));
-        setCurrentPage(data.currentPage || 1);
+        setTotalPages(Math.ceil((data.totalCount || 0) / (data.rowsPerPage || pageSize)));
+        // 요청한 page 번호를 우선적으로 사용 (백엔드 응답과 관계없이)
+        // console.log(`페이지 상태 업데이트: requestedPage=${page}, responseCurrentPage=${data.currentPage}`);
+        setCurrentPage(page);
+        // 백엔드 응답의 rowsPerPage로 상태 업데이트
+        if (data.rowsPerPage) {
+          setRowsPerPage(data.rowsPerPage);
+        }
       } else {
         setSchools([]);
         setTotalPages(1);
-        setCurrentPage(1);
+        setCurrentPage(page);
       }
     } catch (error) {
       console.error("검색 실패:", error);
       setSchools([]);
       setTotalPages(1);
-      setCurrentPage(1);
+      setCurrentPage(page);
     } finally {
       setLoading(false);
     }
@@ -99,13 +112,13 @@ const SchoolManagementPage = () => {
 
   // 초기 데이터 로드
   useEffect(() => {
-    searchSchools();
+    searchSchools("", 1, rowsPerPage);
   }, []);
 
   // 검색 실행
   const handleSearch = () => {
     setCurrentPage(1);
-    searchSchools(searchKeyword);
+    searchSchools(searchKeyword, 1, rowsPerPage);
   };
 
   // 체크박스 선택
@@ -200,8 +213,17 @@ const SchoolManagementPage = () => {
   // 페이지 이동
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
-      searchSchools(searchKeyword);
+      setCurrentPage(page);
+      searchSchools(searchKeyword, page, rowsPerPage);
     }
+  };
+
+  // 페이지당 행 수 변경
+  const handleRowsPerPageChange = (newRowsPerPage: number) => {
+    console.log(`rowsPerPage 변경: ${rowsPerPage} → ${newRowsPerPage}`);
+    setRowsPerPage(newRowsPerPage);
+    setCurrentPage(1); // 첫 페이지로 이동
+    searchSchools(searchKeyword, 1, newRowsPerPage);
   };
 
   // 편집 시작
@@ -421,51 +443,89 @@ const SchoolManagementPage = () => {
         </div>
 
         {/* 페이지네이션 */}
-        <div className="flex items-center justify-center gap-2 mt-4">
-          <button 
-            onClick={() => goToPage(1)}
-            disabled={currentPage === 1}
-            className="px-2 py-1 text-sm border rounded disabled:opacity-50"
-          >
-            ⏮️
-          </button>
-          <button 
-            onClick={() => goToPage(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="px-2 py-1 text-sm border rounded disabled:opacity-50"
-          >
-            ◀️
-          </button>
-          <div className="flex items-center gap-1">
-            <input
-              type="number"
-              value={currentPage}
-              onChange={(e) => {
-                const page = parseInt(e.target.value);
-                if (page >= 1 && page <= totalPages) {
-                  goToPage(page);
-                }
-              }}
-              className="w-12 px-1 py-1 text-sm text-center border rounded"
-              min={1}
-              max={totalPages}
-            />
-            <span className="text-sm">of {totalPages}</span>
+        <div className="flex items-center justify-center gap-4 mt-4">
+          {/* 페이지당 행 수 선택 */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">페이지당:</span>
+            <select
+              value={rowsPerPage}
+              onChange={(e) => handleRowsPerPageChange(parseInt(e.target.value))}
+              className="px-2 py-1 text-sm border rounded bg-white"
+            >
+              <option value={10}>10개</option>
+              <option value={30}>30개</option>
+              <option value={50}>50개</option>
+              <option value={100}>100개</option>
+            </select>
           </div>
-          <button 
-            onClick={() => goToPage(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="px-2 py-1 text-sm border rounded disabled:opacity-50"
-          >
-            ▶️
-          </button>
-          <button 
-            onClick={() => goToPage(totalPages)}
-            disabled={currentPage === totalPages}
-            className="px-2 py-1 text-sm border rounded disabled:opacity-50"
-          >
-            ⏭️
-          </button>
+          
+          {/* 페이징 버튼들 */}
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => goToPage(1)}
+              disabled={currentPage === 1}
+              className={`px-2 py-1 text-sm border rounded transition-colors ${
+                currentPage === 1 
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                  : 'bg-white text-gray-700 hover:bg-gray-50 cursor-pointer'
+              }`}
+              title="첫 페이지"
+            >
+              ⏮️
+            </button>
+            <button 
+              onClick={() => goToPage(currentPage - 1)}
+              disabled={currentPage === 1}
+              className={`px-2 py-1 text-sm border rounded transition-colors ${
+                currentPage === 1 
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                  : 'bg-white text-gray-700 hover:bg-gray-50 cursor-pointer'
+              }`}
+              title="이전 페이지"
+            >
+              ◀️
+            </button>
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                value={currentPage}
+                onChange={(e) => {
+                  const page = parseInt(e.target.value);
+                  if (page >= 1 && page <= totalPages) {
+                    goToPage(page);
+                  }
+                }}
+                className="w-12 px-1 py-1 text-sm text-center border rounded"
+                min={1}
+                max={totalPages}
+              />
+              <span className="text-sm text-gray-600">of {totalPages}</span>
+            </div>
+            <button 
+              onClick={() => goToPage(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className={`px-2 py-1 text-sm border rounded transition-colors ${
+                currentPage === totalPages 
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                  : 'bg-white text-gray-700 hover:bg-gray-50 cursor-pointer'
+              }`}
+              title="다음 페이지"
+            >
+              ▶️
+            </button>
+            <button 
+              onClick={() => goToPage(totalPages)}
+              disabled={currentPage === totalPages}
+              className={`px-2 py-1 text-sm border rounded transition-colors ${
+                currentPage === totalPages 
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                  : 'bg-white text-gray-700 hover:bg-gray-50 cursor-pointer'
+              }`}
+              title="마지막 페이지"
+            >
+              ⏭️
+            </button>
+          </div>
         </div>
       </div>
 
