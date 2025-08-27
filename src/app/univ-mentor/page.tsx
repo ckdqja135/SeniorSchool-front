@@ -170,7 +170,7 @@ export default function SchoolPage() {
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-center text-white">
             <h1 className="font-black-han-sans text-4xl md:text-5xl mb-8 text-shadow-lg">
-              세상 모든 대학교 정보, 학교선배가 알려줄게
+              세상 모든 대학교 정보, 대학 오빠가 알려줄게
             </h1>
             
             {/* 검색 폼 */}
