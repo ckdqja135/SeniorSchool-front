@@ -31,6 +31,13 @@ interface PopularUniversity {
   univViewCount: number;
 }
 
+interface UniversityRequest {
+  univName: string;
+  univPresident: string;
+  univYears: string;
+  univAddr: string;
+}
+
 export default function SearchContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -42,6 +49,14 @@ export default function SearchContent() {
   const [popularUniversities, setPopularUniversities] = useState<PopularUniversity[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchInput, setSearchInput] = useState('');
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [requestForm, setRequestForm] = useState<UniversityRequest>({
+    univName: '',
+    univPresident: '',
+    univYears: '4년제',
+    univAddr: ''
+  });
   const searchRef = useRef<HTMLFormElement>(null);
 
   // 최근 검색 기록 로드
@@ -107,6 +122,58 @@ export default function SearchContent() {
     setTimeout(() => {
       setIsRefreshing(false);
     }, 1000);
+  };
+
+  // 대학교 추가 요청 제출
+  const handleRequestSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!requestForm.univName.trim() || !requestForm.univPresident.trim() || !requestForm.univAddr.trim()) {
+      alert('모든 필드를 입력해주세요.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      const backendURL = 'https://api.reviewhub.life';
+      const response = await fetch(`${backendURL}/admin/univ/request`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestForm),
+      });
+
+      if (response.ok) {
+        alert('대학교 추가 요청이 성공적으로 전송되었습니다.');
+        setShowRequestModal(false);
+        setRequestForm({
+          univName: '',
+          univPresident: '',
+          univYears: '4년제',
+          univAddr: ''
+        });
+      } else {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('대학교 추가 요청 오류:', error);
+      alert('대학교 추가 요청 전송 중 오류가 발생했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // 모달 닫기
+  const handleCloseModal = () => {
+    setShowRequestModal(false);
+    setRequestForm({
+      univName: '',
+      univPresident: '',
+      univYears: '4년제',
+      univAddr: ''
+    });
   };
 
   // 검색 제출
@@ -281,6 +348,19 @@ export default function SearchContent() {
                 </button>
               </div>
             </form>
+            
+            {/* 대학교 추가 요청 버튼 */}
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => setShowRequestModal(true)}
+                className="inline-flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-all duration-300 shadow-md hover:shadow-lg"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <span>대학교 추가 요청</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -397,6 +477,120 @@ export default function SearchContent() {
           </div>
         </div>
       </div>
+
+      {/* 대학교 추가 요청 모달 */}
+      {showRequestModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            {/* 모달 헤더 */}
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-900">대학교 추가 요청</h2>
+                <button
+                  onClick={handleCloseModal}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-gray-600 mt-2">새로운 대학교 정보를 요청해주세요.</p>
+            </div>
+
+            {/* 모달 폼 */}
+            <form onSubmit={handleRequestSubmit} className="p-6 space-y-4">
+              {/* 대학교 이름 */}
+              <div>
+                <label htmlFor="univName" className="block text-sm font-medium text-gray-700 mb-2">
+                  대학교 이름 *
+                </label>
+                <input
+                  type="text"
+                  id="univName"
+                  value={requestForm.univName}
+                  onChange={(e) => setRequestForm({...requestForm, univName: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="대학교 이름을 입력하세요"
+                  required
+                />
+              </div>
+
+              {/* 대학교 총장 */}
+              <div>
+                <label htmlFor="univPresident" className="block text-sm font-medium text-gray-700 mb-2">
+                  대학교 총장 *
+                </label>
+                <input
+                  type="text"
+                  id="univPresident"
+                  value={requestForm.univPresident}
+                  onChange={(e) => setRequestForm({...requestForm, univPresident: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="총장 이름을 입력하세요"
+                  required
+                />
+              </div>
+
+              {/* 대학교 구분 */}
+              <div>
+                <label htmlFor="univYears" className="block text-sm font-medium text-gray-700 mb-2">
+                  대학교 구분 *
+                </label>
+                <select
+                  id="univYears"
+                  value={requestForm.univYears}
+                  onChange={(e) => setRequestForm({...requestForm, univYears: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                >
+                  <option value="4년제">4년제</option>
+                  <option value="3년제">3년제</option>
+                  <option value="사이버대학">사이버대학</option>
+                </select>
+              </div>
+
+              {/* 학교 주소 */}
+              <div>
+                <label htmlFor="univAddr" className="block text-sm font-medium text-gray-700 mb-2">
+                  학교 주소 *
+                </label>
+                <input
+                  type="text"
+                  id="univAddr"
+                  value={requestForm.univAddr}
+                  onChange={(e) => setRequestForm({...requestForm, univAddr: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="학교 주소를 입력하세요"
+                  required
+                />
+              </div>
+
+              {/* 제출 버튼 */}
+              <div className="flex space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors ${
+                    isSubmitting
+                      ? 'bg-blue-400 cursor-not-allowed'
+                      : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
+                >
+                  {isSubmitting ? '요청 중...' : '요청하기'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

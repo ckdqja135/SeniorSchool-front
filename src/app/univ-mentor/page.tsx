@@ -19,6 +19,29 @@ interface PopularUniversity {
   univViewCount: number;
 }
 
+interface PopularBoard {
+  boardIdx: number;
+  boardTitle: string;
+  boardContent: string;
+  boardRegDate: string;
+  boardLike: number;
+  boardHits: number;
+  boardID: string;
+  university: {
+    univName: string;
+    univLocate: string;
+    univType: string;
+    univCampos: string;
+  };
+}
+
+interface UniversityRequest {
+  univName: string;
+  univPresident: string;
+  univYears: string;
+  univAddr: string;
+}
+
 export default function SchoolPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [suggestions, setSuggestions] = useState<University[]>([]);
@@ -27,7 +50,17 @@ export default function SchoolPage() {
   const [error, setError] = useState<string | null>(null);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [popularUniversities, setPopularUniversities] = useState<PopularUniversity[]>([]);
+  const [popularBoards, setPopularBoards] = useState<PopularBoard[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isBoardRefreshing, setIsBoardRefreshing] = useState(false);
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [requestForm, setRequestForm] = useState<UniversityRequest>({
+    univName: '',
+    univPresident: '',
+    univYears: '4년제',
+    univAddr: ''
+  });
   const searchRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -42,6 +75,11 @@ export default function SchoolPage() {
   // 인기 대학교 데이터 로드
   useEffect(() => {
     fetchPopularUniversities();
+  }, []);
+
+  // 인기 후기 데이터 로드
+  useEffect(() => {
+    fetchPopularBoards();
   }, []);
 
   // 자동완성 검색어 가져오기
@@ -130,6 +168,26 @@ export default function SchoolPage() {
     }
   };
 
+  // 인기 후기 데이터 가져오기
+  const fetchPopularBoards = async () => {
+    try {
+      const backendURL = 'https://api.reviewhub.life';
+      const response = await fetch(`${backendURL}/board/top-viewed`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.status === 200 && data.data) {
+        setPopularBoards(data.data);
+      }
+    } catch (error) {
+      console.error('인기 후기 로딩 오류:', error);
+    }
+  };
+
   // 인기 대학교 새로고침
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -138,6 +196,17 @@ export default function SchoolPage() {
     // 애니메이션을 위한 지연
     setTimeout(() => {
       setIsRefreshing(false);
+    }, 1000);
+  };
+
+  // 인기 후기 새로고침
+  const handleBoardRefresh = async () => {
+    setIsBoardRefreshing(true);
+    await fetchPopularBoards();
+    
+    // 애니메이션을 위한 지연
+    setTimeout(() => {
+      setIsBoardRefreshing(false);
     }, 1000);
   };
 
@@ -209,6 +278,63 @@ export default function SchoolPage() {
   // 인기 대학교 클릭
   const handlePopularUniversityClick = (university: PopularUniversity) => {
     router.push(`/univ-mentor/${encodeURIComponent(university.univName)}`);
+  };
+
+  // 인기 후기 클릭
+  const handlePopularBoardClick = (board: PopularBoard) => {
+    router.push(`/board/${board.boardIdx}`);
+  };
+
+  // 대학교 추가 요청 제출
+  const handleRequestSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!requestForm.univName.trim() || !requestForm.univPresident.trim() || !requestForm.univAddr.trim()) {
+      alert('모든 필드를 입력해주세요.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      const backendURL = 'https://api.reviewhub.life';
+      const response = await fetch(`${backendURL}/admin/univ/request`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestForm),
+      });
+
+      if (response.ok) {
+        alert('대학교 추가 요청이 성공적으로 전송되었습니다.');
+        setShowRequestModal(false);
+        setRequestForm({
+          univName: '',
+          univPresident: '',
+          univYears: '4년제',
+          univAddr: ''
+        });
+      } else {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('대학교 추가 요청 오류:', error);
+      alert('대학교 추가 요청 전송 중 오류가 발생했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // 모달 닫기
+  const handleCloseModal = () => {
+    setShowRequestModal(false);
+    setRequestForm({
+      univName: '',
+      univPresident: '',
+      univYears: '4년제',
+      univAddr: ''
+    });
   };
 
   return (
@@ -290,6 +416,8 @@ export default function SchoolPage() {
                     <span>검색</span>
                   </button>
                 </div>
+                
+
 
                 {/* 자동완성 드롭다운 */}
                 {showSuggestions && (suggestions.length > 0 || isLoading || error || searchTerm.trim()) && (
@@ -387,17 +515,7 @@ export default function SchoolPage() {
                      </div>
                    ))}
                    
-                   {/* Reload 버튼 */}
-                   <button
-                     onClick={handleRefresh}
-                     disabled={isRefreshing}
-                     className="text-gray-500 hover:text-gray-700 text-sm font-medium transition-colors duration-200 flex items-center space-x-1"
-                   >
-                     <span>Reload</span>
-                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                     </svg>
-                   </button>
+                   
                  </div>
                </div>
              )}
@@ -406,70 +524,264 @@ export default function SchoolPage() {
        </div>
 
                                                                                                                                {/* 검색창 밑 컨텐츠 */}
-           <div className="bg-white py-6">
-             <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-              {/* 인기 대학교 섹션 */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-               <div className="p-3 border-b border-gray-200">
-                 <div className="flex items-center justify-between">
-                   <h2 className="text-base font-bold text-gray-900">인기 대학교 TOP 10</h2>
-                   <button
-                     onClick={handleRefresh}
-                     disabled={isRefreshing}
-                     className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg transition-all duration-300 ${
-                       isRefreshing
-                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                         : 'bg-green-100 text-green-600 hover:bg-green-200'
-                     }`}
-                   >
-                     <svg
-                       className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`}
-                       fill="none"
-                       stroke="currentColor"
-                       viewBox="0 0 24 24"
-                     >
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                     </svg>
-                     <span className="text-sm">{isRefreshing ? '갱신 중...' : '새로고침'}</span>
-                   </button>
-                 </div>
-               </div>
-               <div className="p-3">
-                 <div className="grid grid-cols-1 gap-1.5">
-                   {popularUniversities.map((university, index) => (
-                     <div
-                       key={university.univIdx}
-                       onClick={() => handlePopularUniversityClick(university)}
-                       className={`group p-1.5 rounded-lg border border-gray-200 hover:border-green-300 hover:shadow-md transition-all duration-300 cursor-pointer transform hover:scale-105 ${
-                         isRefreshing ? 'animate-pulse' : ''
-                       }`}
-                     >
-                       <div className="flex items-center space-x-1.5">
-                         <div className={`w-4 h-4 rounded-full flex items-center justify-center text-white font-bold text-xs ${
-                           index < 3 ? 'bg-gradient-to-r from-yellow-400 to-orange-500' : 'bg-gradient-to-r from-gray-400 to-gray-600'
-                         }`}>
-                           {index + 1}
-                         </div>
-                         <div className="flex-1 min-w-0">
-                           <h3 className="font-semibold text-gray-900 group-hover:text-green-600 transition-colors duration-200 text-xs truncate">
-                             {university.univName}
-                           </h3>
-                           <p className="text-xs text-gray-500 truncate">📍 {university.univLocate}</p>
-                           <p className="text-xs text-gray-400 truncate">{university.univType} • {university.univCampos}</p>
-                         </div>
-                         <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
-                           <svg className="w-2.5 h-2.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                         <div className="bg-white py-6">
+               <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* 인기 대학교 섹션 */}
+                    <div className="relative">
+                                             {/* 대학교 추가 요청 버튼 - 섹션 왼쪽 바깥쪽 */}
+                       <div className="absolute -left-48 top-0">
+                                                 <button
+                           type="button"
+                           onClick={() => setShowRequestModal(true)}
+                           className="flex items-center space-x-2 px-3 py-1.5 rounded-lg transition-all duration-300 bg-green-100 text-green-600 hover:bg-green-200"
+                         >
+                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                            </svg>
+                           <span className="text-sm">대학교 추가 요청</span>
+                         </button>
+                      </div>
+                      
+                      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                        <div className="p-3 border-b border-gray-200">
+                          <div className="flex items-center justify-between">
+                            <h2 className="text-base font-bold text-gray-900">인기 대학교 TOP 10</h2>
+                            <button
+                              onClick={handleRefresh}
+                              disabled={isRefreshing}
+                              className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg transition-all duration-300 ${
+                                isRefreshing
+                                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                  : 'bg-green-100 text-green-600 hover:bg-green-200'
+                              }`}
+                            >
+                              <svg
+                                className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`}
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                              </svg>
+                              <span className="text-sm">{isRefreshing ? '갱신 중...' : '새로고침'}</span>
+                            </button>
+                          </div>
+                        </div>
+                        
+                                                 <div className="p-3">
+                           <div className="grid grid-cols-1 gap-1.5">
+                             {popularUniversities.map((university, index) => (
+                               <div
+                                 key={university.univIdx}
+                                 onClick={() => handlePopularUniversityClick(university)}
+                                 className={`group p-1.5 rounded-lg border border-gray-200 hover:border-green-300 hover:shadow-md transition-all duration-300 cursor-pointer transform hover:scale-105 ${
+                                   isRefreshing ? 'animate-pulse' : ''
+                                 }`}
+                               >
+                                 <div className="flex items-center space-x-1.5">
+                                   <div className={`w-4 h-4 rounded-full flex items-center justify-center text-white font-bold text-xs ${
+                                     index < 3 ? 'bg-gradient-to-r from-yellow-400 to-orange-500' : 'bg-gradient-to-r from-gray-400 to-gray-600'
+                                   }`}>
+                                     {index + 1}
+                                   </div>
+                                   <div className="flex-1 min-w-0">
+                                     <h3 className="font-semibold text-gray-900 group-hover:text-green-600 transition-colors duration-200 text-xs truncate">
+                                       {university.univName}
+                                     </h3>
+                                     <p className="text-xs text-gray-500 truncate">📍 {university.univLocate}</p>
+                                     <p className="text-xs text-gray-400 truncate">{university.univType} • {university.univCampos}</p>
+                                   </div>
+                                   <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
+                                     <svg className="w-2.5 h-2.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                     </svg>
+                                   </div>
+                                 </div>
+                               </div>
+                             ))}
+                           </div>
                          </div>
                        </div>
                      </div>
-                   ))}
-                 </div>
-               </div>
-             </div>
-           </div>
-         </div>
+
+                  {/* 인기 후기 섹션 */}
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div className="p-3 border-b border-gray-200">
+                      <div className="flex items-center justify-between">
+                        <h2 className="text-base font-bold text-gray-900">인기 후기 TOP 10</h2>
+                                                 <button
+                           onClick={handleBoardRefresh}
+                           disabled={isBoardRefreshing}
+                           className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg transition-all duration-300 ${
+                             isBoardRefreshing
+                               ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                               : 'bg-green-100 text-green-600 hover:bg-green-200'
+                           }`}
+                         >
+                          <svg
+                            className={`w-3 h-3 ${isBoardRefreshing ? 'animate-spin' : ''}`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          <span className="text-sm">{isBoardRefreshing ? '갱신 중...' : '새로고침'}</span>
+                        </button>
+                      </div>
+                    </div>
+                    <div className="p-3">
+                      <div className="grid grid-cols-1 gap-1.5">
+                        {popularBoards.map((board, index) => (
+                          <div
+                            key={board.boardIdx}
+                            onClick={() => handlePopularBoardClick(board)}
+                            className={`group p-1.5 rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-300 cursor-pointer transform hover:scale-105 ${
+                              isBoardRefreshing ? 'animate-pulse' : ''
+                            }`}
+                          >
+                            <div className="flex items-center space-x-1.5">
+                              <div className={`w-4 h-4 rounded-full flex items-center justify-center text-white font-bold text-xs ${
+                                index < 3 ? 'bg-gradient-to-r from-blue-400 to-indigo-500' : 'bg-gradient-to-r from-gray-400 to-gray-600'
+                              }`}>
+                                {index + 1}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-200 text-xs truncate">
+                                  {board.boardTitle}
+                                </h3>
+                                <p className="text-xs text-gray-500 truncate">📍 {board.university.univName}</p>
+                                <p className="text-xs text-gray-400 truncate">❤️ {board.boardLike} • 👁️ {board.boardHits}</p>
+                              </div>
+                              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
+                                <svg className="w-2.5 h-2.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+      {/* 대학교 추가 요청 모달 */}
+      {showRequestModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            {/* 모달 헤더 */}
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-900">대학교 추가 요청</h2>
+                <button
+                  onClick={handleCloseModal}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-gray-600 mt-2">새로운 대학교 정보를 요청해주세요.</p>
+            </div>
+
+            {/* 모달 폼 */}
+            <form onSubmit={handleRequestSubmit} className="p-6 space-y-4">
+              {/* 대학교 이름 */}
+              <div>
+                <label htmlFor="univName" className="block text-sm font-medium text-gray-700 mb-2">
+                  대학교 이름 *
+                </label>
+                <input
+                  type="text"
+                  id="univName"
+                  value={requestForm.univName}
+                  onChange={(e) => setRequestForm({...requestForm, univName: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="대학교 이름을 입력하세요"
+                  required
+                />
+              </div>
+
+              {/* 대학교 총장 */}
+              <div>
+                <label htmlFor="univPresident" className="block text-sm font-medium text-gray-700 mb-2">
+                  대학교 총장 *
+                </label>
+                <input
+                  type="text"
+                  id="univPresident"
+                  value={requestForm.univPresident}
+                  onChange={(e) => setRequestForm({...requestForm, univPresident: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="총장 이름을 입력하세요"
+                  required
+                />
+              </div>
+
+              {/* 대학교 구분 */}
+              <div>
+                <label htmlFor="univYears" className="block text-sm font-medium text-gray-700 mb-2">
+                  대학교 구분 *
+                </label>
+                <select
+                  id="univYears"
+                  value={requestForm.univYears}
+                  onChange={(e) => setRequestForm({...requestForm, univYears: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                >
+                  <option value="4년제">4년제</option>
+                  <option value="3년제">3년제</option>
+                  <option value="사이버대학">사이버대학</option>
+                </select>
+              </div>
+
+              {/* 학교 주소 */}
+              <div>
+                <label htmlFor="univAddr" className="block text-sm font-medium text-gray-900 mb-2">
+                  학교 주소 *
+                </label>
+                <input
+                  type="text"
+                  id="univAddr"
+                  value={requestForm.univAddr}
+                  onChange={(e) => setRequestForm({...requestForm, univAddr: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="학교 주소를 입력하세요"
+                  required
+                />
+              </div>
+
+              {/* 제출 버튼 */}
+              <div className="flex space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors ${
+                    isSubmitting
+                      ? 'bg-blue-400 cursor-not-allowed'
+                      : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
+                >
+                  {isSubmitting ? '요청 중...' : '요청하기'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
