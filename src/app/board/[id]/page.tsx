@@ -292,6 +292,32 @@ export default function BoardDetailPage() {
   const [isLiked, setIsLiked] = useState(false); // 좋아요 상태
   const [isLikeLoading, setIsLikeLoading] = useState(false); // 좋아요 로딩 상태
   
+  // 신고 관련 상태
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportForm, setReportForm] = useState({
+    reportReason: '',
+    reporterId: ''
+  });
+  const [isReportLoading, setIsReportLoading] = useState(false);
+
+  // 신고 모달 토글 함수
+  const toggleReportModal = () => {
+    console.log('🚨 toggleReportModal 함수 호출됨');
+    console.log('현재 showReportModal 상태:', showReportModal);
+    console.log('setShowReportModal 함수 타입:', typeof setShowReportModal);
+    
+    try {
+      setShowReportModal(prev => {
+        const newState = !prev;
+        console.log('showReportModal 상태를', prev, '에서', newState, '로 변경');
+        return newState;
+      });
+      console.log('setShowReportModal 호출 완료');
+    } catch (error) {
+      console.error('toggleReportModal 오류:', error);
+    }
+  };
+  
   // ID 기반 더보기 방식 페이징 관련 상태
   const [visibleIds, setVisibleIds] = useState<Set<number>>(new Set());
   const [commentsPerLoad] = useState(2); // 한 번에 로드할 댓글 수
@@ -311,6 +337,11 @@ export default function BoardDetailPage() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [activeCommentMenu]);
+
+  // showReportModal 상태 변화 추적
+  useEffect(() => {
+    console.log('🔍 showReportModal 상태 변화됨:', showReportModal);
+  }, [showReportModal]);
 
   const fetchBoardPost = async () => {
     setIsLoading(true);
@@ -352,7 +383,7 @@ export default function BoardDetailPage() {
           if (data.length > 0) {
             // 초기 댓글 ID 설정 (최신순으로 2개)
             const initialIds = pickNextIdsFromList(data, new Set(), commentsPerLoad);
-            console.log('초기 댓글 ID:', Array.from(initialIds));
+            // console.log('초기 댓글 ID:', Array.from(initialIds));
             setVisibleIds(initialIds);
             setHasMoreComments(data.length > commentsPerLoad);
           } else {
@@ -361,27 +392,27 @@ export default function BoardDetailPage() {
           }
         } else if (data && typeof data === 'object') {
           // 객체인 경우 배열로 변환 시도
-          console.log('댓글 데이터가 배열이 아님, 객체 구조:', data);
+          // console.log('댓글 데이터가 배열이 아님, 객체 구조:', data);
           setComments([]);
           setVisibleIds(new Set());
           setTotalComments(0);
           setHasMoreComments(false);
         } else {
-          console.log('댓글 데이터가 예상과 다른 형태:', typeof data, data);
+          // console.log('댓글 데이터가 예상과 다른 형태:', typeof data, data);
           setComments([]);
           setVisibleIds(new Set());
           setTotalComments(0);
           setHasMoreComments(false);
         }
       } else {
-        console.error('댓글 API 오류:', response.status, response.statusText);
+        // console.error('댓글 API 오류:', response.status, response.statusText);
         setComments([]);
         setVisibleIds(new Set());
         setTotalComments(0);
         setHasMoreComments(false);
       }
     } catch (error) {
-      console.error('댓글 조회 오류:', error);
+      // console.error('댓글 조회 오류:', error);
       setComments([]);
       setVisibleIds(new Set());
       setTotalComments(0);
@@ -391,7 +422,7 @@ export default function BoardDetailPage() {
 
   // 게시글 정보 가져오기
   useEffect(() => {
-    console.log('useEffect 실행 - boardId:', boardId, '타입:', typeof boardId);
+    // console.log('useEffect 실행 - boardId:', boardId, '타입:', typeof boardId);
     
     if (boardId) {
       fetchBoardPost();
@@ -746,6 +777,48 @@ export default function BoardDetailPage() {
     return count;
   };
 
+  // 신고 제출
+  const handleReportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!boardPost) return;
+    
+    try {
+      setIsReportLoading(true);
+      
+      const backendURL = 'https://api.reviewhub.life';
+      const reportData = {
+        boardIdx: boardPost.boardIdx,
+        serviceType: 'univ',
+        reportReason: reportForm.reportReason.trim(),
+        reporterId: reportForm.reporterId.trim()
+      };
+
+      const response = await fetch(`${backendURL}/admin/report/createReport`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(reportData),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        alert('신고가 성공적으로 등록되었습니다.');
+        setShowReportModal(false);
+        setReportForm({ reportReason: '', reporterId: '' });
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || '신고 등록에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('신고 등록 오류:', error);
+      alert('신고 등록 중 오류가 발생했습니다.');
+    } finally {
+      setIsReportLoading(false);
+    }
+  };
+
   // 대댓글 작성
   const handleReplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -856,16 +929,33 @@ export default function BoardDetailPage() {
           <div className="flex justify-between items-start mb-4">
             <h1 className="text-3xl font-bold text-gray-900">{boardPost.boardTitle}</h1>
             
-            {/* 설정 드롭다운 */}
-            <div className="relative">
+            {/* 액션 버튼들 */}
+            <div className="flex items-center space-x-2">
+              {/* 신고 버튼 */}
               <button
-                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-                onClick={() => setShowPasswordModal(true)}
+                onClick={() => {
+                  console.log('🚨 신고하기 버튼 직접 클릭됨!');
+                  console.log('toggleReportModal 함수 타입:', typeof toggleReportModal);
+                  toggleReportModal();
+                }}
+                className="px-4 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-lg transition-colors text-sm font-medium cursor-pointer"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
                 </svg>
+                신고하기
               </button>
+              
+              {/* 설정 드롭다운 */}
+              <div className="relative">
+                <button
+                  className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                  onClick={() => setShowPasswordModal(true)}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                  </svg>
+                </button>
               
               {/* 드롭다운 메뉴 */}
               {showPasswordModal && (
@@ -893,6 +983,7 @@ export default function BoardDetailPage() {
                   </button>
                 </div>
               )}
+              </div>
             </div>
         </div>
 
@@ -1297,6 +1388,86 @@ export default function BoardDetailPage() {
                  </button>
                </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 신고 모달 */}
+      {showReportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="text-center mb-6">
+              <div className="text-red-600 text-6xl mb-4">🚨</div>
+              <h3 className="text-xl font-bold text-gray-800">후기 신고하기</h3>
+              <p className="text-gray-600 mt-2">부적절한 내용을 신고해주세요</p>
+            </div>
+            
+            <form onSubmit={handleReportSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  후기 고유 ID
+                </label>
+                <input
+                  type="text"
+                  value={boardPost?.boardIdx || ''}
+                  disabled
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  신고 사유 <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={reportForm.reportReason}
+                  onChange={(e) => setReportForm({ ...reportForm, reportReason: e.target.value })}
+                  placeholder="신고 사유를 입력해주세요..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  rows={3}
+                  maxLength={200}
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1 text-right">
+                  {reportForm.reportReason.length}/200
+                </p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  신고자 ID <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={reportForm.reporterId}
+                  onChange={(e) => setReportForm({ ...reportForm, reporterId: e.target.value })}
+                  placeholder="신고자 ID를 입력하세요"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  maxLength={20}
+                  required
+                />
+              </div>
+              
+              <div className="flex space-x-3 justify-center pt-4">
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setShowReportModal(false);
+                    setReportForm({ reportReason: '', reporterId: '' });
+                  }}
+                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                >
+                  취소
+                </button>
+                <button 
+                  type="submit"
+                  disabled={isReportLoading}
+                  className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isReportLoading ? '신고 중...' : '신고하기'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

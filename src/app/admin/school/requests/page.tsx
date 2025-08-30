@@ -557,7 +557,7 @@ const UniversityRequestsPage: React.FC = () => {
                       요청 번호
                     </label>
                     <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md">
-                      #{selectedRequest.requestIdx}
+                        {selectedRequest.requestIdx}
                     </p>
                   </div>
                   <div>
