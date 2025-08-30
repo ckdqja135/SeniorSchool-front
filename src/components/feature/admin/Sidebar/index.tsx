@@ -3,16 +3,30 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 
 interface SidebarProps {
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
 }
 
+interface MenuItem {
+  icon: string;
+  label: string;
+  href: string;
+  subItems: SubMenuItem[];
+}
+
+interface SubMenuItem {
+  label: string;
+  href: string;
+  subItems?: SubMenuItem[];
+}
+
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
   const pathname = usePathname();
 
-  const menuItems = [
+  const menuItems: MenuItem[] = [
     {
       icon: "📊",
       label: "Dashboard",
@@ -25,13 +39,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
       href: "/admin/school",
       subItems: [
         { label: "학교 관리", href: "/admin/school/management" },
-        { 
-          label: "게시글 관리", 
-          href: "/admin/school/posts",
-          subItems: [
-            { label: "신고 게시글", href: "/admin/school/posts/reported" }
-          ]
-        },
+        { label: "대학교 추가 요청", href: "/admin/school/requests" },
       ],
     },
     {
@@ -45,6 +53,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
       label: "관리자 관리",
       href: "/admin/admin",
       subItems: [],
+    },
+    {
+      icon: "📝",
+      label: "게시글 관리",
+      href: "/admin/posts",
+      subItems: [
+        { label: "신고 게시글", href: "/admin/posts/reported" }
+      ],
     }
   ];
 
@@ -69,7 +85,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
       <div className="p-4 border-b border-gray-700">
         <div className="flex items-center justify-between">
           {!isCollapsed && (
-            <span className="text-lg font-semibold">Admin Page</span>
+            <div className="flex items-center space-x-2">
+                <Image src="/images/duck.png" alt="Ori Duck" width={40} height={40} />
+              <span className="text-lg font-bold text-white">Ori Admin</span>
+            </div>
           )}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
@@ -89,8 +108,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
                 {item.subItems.length > 0 ? (
                   <button
                     onClick={() => toggleExpanded(item.href)}
-                    className={`w-full flex items-center justify-between p-2 rounded-md transition-colors hover:bg-gray-700 ${
-                      pathname.startsWith(item.href) ? "bg-blue-600" : ""
+                    className={`w-full flex items-center justify-between p-2 rounded-md transition-all duration-200 hover:bg-gray-700 ${
+                      pathname.startsWith(item.href) ? "bg-gray-700 shadow-lg ring-2 ring-gray-500 ring-opacity-50" : ""
                     }`}
                   >
                     <div className="flex items-center">
@@ -108,8 +127,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
                 ) : (
                   <Link href={item.href}>
                     <div
-                      className={`flex items-center p-2 rounded-md transition-colors hover:bg-gray-700 ${
-                        pathname === item.href ? "bg-blue-600" : ""
+                      className={`flex items-center p-2 rounded-md transition-all duration-200 hover:bg-gray-700 ${
+                        pathname === item.href ? "bg-gray-700 shadow-lg ring-2 ring-gray-500 ring-opacity-50" : ""
                       }`}
                     >
                       <span className="text-xl mr-3">{item.icon}</span>
@@ -131,8 +150,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
                             <div>
                               <button
                                 onClick={() => toggleSubExpanded(subItem.href)}
-                                className={`w-full flex items-center justify-between p-2 text-xs rounded-md transition-colors hover:bg-gray-700 ${
-                                  pathname.startsWith(subItem.href) ? "bg-blue-600" : ""
+                                className={`w-full flex items-center justify-between p-2 text-xs rounded-md transition-all duration-200 hover:bg-gray-700 ${
+                                  pathname.startsWith(subItem.href) ? "bg-gray-700 shadow-md ring-1 ring-gray-500 ring-opacity-50" : ""
                                 }`}
                               >
                                 <span>{subItem.label}</span>
@@ -148,8 +167,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
                                     <li key={thirdItem.href}>
                                       <Link href={thirdItem.href}>
                                         <div
-                                          className={`block p-2 text-xs rounded-md transition-colors hover:bg-gray-700 ${
-                                            pathname === thirdItem.href ? "bg-blue-600" : ""
+                                          className={`block p-2 text-xs rounded-md transition-all duration-200 hover:bg-gray-700 ${
+                                            pathname === thirdItem.href ? "bg-gray-700 shadow-sm ring-1 ring-gray-500 ring-opacity-50" : ""
                                           }`}
                                         >
                                           {thirdItem.label}
@@ -163,8 +182,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
                           ) : (
                             <Link href={subItem.href}>
                               <div
-                                className={`block p-2 text-xs rounded-md transition-colors hover:bg-gray-700 ${
-                                  pathname === subItem.href ? "bg-blue-600" : ""
+                                className={`block p-2 text-xs rounded-md transition-all duration-200 hover:bg-gray-700 ${
+                                  pathname === subItem.href ? "bg-gray-700 shadow-md ring-1 ring-gray-500 ring-opacity-50" : ""
                                 }`}
                               >
                                 {subItem.label}
