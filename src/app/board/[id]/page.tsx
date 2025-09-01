@@ -36,6 +36,8 @@ interface Comment {
   writerId: string;
   commentPerent: number;
   commentContent: string;
+  regDate?: string; // 댓글 작성일 (백엔드 필드명)
+  modDate?: string; // 댓글 수정일 (백엔드 필드명)
   replies?: Comment[];
 }
 
@@ -80,10 +82,34 @@ const CommentItem = ({
   return (
     <div className={`border border-gray-200 rounded-lg p-3 ${bgColor} hover:shadow-sm transition-shadow`}>
       <div className="flex justify-between items-start mb-2">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {normalizedLevel > 0 && <span className="text-blue-600 text-sm">↳</span>}
-          <span className="font-semibold text-gray-900">{comment.writerId}</span>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-gray-900">{comment.writerId}</span>
+            {comment.regDate && (
+              <span className="text-xs text-gray-500">
+                {new Date(comment.regDate).toLocaleDateString('ko-KR', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric'
+                })}
+                {new Date(comment.regDate).toLocaleTimeString('ko-KR', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: true
+                })}
+              </span>
+            )}
+          </div>
         </div>
+        {comment.modDate && comment.modDate !== comment.regDate && (
+          <div className="text-xs text-gray-400 italic">
+            수정됨 {new Date(comment.modDate).toLocaleDateString('ko-KR', {
+              month: 'short',
+              day: 'numeric'
+            })}
+          </div>
+        )}
       </div>
       <p className={`text-gray-700 leading-relaxed mb-3 ${normalizedLevel > 0 ? 'ml-6' : ''}`}>
         {comment.commentContent}
@@ -124,14 +150,13 @@ const CommentItem = ({
           {activeCommentMenu === comment.commentIdx && (
             <div className="absolute right-0 top-full mt-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
               <button
-                onClick={() => {
+                onClick={() => {                 
                   setEditCommentForm({ 
                     commentIdx: comment.commentIdx, 
                     content: comment.commentContent, 
                     password: '' 
                   });
-                  setShowEditCommentModal(true);
-                  setActiveCommentMenu(null);
+                  setShowEditCommentModal(true);  
                 }}
                 className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 border-b border-gray-100 first:rounded-t-lg last:rounded-b-lg last:border-b-0"
               >
@@ -144,7 +169,6 @@ const CommentItem = ({
                     password: '' 
                   });
                   setShowDeleteCommentModal(true);
-                  setActiveCommentMenu(null);
                 }}
                 className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 border-b border-gray-100 first:rounded-t-lg last:rounded-b-lg last:border-b-0"
               >
@@ -327,7 +351,12 @@ export default function BoardDetailPage() {
   // 햄버거 메뉴 외부 클릭 시 닫기
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (activeCommentMenu !== null) {
+      // 클릭된 요소가 햄버거 메뉴 버튼이나 드롭다운 메뉴 내부인지 확인
+      const target = event.target as Element;
+      const isMenuButton = target.closest('button[class*="hover:bg-gray-100"]');
+      const isDropdownMenu = target.closest('.absolute.right-0.top-full');
+      
+      if (activeCommentMenu !== null && !isMenuButton && !isDropdownMenu) {
         setActiveCommentMenu(null);
       }
     };
@@ -340,8 +369,25 @@ export default function BoardDetailPage() {
 
   // showReportModal 상태 변화 추적
   useEffect(() => {
-    console.log('🔍 showReportModal 상태 변화됨:', showReportModal);
   }, [showReportModal]);
+
+  // 댓글 수정/삭제 모달 상태 변화 추적
+  useEffect(() => { 
+    
+    // showEditCommentModal이 true로 변경될 때 스택 트레이스
+    if (showEditCommentModal === true) {
+      console.log('🔍 showEditCommentModal이 true로 변경됨');
+      console.trace('showEditCommentModal true 변경 스택 트레이스');
+    }
+  }, [showEditCommentModal]);
+
+  useEffect(() => {
+    
+  }, [showDeleteCommentModal]);
+
+  useEffect(() => {
+    
+  }, [activeCommentMenu]);
 
   const fetchBoardPost = async () => {
     setIsLoading(true);
@@ -356,7 +402,7 @@ export default function BoardDetailPage() {
       }
       
       const data = await response.json();
-      console.log('게시글 API 응답:', data); // 디버깅용 로그
+      
       setBoardPost(data);
     } catch (error) {
       console.error('게시글 조회 오류:', error);
@@ -373,7 +419,7 @@ export default function BoardDetailPage() {
       
       if (response.ok) {
         const data = await response.json();
-        // console.log('댓글 API 응답 데이터:', data);
+        console.log('댓글 API 응답 데이터:', data);
         
         // 데이터가 배열인지 확인하고 안전하게 설정
         if (Array.isArray(data)) {
@@ -383,7 +429,7 @@ export default function BoardDetailPage() {
           if (data.length > 0) {
             // 초기 댓글 ID 설정 (최신순으로 2개)
             const initialIds = pickNextIdsFromList(data, new Set(), commentsPerLoad);
-            // console.log('초기 댓글 ID:', Array.from(initialIds));
+            console.log('초기 댓글 ID:', Array.from(initialIds));
             setVisibleIds(initialIds);
             setHasMoreComments(data.length > commentsPerLoad);
           } else {
@@ -392,27 +438,25 @@ export default function BoardDetailPage() {
           }
         } else if (data && typeof data === 'object') {
           // 객체인 경우 배열로 변환 시도
-          // console.log('댓글 데이터가 배열이 아님, 객체 구조:', data);
           setComments([]);
           setVisibleIds(new Set());
           setTotalComments(0);
           setHasMoreComments(false);
         } else {
-          // console.log('댓글 데이터가 예상과 다른 형태:', typeof data, data);
           setComments([]);
           setVisibleIds(new Set());
           setTotalComments(0);
           setHasMoreComments(false);
         }
       } else {
-        // console.error('댓글 API 오류:', response.status, response.statusText);
+        console.error('댓글 API 오류:', response.status, response.statusText);
         setComments([]);
         setVisibleIds(new Set());
         setTotalComments(0);
         setHasMoreComments(false);
       }
     } catch (error) {
-      // console.error('댓글 조회 오류:', error);
+      console.error('댓글 조회 오류:', error);
       setComments([]);
       setVisibleIds(new Set());
       setTotalComments(0);
@@ -421,9 +465,7 @@ export default function BoardDetailPage() {
   };
 
   // 게시글 정보 가져오기
-  useEffect(() => {
-    // console.log('useEffect 실행 - boardId:', boardId, '타입:', typeof boardId);
-    
+  useEffect(() => {   
     if (boardId) {
       fetchBoardPost();
       fetchComments();
@@ -445,7 +487,8 @@ export default function BoardDetailPage() {
         boardIdx: parseInt(boardId),
         parentIdx: 0, // 최상위 댓글
         depth: 0, // 최상위 댓글
-        commentLike: 0 // 초기 좋아요 수
+        commentLike: 0, // 초기 좋아요 수
+        commentRegDate: new Date().toISOString() // 댓글 작성일 자동 설정
       };
 
       const response = await fetch(`${backendURL}/comment/insert`, {
@@ -642,11 +685,12 @@ export default function BoardDetailPage() {
       const editData = {
         commentIdx: editCommentForm.commentIdx,
         commentContent: editCommentForm.content.trim(),
-        commentPw: editCommentForm.password.trim()
+        commentPw: editCommentForm.password.trim(),
+        modDate: new Date().toISOString() // 댓글 수정일 자동 설정 (백엔드 필드명)
       };
 
-      const response = await fetch(`${backendURL}/comment/update`, {
-        method: 'POST',
+      const response = await fetch(`${backendURL}/comment/modify`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -656,6 +700,7 @@ export default function BoardDetailPage() {
       if (response.ok) {
         setShowEditCommentModal(false);
         setEditCommentForm({ commentIdx: 0, content: '', password: '' });
+        setActiveCommentMenu(null);
         fetchComments();
         alert('댓글이 성공적으로 수정되었습니다!');
       } else {
@@ -677,7 +722,7 @@ export default function BoardDetailPage() {
       };
 
       const response = await fetch(`${backendURL}/comment/delete`, {
-        method: 'POST',
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -687,6 +732,7 @@ export default function BoardDetailPage() {
       if (response.ok) {
         setShowDeleteCommentModal(false);
         setDeleteCommentData({ commentIdx: 0, password: '' });
+        setActiveCommentMenu(null);
         fetchComments();
         alert('댓글이 성공적으로 삭제되었습니다!');
       } else {
@@ -832,7 +878,8 @@ export default function BoardDetailPage() {
         boardIdx: parseInt(boardId),
         parentIdx: replyForm.parentIdx,
         depth: 1, // 대댓글
-        commentLike: 0
+        commentLike: 0,
+        regDate: new Date().toISOString() // 답글 작성일 자동 설정 (백엔드 필드명)
       };
 
       const response = await fetch(`${backendURL}/comment/insert`, {
@@ -1339,7 +1386,10 @@ export default function BoardDetailPage() {
                <div className="flex space-x-3 justify-center pt-4">
                  <button 
                    type="button"
-                   onClick={() => setShowEditCommentModal(false)}
+                   onClick={() => {
+                     setShowEditCommentModal(false);
+                     setActiveCommentMenu(null);
+                   }}
                    className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
                  >
                    취소
@@ -1375,7 +1425,10 @@ export default function BoardDetailPage() {
                />
                <div className="flex space-x-3 justify-center">
                  <button 
-                   onClick={() => setShowDeleteCommentModal(false)}
+                   onClick={() => {
+                     setShowDeleteCommentModal(false);
+                     setActiveCommentMenu(null);
+                   }}
                    className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
                  >
                    취소
