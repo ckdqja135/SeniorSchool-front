@@ -326,17 +326,14 @@ export default function BoardDetailPage() {
 
   // 신고 모달 토글 함수
   const toggleReportModal = () => {
-    console.log('🚨 toggleReportModal 함수 호출됨');
-    console.log('현재 showReportModal 상태:', showReportModal);
-    console.log('setShowReportModal 함수 타입:', typeof setShowReportModal);
     
     try {
       setShowReportModal(prev => {
         const newState = !prev;
-        console.log('showReportModal 상태를', prev, '에서', newState, '로 변경');
+        
         return newState;
       });
-      console.log('setShowReportModal 호출 완료');
+      
     } catch (error) {
       console.error('toggleReportModal 오류:', error);
     }
@@ -376,7 +373,7 @@ export default function BoardDetailPage() {
     
     // showEditCommentModal이 true로 변경될 때 스택 트레이스
     if (showEditCommentModal === true) {
-      console.log('🔍 showEditCommentModal이 true로 변경됨');
+      
       console.trace('showEditCommentModal true 변경 스택 트레이스');
     }
   }, [showEditCommentModal]);
@@ -419,7 +416,6 @@ export default function BoardDetailPage() {
       
       if (response.ok) {
         const data = await response.json();
-        console.log('댓글 API 응답 데이터:', data);
         
         // 데이터가 배열인지 확인하고 안전하게 설정
         if (Array.isArray(data)) {
@@ -429,7 +425,6 @@ export default function BoardDetailPage() {
           if (data.length > 0) {
             // 초기 댓글 ID 설정 (최신순으로 2개)
             const initialIds = pickNextIdsFromList(data, new Set(), commentsPerLoad);
-            console.log('초기 댓글 ID:', Array.from(initialIds));
             setVisibleIds(initialIds);
             setHasMoreComments(data.length > commentsPerLoad);
           } else {
@@ -604,16 +599,6 @@ export default function BoardDetailPage() {
         isLiked: !isLiked // 현재 상태의 반대값을 전송 (토글)
       };
       
-      console.log('좋아요 요청 데이터:', {
-        boardId,
-        boardIdType: typeof boardId,
-        parsedBoardId,
-        parsedBoardIdType: typeof parsedBoardId,
-        currentIsLiked: isLiked,
-        requestBody,
-        requestBodyString: JSON.stringify(requestBody)
-      });
-      
       const response = await fetch(`${backendURL}/board/like`, {
         method: 'POST',
         headers: {
@@ -622,16 +607,9 @@ export default function BoardDetailPage() {
         body: JSON.stringify(requestBody)
       });
 
-      console.log('좋아요 API 응답:', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok
-      });
-
       if (response.ok) {
         // 좋아요 상태 토글
         setIsLiked(!isLiked);
-        console.log('좋아요 상태 변경:', !isLiked);
         // 백엔드에서 최신 상태를 가져와서 동기화
         await fetchLikeCount();
       } else {
@@ -639,7 +617,6 @@ export default function BoardDetailPage() {
         if (response.status === 400) {
           try {
             const errorData = await response.json();
-            console.error('400 에러 상세:', errorData);
           } catch (e) {
             console.error('400 에러 응답 파싱 실패:', e);
           }
@@ -661,7 +638,6 @@ export default function BoardDetailPage() {
       
       if (response.ok) {
         const data = await response.json();
-        console.log('좋아요 API 응답:', data); // 디버깅용 로그
         
         // 좋아요 수만 업데이트
         if (boardPost) {
@@ -780,17 +756,14 @@ export default function BoardDetailPage() {
   const pickNextIds = (currentIds: Set<number>, addCount: number) => {
     const sorted = [...comments].sort((a, b) => b.commentIdx - a.commentIdx); // 최신순
     const next = new Set(currentIds);
-    console.log('pickNextIds 호출:', { currentIds: Array.from(currentIds), addCount, sorted: sorted.map(c => c.commentIdx) });
     
     for (const c of sorted) {
       if (next.size - currentIds.size >= addCount) break;
       if (!next.has(c.commentIdx)) {
         next.add(c.commentIdx);
-        console.log('댓글 추가:', c.commentIdx);
       }
     }
-    
-    console.log('결과:', Array.from(next));
+
     return next;
   };
 
@@ -981,8 +954,6 @@ export default function BoardDetailPage() {
               {/* 신고 버튼 */}
               <button
                 onClick={() => {
-                  console.log('🚨 신고하기 버튼 직접 클릭됨!');
-                  console.log('toggleReportModal 함수 타입:', typeof toggleReportModal);
                   toggleReportModal();
                 }}
                 className="px-4 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-lg transition-colors text-sm font-medium cursor-pointer"
