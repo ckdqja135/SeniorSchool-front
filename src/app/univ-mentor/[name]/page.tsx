@@ -728,21 +728,21 @@ export default function SchoolPage() {
               <div className="flex space-x-4">
                 <button
                   onClick={shareTwitter}
-                  className="p-3 bg-blue-400 text-white rounded-full hover:bg-blue-500 transition-colors"
+                  className="w-12 h-12 bg-blue-400 text-white rounded-full hover:bg-blue-500 transition-colors flex items-center justify-center"
                   title="트위터에 공유"
                 >
                   <i className="fa fa-twitter text-xl"></i>
                 </button>
                 <button
                   onClick={shareFacebook}
-                  className="p-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
+                  className="w-12 h-12 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors flex items-center justify-center"
                   title="페이스북에 공유"
                 >
                   <i className="fa fa-facebook text-xl"></i>
                 </button>
                 <button
                   onClick={shareLink}
-                  className="p-3 bg-gray-600 text-white rounded-full hover:bg-gray-700 transition-colors"
+                  className="w-12 h-12 bg-gray-600 text-white rounded-full hover:bg-gray-700 transition-colors flex items-center justify-center"
                   title="링크 복사"
                 >
                   <i className="fa fa-link text-xl"></i>
