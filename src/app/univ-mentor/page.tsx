@@ -375,19 +375,20 @@ export default function SchoolPage() {
         />
         
         {/* 검색 폼 오버레이 */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center text-white">
-            <h1 className="font-black-han-sans text-4xl md:text-5xl mb-8 text-shadow-lg">
-              세상 모든 대학교 정보, 대학 오빠가 알려줄게
+        <div className="absolute inset-0 flex items-center justify-center px-4 sm:px-6 lg:px-8">
+          <div className="text-center text-white w-full">
+            <h1 className="font-black-han-sans text-2xl sm:text-3xl md:text-4xl lg:text-5xl mb-6 sm:mb-8 text-shadow-lg leading-tight">
+              <span className="block">세상 모든 대학교 정보,</span>
+              <span className="block">대학 오빠가 알려줄게</span>
             </h1>
             
             {/* 검색 폼 */}
             <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
               <div className="relative" ref={searchRef}>
-                <div className="flex items-center bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/20 overflow-hidden">
+                <div className="flex items-center bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/20 overflow-hidden mx-2 sm:mx-0">
                   {/* 검색 아이콘 */}
-                  <div className="pl-6 pr-4 text-gray-400">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="pl-3 sm:pl-6 pr-2 sm:pr-4 text-gray-400">
+                    <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                   </div>
@@ -401,14 +402,14 @@ export default function SchoolPage() {
                     onKeyDown={handleKeyDown}
                     placeholder="찾고 싶은 대학교를 입력해보세요..."
                     required
-                    className="flex-1 px-4 py-5 text-lg font-medium text-gray-900 bg-transparent border-0 focus:outline-none focus:ring-0 placeholder-gray-400"
+                    className="flex-1 px-2 sm:px-4 py-4 sm:py-5 text-base sm:text-lg font-medium text-gray-900 bg-transparent border-0 focus:outline-none focus:ring-0 placeholder-gray-400"
                     autoComplete="off"
                   />
                   
                   {/* 검색 버튼 */}
                   <button
                     type="submit"
-                    className="px-8 py-5 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold text-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2 flex items-center space-x-2"
+                    className="px-4 sm:px-8 py-4 sm:py-5 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold text-base sm:text-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2 flex items-center space-x-1 sm:space-x-2"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -421,7 +422,7 @@ export default function SchoolPage() {
 
                 {/* 자동완성 드롭다운 */}
                 {showSuggestions && (suggestions.length > 0 || isLoading || error || searchTerm.trim()) && (
-                  <div className="absolute top-full left-0 right-0 mt-3 bg-white/95 backdrop-blur-sm border border-white/30 rounded-2xl shadow-2xl z-10 max-h-80 overflow-hidden">
+                  <div className="absolute top-full left-2 right-2 sm:left-0 sm:right-0 mt-3 bg-white/95 backdrop-blur-sm border border-white/30 rounded-2xl shadow-2xl z-10 max-h-80 overflow-hidden">
                     {/* 로딩 표시 */}
                     {isLoading && (
                       <div className="px-6 py-8 text-center">
