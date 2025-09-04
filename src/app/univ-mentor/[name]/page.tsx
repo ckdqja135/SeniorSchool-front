@@ -656,24 +656,24 @@ export default function SchoolPage() {
             {/* 대학교 정보 */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-2xl font-bold text-gray-800 mb-6 tracking-wide">대학교 정보</h2>
-              <div className="grid grid-cols-2 gap-5">
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 hover:shadow-md transition-all duration-200">
-                  <span className="text-xs text-blue-700 font-bold uppercase tracking-wider mb-2 block">위치</span>
-                  <p className="text-lg font-semibold text-gray-900 leading-relaxed">{university.univLocate}</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 hover:shadow-md transition-all duration-200">
+                  <span className="text-xs text-blue-700 font-bold uppercase tracking-wider mb-1 block">위치</span>
+                  <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-900 leading-relaxed">{university.univLocate}</p>
                 </div>
-                <div className="bg-green-50 p-4 rounded-lg border border-green-100 hover:shadow-md transition-all duration-200">
-                  <span className="text-xs text-green-700 font-bold uppercase tracking-wider mb-2 block">구분</span>
-                  <p className="text-lg font-semibold text-gray-900 leading-relaxed">{university.univType}</p>
+                <div className="bg-green-50 p-3 rounded-lg border border-green-100 hover:shadow-md transition-all duration-200">
+                  <span className="text-xs text-green-700 font-bold uppercase tracking-wider mb-1 block">구분</span>
+                  <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-900 leading-relaxed">{university.univType}</p>
                 </div>
-                <div className="bg-purple-50 p-4 rounded-lg border border-purple-100 hover:shadow-md transition-all duration-200">
-                  <span className="text-xs text-purple-700 font-bold uppercase tracking-wider mb-2 block">설립</span>
-                  <p className="text-lg font-semibold text-gray-900 leading-relaxed">
+                <div className="bg-purple-50 p-3 rounded-lg border border-purple-100 hover:shadow-md transition-all duration-200">
+                  <span className="text-xs text-purple-700 font-bold uppercase tracking-wider mb-1 block">설립</span>
+                  <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-900 leading-relaxed">
                     {university.univEstablish ? `${university.univEstablish}년` : '정보 없음'}
                   </p>
                 </div>
-                <div className="bg-orange-50 p-4 rounded-lg border border-orange-100 hover:shadow-md transition-all duration-200">
-                  <span className="text-xs text-orange-700 font-bold uppercase tracking-wider mb-2 block">총장</span>
-                  <p className="text-lg font-semibold text-gray-900 leading-relaxed">{university.univPresident}</p>
+                <div className="bg-orange-50 p-3 rounded-lg border border-orange-100 hover:shadow-md transition-all duration-200">
+                  <span className="text-xs text-orange-700 font-bold uppercase tracking-wider mb-1 block">총장</span>
+                  <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-900 leading-relaxed">{university.univPresident}</p>
                 </div>
               </div>
               
@@ -755,15 +755,15 @@ export default function SchoolPage() {
           <div className="space-y-6">
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-gray-800">대학교 입학 후기</h2>
-                                 <div className="flex items-center space-x-3">
+                <h2 className="text-xs sm:text-sm md:text-base lg:text-xl font-semibold text-gray-800">대학교 입학 후기</h2>
+                                 <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-3">
                    {/* 정렬 필터 버튼 - 단일 토글 */}
                    <button
                      onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
-                     className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all duration-200 flex items-center space-x-2"
+                     className="p-0.5 sm:p-1 md:p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all duration-200 flex items-center space-x-0.5 sm:space-x-1 md:space-x-2"
                      title={sortOrder === 'desc' ? '최신순 (클릭시 오래된순으로 변경)' : '오래된순 (클릭시 최신순으로 변경)'}
                    >
-                     <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <svg className="w-2.5 h-2.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                        {sortOrder === 'desc' ? (
                          // 최신순일 때: 위쪽 화살표
                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 14l5-5 5 5" />
@@ -772,19 +772,19 @@ export default function SchoolPage() {
                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                        )}
                      </svg>
-                     <span className="text-sm font-medium text-gray-600">
+                     <span className="text-xs sm:text-sm font-semibold text-gray-600">
                        {sortOrder === 'desc' ? '최신순' : '오래된순'}
                      </span>
                    </button>
                    
                    <button
                      onClick={() => setShowReviewModal(true)}
-                     className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center space-x-2"
+                     className="px-1.5 sm:px-3 md:px-6 py-1 sm:py-1.5 md:py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center space-x-0.5 sm:space-x-1 md:space-x-2"
                    >
-                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <svg className="w-2.5 h-2.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                      </svg>
-                     <span>글쓰기</span>
+                     <span className="text-xs sm:text-sm font-semibold">글쓰기</span>
                    </button>
                  </div>
               </div>
