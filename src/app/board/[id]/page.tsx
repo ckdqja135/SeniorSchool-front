@@ -181,7 +181,7 @@ const CommentItem = ({
 
       {/* 답글 입력창 */}
       {showReplyInput === comment.commentIdx && (
-        <div className={`mt-3 ${normalizedLevel > 0 ? 'ml-6' : ''} pl-4 border-l-2 border-blue-200`}>
+        <div className="mt-3 pl-4 border-l-2 border-blue-200">
           <form onSubmit={handleReplySubmit} className="space-y-3">
             <textarea
               value={replyForm.content}
@@ -192,12 +192,14 @@ const CommentItem = ({
               placeholder="답글을 입력하세요..."
               required
             />
-            <div className="flex items-center gap-2">
+            
+            {/* 아이디, 비밀번호, 버튼들을 한 줄에 배치 */}
+            <div className="flex items-center gap-1">
               <input
                 type="text"
                 value={replyForm.writer}
                 onChange={(e) => setReplyForm({ ...replyForm, writer: e.target.value })}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                className="w-16 px-1 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 placeholder="아이디"
                 maxLength={10}
                 required
@@ -206,14 +208,14 @@ const CommentItem = ({
                 type="password"
                 value={replyForm.password}
                 onChange={(e) => setReplyForm({ ...replyForm, password: e.target.value })}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                className="w-16 px-1 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 placeholder="비밀번호"
                 maxLength={8}
                 required
               />
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                className="px-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium whitespace-nowrap"
               >
                 답글 작성
               </button>
@@ -223,11 +225,12 @@ const CommentItem = ({
                   setShowReplyInput(null);
                   setReplyForm({ content: '', writer: '', password: '', parentIdx: 0 });
                 }}
-                className="px-3 py-2 text-gray-600 hover:text-gray-800 transition-colors text-sm"
+                className="px-1 py-2 text-gray-600 hover:text-gray-800 transition-colors text-xs whitespace-nowrap"
               >
                 취소
               </button>
             </div>
+            
             <p className="text-xs text-gray-500 text-right">
               {replyForm.content.length}/100
             </p>
@@ -947,7 +950,7 @@ export default function BoardDetailPage() {
          {/* 게시글 헤더 */}
          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="flex justify-between items-start mb-4">
-            <h1 className="text-3xl font-bold text-gray-900">{boardPost.boardTitle}</h1>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{boardPost.boardTitle}</h1>
             
             {/* 액션 버튼들 */}
             <div className="flex items-center space-x-2">
@@ -956,12 +959,13 @@ export default function BoardDetailPage() {
                 onClick={() => {
                   toggleReportModal();
                 }}
-                className="px-4 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-lg transition-colors text-sm font-medium cursor-pointer"
+                className="px-2 sm:px-4 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-lg transition-colors text-xs sm:text-sm font-medium cursor-pointer"
               >
-                <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
                 </svg>
-                신고하기
+                <span className="hidden sm:inline">신고하기</span>
+                <span className="sm:hidden">신고</span>
               </button>
               
               {/* 설정 드롭다운 */}
@@ -1125,11 +1129,12 @@ export default function BoardDetailPage() {
               </div>
             )}
 
-                                {/* 댓글 작성 폼 - 컴팩트한 인라인 스타일 */}
+                                {/* 댓글 작성 폼 - 모바일 반응형 */}
            <div className="border-t border-gray-200 pt-4">
-             <form onSubmit={handleCommentSubmit} className="flex items-center gap-3">
+             <form onSubmit={handleCommentSubmit} className="space-y-3">
+               {/* 첫 번째 줄: 댓글 입력창 */}
                <textarea 
-                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
+                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
                  rows={2}
                  maxLength={100}
                  placeholder="댓글을 입력하세요..."
@@ -1138,9 +1143,11 @@ export default function BoardDetailPage() {
                  required
                />
                
+               {/* 두 번째 줄: 아이디, 비밀번호, 작성 버튼 */}
+               <div className="flex items-center gap-2">
                     <input 
                       type="text" 
-                 className="w-20 px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                 className="w-32 px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                  placeholder="아이디"
                       maxLength={10}
                       value={commentForm.writer}
@@ -1150,7 +1157,7 @@ export default function BoardDetailPage() {
                
                     <input 
                       type="password" 
-                 className="w-20 px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                 className="w-32 px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                  placeholder="비밀번호"
                       maxLength={8}
                       value={commentForm.password}
@@ -1160,10 +1167,11 @@ export default function BoardDetailPage() {
                
                                <button 
                   type="submit" 
-                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 text-sm font-medium shadow-md transform hover:scale-105"
+                  className="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 text-sm font-medium shadow-md transform hover:scale-105 whitespace-nowrap"
                 >
                   작성
                       </button>
+               </div>
                 </form>
              <p className="text-xs text-gray-500 mt-1 text-right">
                {commentForm.content.length}/100
