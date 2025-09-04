@@ -1147,7 +1147,7 @@ export default function BoardDetailPage() {
                <div className="flex items-center gap-2">
                     <input 
                       type="text" 
-                 className="w-32 px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                 className="w-28 sm:w-32 px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                  placeholder="아이디"
                       maxLength={10}
                       value={commentForm.writer}
@@ -1157,7 +1157,7 @@ export default function BoardDetailPage() {
                
                     <input 
                       type="password" 
-                 className="w-32 px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                 className="w-28 sm:w-32 px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                  placeholder="비밀번호"
                       maxLength={8}
                       value={commentForm.password}
@@ -1167,7 +1167,7 @@ export default function BoardDetailPage() {
                
                                <button 
                   type="submit" 
-                  className="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 text-sm font-medium shadow-md transform hover:scale-105 whitespace-nowrap"
+                  className="px-4 sm:px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 text-sm font-medium shadow-md transform hover:scale-105 whitespace-nowrap"
                 >
                   작성
                       </button>
