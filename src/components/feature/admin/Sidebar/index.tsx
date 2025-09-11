@@ -48,6 +48,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
       href: "/admin/church",
       subItems: [
         { label: "교회 관리", href: "/admin/church" },
+        { label: "교회 추가 요청", href: "/admin/church/requests" },
       ],
     },
     {
