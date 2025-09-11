@@ -43,6 +43,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
       ],
     },
     {
+      icon: "⛪",
+      label: "교회 오빠",
+      href: "/admin/church",
+      subItems: [
+        { label: "교회 관리", href: "/admin/church" },
+      ],
+    },
+    {
       icon: "✍️",
       label: "회사 오빠",
       href: "/admin/company",

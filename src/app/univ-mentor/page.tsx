@@ -211,11 +211,11 @@ export default function SchoolPage() {
   };
 
   // 검색 제출
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (searchTerm.trim()) {
       addToRecentSearches(searchTerm.trim());
-      router.push(`/search?name=${encodeURIComponent(searchTerm)}`);
+      await performSearchAndNavigate(searchTerm.trim());
     }
   };
 
@@ -225,8 +225,53 @@ export default function SchoolPage() {
     setShowSuggestions(false);
     setError(null);
     addToRecentSearches(suggestion.univName);
-    // 검색 결과 페이지로 이동 (검색어를 URL 파라미터로 전달)
-    router.push(`/search?name=${encodeURIComponent(suggestion.univName)}`);
+    // 자동완성 선택 시에는 바로 상세 페이지로 이동
+    router.push(`/univ-mentor/${encodeURIComponent(suggestion.univName)}`);
+  };
+
+  // 검색 수행 및 결과에 따른 라우팅
+  const performSearchAndNavigate = async (searchTerm: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const backendURL = 'https://api.reviewhub.life';
+      
+      // 자동완성 API를 사용해서 결과 개수 확인
+      const autoResponse = await fetch(`${backendURL}/search/auto?keyword=${encodeURIComponent(searchTerm)}`);
+      
+      if (!autoResponse.ok) {
+        throw new Error(`HTTP error! status: ${autoResponse.status}`);
+      }
+
+      const autoData = await autoResponse.json();
+      
+      // 디버깅을 위한 로그 출력
+      console.log('자동완성 API 결과:', autoData);
+      console.log('검색어:', searchTerm);
+      console.log('결과 개수:', Array.isArray(autoData) ? autoData.length : '배열이 아님');
+
+      // 자동완성 결과가 배열인지 확인
+      if (Array.isArray(autoData)) {
+        if (autoData.length === 1) {
+          // 정확히 1개 결과가 있으면 바로 상세 페이지로 이동
+          router.push(`/univ-mentor/${encodeURIComponent(autoData[0].univName)}`);
+        } else {
+          // 2개 이상의 결과가 있으면 검색 결과 페이지로 이동
+          router.push(`/univ-search?name=${encodeURIComponent(searchTerm)}`);
+        }
+      } else {
+        // 결과가 없으면 검색 결과 페이지로 이동
+        router.push(`/univ-search?name=${encodeURIComponent(searchTerm)}`);
+      }
+    } catch (error) {
+      console.error('검색 오류:', error);
+      setError('검색 중 오류가 발생했습니다.');
+      // 오류 발생 시에도 검색 결과 페이지로 이동
+      router.push(`/univ-search?name=${encodeURIComponent(searchTerm)}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // 검색어 입력 처리
@@ -272,7 +317,7 @@ export default function SchoolPage() {
 
   // 최근 검색어 클릭
   const handleRecentSearchClick = (term: string) => {
-    router.push(`/search?name=${encodeURIComponent(term)}`);
+    router.push(`/univ-search?name=${encodeURIComponent(term)}`);
   };
 
   // 인기 대학교 클릭
