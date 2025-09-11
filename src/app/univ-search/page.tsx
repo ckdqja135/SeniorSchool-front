@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -22,7 +22,7 @@ interface University {
   univViewCount: number;
 }
 
-export default function UnivSearchPage() {
+function UnivSearchContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const searchName = searchParams.get('name') || '';
@@ -198,5 +198,13 @@ export default function UnivSearchPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function UnivSearchPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-lg">로딩 중...</div></div>}>
+      <UnivSearchContent />
+    </Suspense>
   );
 }

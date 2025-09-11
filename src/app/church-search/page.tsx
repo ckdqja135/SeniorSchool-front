@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ChurchAutoSearchResult } from '@/types/Church';
 
-export default function ChurchSearchPage() {
+function ChurchSearchContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const searchName = searchParams.get('name') || '';
@@ -186,5 +186,13 @@ export default function ChurchSearchPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function ChurchSearchPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-lg">로딩 중...</div></div>}>
+      <ChurchSearchContent />
+    </Suspense>
   );
 }
