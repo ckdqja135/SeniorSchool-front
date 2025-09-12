@@ -33,11 +33,15 @@ export interface ChurchBoard {
 
 export interface ChurchComment {
   commentIdx: number;
-  commentContent: string;
   boardIdx: number;
-  commentRegDate: string;
-  commentID: string;
   commentLike: number;
+  commentDepth: number;
+  writerId: string;
+  commentParent: number;
+  commentContent: string;
+  regDate: string;
+  modDate: string;
+  replies?: ChurchComment[];
 }
 
 export interface PopularChurch {

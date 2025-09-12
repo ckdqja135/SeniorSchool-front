@@ -714,15 +714,21 @@ const ChurchManagementPage = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">교회 종류</label>
-                  <input
-                    type="text"
+                  <select
                     value={isEditMode ? editingChurch?.churchType || "" : selectedChurch.churchType}
                     onChange={(e) => handleEditChange("churchType", e.target.value)}
-                    readOnly={!isEditMode}
+                    disabled={!isEditMode}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
                       isEditMode ? "bg-white" : "bg-gray-50"
                     }`}
-                  />
+                  >
+                    <option value="감리교">감리교</option>
+                    <option value="장로교">장로교</option>
+                    <option value="침례교">침례교</option>
+                    <option value="성결교">성결교</option>
+                    <option value="순복음">순복음</option>
+                    <option value="기타">기타</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">설립년도</label>

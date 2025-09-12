@@ -31,6 +31,61 @@ export default function ChurchDetailPage() {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<any>(null);
   const [isKakaoMapLoaded, setIsKakaoMapLoaded] = useState(false);
+  
+  // 페이징 관련 상태
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+  
+  // 정렬 관련 상태
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc'); // desc: 최신순, asc: 오래된순
+
+  // 검색 관련 상태
+  const [searchType, setSearchType] = useState<'id' | 'title' | 'content'>('title');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+
+  // 정렬된 후기 목록 계산
+  const sortedBoards = [...boards].sort((a, b) => {
+    const dateA = new Date(a.boardRegDate).getTime();
+    const dateB = new Date(b.boardRegDate).getTime();
+    return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+  });
+
+  // 검색된 후기 목록 계산
+  const filteredBoards = sortedBoards.filter(board => {
+    if (!searchQuery.trim()) return true;
+    
+    const query = searchQuery.toLowerCase();
+    switch (searchType) {
+      case 'title':
+        return board.boardTitle.toLowerCase().includes(query);
+      case 'content':
+        return board.boardContent.toLowerCase().includes(query);
+      case 'id':
+        return board.boardID.toLowerCase().includes(query);
+      default:
+        return true;
+    }
+  });
+
+  // 페이징 계산
+  const totalPages = Math.ceil(filteredBoards.length / itemsPerPage);
+  const paginatedBoards = filteredBoards.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // 검색 핸들러
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSearching(true);
+    setCurrentPage(1); // 검색 시 첫 페이지로 이동
+    
+    // 검색 시뮬레이션 (실제로는 API 호출)
+    setTimeout(() => {
+      setIsSearching(false);
+    }, 500);
+  };
 
   // 카카오맵 API 동적 로딩
   useEffect(() => {
@@ -220,8 +275,9 @@ export default function ChurchDetailPage() {
           padding: 0;
           border-radius: 8px;
           box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-          min-width: 200px;
-          max-width: 300px;
+          min-width: 250px;
+          max-width: 350px;
+          width: 350px;
         ">
           <div style="
             padding: 12px 16px 8px 16px;
@@ -232,10 +288,14 @@ export default function ChurchDetailPage() {
               font-weight: bold;
               font-size: 14px;
               margin-bottom: 4px;
+              word-break: break-word;
+              padding-right: 30px;
             ">${church.churchName}</div>
             <div style="
               font-size: 12px;
               opacity: 0.9;
+              word-break: break-word;
+              padding-right: 30px;
             ">${church.churchType}</div>
             <div data-close style="
               position: absolute;
@@ -276,19 +336,26 @@ export default function ChurchDetailPage() {
                 align-items: center;
                 justify-content: center;
               "></div>
-              <div style="flex: 1; min-width: 0;">
+              <div style="flex: 1; min-width: 0; overflow: hidden;">
                 <div style="
                   margin-bottom: 8px;
                   color: #333;
                   font-size: 14px;
                   line-height: 1.4;
                   word-break: break-word;
+                  overflow-wrap: break-word;
+                  white-space: normal;
+                  max-width: 100%;
                 ">📍 ${church.churchAddr || church.churchLocation}</div>
                 <div style="
                   margin-bottom: 12px;
                   color: #666;
                   font-size: 13px;
                   line-height: 1.3;
+                  word-break: break-word;
+                  overflow-wrap: break-word;
+                  white-space: normal;
+                  max-width: 100%;
                 ">🏢 ${church.churchLotAddr || ''}</div>
                 ${church.churchURL ? `
                 <a href="${church.churchURL}" 
@@ -304,6 +371,7 @@ export default function ChurchDetailPage() {
                      font-size: 13px;
                      font-weight: 500;
                      transition: transform 0.2s, box-shadow 0.2s;
+                     word-break: keep-all;
                    ">🌐 교회 홈페이지</a>
                 ` : ''}
               </div>
@@ -377,9 +445,6 @@ export default function ChurchDetailPage() {
   }, [isKakaoMapLoaded, church]);
 
   // 게시글 클릭 핸들러
-  const handleBoardClick = (board: ChurchBoard) => {
-    router.push(`/church-board/${board.boardIdx}`);
-  };
 
   // 새 게시글 작성 핸들러
   const handleWriteBoard = () => {
@@ -642,9 +707,29 @@ export default function ChurchDetailPage() {
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xs sm:text-sm md:text-base lg:text-xl font-semibold text-gray-800">교회 후기</h2>
                 <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-3">
+                  {/* 정렬 필터 버튼 - 단일 토글 */}
+                  <button
+                    onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
+                    className="p-0.5 sm:p-1 md:p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all duration-200 flex items-center space-x-0.5 sm:space-x-1 md:space-x-2"
+                    title={sortOrder === 'desc' ? '최신순 (클릭시 오래된순으로 변경)' : '오래된순 (클릭시 최신순으로 변경)'}
+                  >
+                    <svg className="w-2.5 h-2.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      {sortOrder === 'desc' ? (
+                        // 최신순일 때: 위쪽 화살표
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 14l5-5 5 5" />
+                      ) : (
+                        // 오래된순일 때: 아래쪽 화살표
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      )}
+                    </svg>
+                    <span className="text-xs sm:text-sm font-semibold text-gray-600">
+                      {sortOrder === 'desc' ? '최신순' : '오래된순'}
+                    </span>
+                  </button>
+                  
                   <button
                     onClick={handleWriteBoard}
-                    className="px-1.5 sm:px-3 md:px-6 py-1 sm:py-1.5 md:py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center space-x-0.5 sm:space-x-1 md:space-x-2"
+                    className="px-1.5 sm:px-3 md:px-6 py-1 sm:py-1.5 md:py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center space-x-0.5 sm:space-x-1 md:space-x-2"
                   >
                     <svg className="w-2.5 h-2.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -665,29 +750,122 @@ export default function ChurchDetailPage() {
                   <div className="text-center py-8">
                     <p className="text-sm text-red-500">{boardError}</p>
                   </div>
-                ) : boards.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    교회 후기를 등록해 보세요!
-                  </div>
+                ) : paginatedBoards.length > 0 ? (
+                  <>
+                    {paginatedBoards.map((board) => (
+                      <div
+                        key={board.boardIdx}
+                        className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                        onClick={() => router.push(`/church-board/${board.boardIdx}`)}
+                      >
+                        <h3 className="font-semibold text-gray-900 mb-2">{board.boardTitle}</h3>
+                        <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
+                          <span>작성자: {board.boardID}</span>
+                          <span>{board.boardRegDate}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs text-gray-400">
+                          <span>조회수: {board.boardHits}</span>
+                          <span>좋아요: {board.boardLike}</span>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {/* 페이징 */}
+                    {totalPages > 1 && (
+                      <div className="flex justify-center items-center space-x-2 mt-8">
+                        <button
+                          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                          disabled={currentPage === 1}
+                          className="px-4 py-2 text-sm font-medium bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 flex items-center space-x-1"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                          </svg>
+                          <span>이전</span>
+                        </button>
+                        
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                          <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                              currentPage === page
+                                ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg transform scale-105'
+                                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        ))}
+                        
+                        <button
+                          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                          disabled={currentPage === totalPages}
+                          className="px-4 py-2 text-sm font-medium bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 flex items-center space-x-1"
+                        >
+                          <span>다음</span>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+                  </>
                 ) : (
-                  boards.map((board) => (
-                    <div 
-                      key={board.boardIdx} 
-                      onClick={() => handleBoardClick(board)}
-                      className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                    >
-                      <h3 className="font-semibold text-gray-900 mb-2">{board.boardTitle}</h3>
-                      <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
-                        <span>작성자: {board.boardID}</span>
-                        <span>{board.boardRegDate}</span>
-                      </div>
-                      <div className="flex justify-between items-center text-xs text-gray-400">
-                        <span>조회수: {board.boardHits}</span>
-                        <span>좋아요: {board.boardLike}</span>
-                      </div>
-                    </div>
-                  ))
+                  <div className="text-center py-8 text-gray-500">
+                    {searchQuery ? '검색 결과가 없습니다' : '아직 교회 후기가 없습니다.\n첫 번째 후기를 작성해보세요!'}
+                  </div>
                 )}
+
+                {/* 검색창 - 항상 표시 */}
+                <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
+                    {/* 검색 타입 선택 */}
+                    <select
+                      value={searchType}
+                      onChange={(e) => setSearchType(e.target.value as 'id' | 'title' | 'content')}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white"
+                    >
+                      <option value="title">제목</option>
+                      <option value="content">내용</option>
+                      <option value="id">작성자</option>
+                    </select>
+                    
+                    {/* 검색어 입력 */}
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="검색어를 입력하세요"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                      onKeyPress={(e) => e.key === 'Enter' && handleSearch(e as any)}
+                    />
+                    
+                    {/* 검색 버튼 */}
+                    <button
+                      type="submit"
+                      disabled={isSearching}
+                      className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2 min-w-[100px] justify-center"
+                    >
+                      {isSearching ? (
+                        <>
+                          <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <span>검색중...</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                          <span>검색</span>
+                        </>
+                      )}
+                    </button>
+                  </form>
+                </div>
               </div>
             </div>
           </div>
@@ -697,118 +875,77 @@ export default function ChurchDetailPage() {
       {/* 후기 작성 모달 */}
       {showWriteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            {/* 모달 헤더 */}
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">교회 후기</h2>
-                <button
-                  onClick={handleCloseWriteModal}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <p className="text-gray-600 mt-2">{church?.churchName}에 대한 후기를 작성해주세요.</p>
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">{church?.churchName}의 후기를 남겨주세요</h3>
+              <button 
+                onClick={handleCloseWriteModal}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ×
+              </button>
             </div>
-
-            {/* 모달 폼 */}
-            <form onSubmit={handleWriteSubmit} className="p-6 space-y-4">
-              {/* 제목 */}
+            <form onSubmit={handleWriteSubmit} className="space-y-4">
               <div>
-                <label htmlFor="boardTitle" className="block text-sm font-medium text-gray-700 mb-2">
-                  제목 *
-                </label>
-                <input
-                  type="text"
-                  id="boardTitle"
+                <label className="block text-sm font-medium text-gray-700 mb-1">제목</label>
+                <input 
+                  type="text" 
                   value={writeForm.boardTitle}
                   onChange={(e) => setWriteForm({...writeForm, boardTitle: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="후기 제목을 입력하세요"
-                  maxLength={50}
-                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                  maxLength={40} 
+                  required 
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  {writeForm.boardTitle.length}/50
-                </p>
               </div>
-
-              {/* 내용 */}
               <div>
-                <label htmlFor="boardContent" className="block text-sm font-medium text-gray-700 mb-2">
-                  내용 *
-                </label>
-                <textarea
-                  id="boardContent"
+                <label className="block text-sm font-medium text-gray-700 mb-1">내용</label>
+                <textarea 
                   value={writeForm.boardContent}
                   onChange={(e) => setWriteForm({...writeForm, boardContent: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  rows={6}
-                  placeholder="교회에 대한 후기를 자유롭게 작성해주세요"
-                  maxLength={1000}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                  rows={4} 
+                  maxLength={700} 
                   required
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  {writeForm.boardContent.length}/1000
-                </p>
+                ></textarea>
+                <p className="text-xs text-gray-500 mt-1">다른 사람의 인격권을 침해하거나 명예를 훼손하게 하는 글은 삭제될 수 있습니다.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">작성자</label>
+                  <input 
+                    type="text" 
+                    value={writeForm.boardID}
+                    onChange={(e) => setWriteForm({...writeForm, boardID: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    required 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">비밀번호</label>
+                  <input 
+                    type="password" 
+                    value={writeForm.writerPw}
+                    onChange={(e) => setWriteForm({...writeForm, writerPw: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    required 
+                  />
+                </div>
               </div>
 
-              {/* 작성자 ID */}
-              <div>
-                <label htmlFor="boardID" className="block text-sm font-medium text-gray-700 mb-2">
-                  작성자 ID *
-                </label>
-                <input
-                  type="text"
-                  id="boardID"
-                  value={writeForm.boardID}
-                  onChange={(e) => setWriteForm({...writeForm, boardID: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="작성자 ID를 입력하세요"
-                  maxLength={20}
-                  required
-                />
-              </div>
-
-              {/* 비밀번호 */}
-              <div>
-                <label htmlFor="writerPw" className="block text-sm font-medium text-gray-700 mb-2">
-                  비밀번호 *
-                </label>
-                <input
-                  type="password"
-                  id="writerPw"
-                  value={writeForm.writerPw}
-                  onChange={(e) => setWriteForm({...writeForm, writerPw: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="비밀번호를 입력하세요"
-                  maxLength={20}
-                  required
-                />
-              </div>
-
-              {/* 제출 버튼 */}
-              <div className="flex space-x-3 pt-4">
-                <button
-                  type="button"
+              <div className="flex justify-end space-x-3 pt-6">
+                <button 
+                  type="button" 
                   onClick={handleCloseWriteModal}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-6 py-2.5 text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 font-medium"
                 >
-                  취소
+                  닫기
                 </button>
-                <button
-                  type="submit"
+                <button 
+                  type="submit" 
                   disabled={isSubmitting}
-                  className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors ${
-                    isSubmitting
-                      ? 'bg-blue-400 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700'
-                  }`}
+                  className="px-6 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
-                  {isSubmitting ? '작성 중...' : '후기 작성'}
+                  {isSubmitting ? '작성 중...' : '글쓰기'}
                 </button>
               </div>
             </form>

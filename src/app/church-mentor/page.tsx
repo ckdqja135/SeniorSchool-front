@@ -22,7 +22,7 @@ export default function ChurchMentorPage() {
   const [requestForm, setRequestForm] = useState<ChurchRequest>({
     churchName: '',
     churchPastor: '',
-    churchType: '개신교',
+    churchType: '감리교',
     churchLocation: ''
   });
   const searchRef = useRef<HTMLDivElement>(null);
@@ -738,9 +738,11 @@ export default function ChurchMentorPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   required
                 >
-                  <option value="개신교">개신교</option>
-                  <option value="천주교">천주교</option>
-                  <option value="정교회">정교회</option>
+                  <option value="감리교">감리교</option>
+                  <option value="장로교">장로교</option>
+                  <option value="침례교">침례교</option>
+                  <option value="성결교">성결교</option>
+                  <option value="순복음">순복음</option>
                   <option value="기타">기타</option>
                 </select>
               </div>
