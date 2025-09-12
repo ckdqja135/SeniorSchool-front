@@ -858,9 +858,9 @@ export default function ChurchBoardDetailPage() {
         <div className="mb-6">
           <button 
             onClick={() => {
-              // 교회 이름이 있으면 교회 검색 페이지로, 없으면 뒤로가기
+              // 교회 이름이 있으면 교회 멘토 페이지로, 없으면 뒤로가기
               if (board.church?.churchName) {
-                router.push(`/church-search?name=${encodeURIComponent(board.church.churchName)}`);
+                router.push(`/church-mentor/${encodeURIComponent(board.church.churchName)}`);
               } else {
                 router.back();
               }

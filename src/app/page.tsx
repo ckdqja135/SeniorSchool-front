@@ -22,6 +22,25 @@ interface BoardPost {
   university: University;
 }
 
+interface Church {
+  churchName: string;
+  churchLocation: string;
+  churchType: string;
+  churchPastor: string;
+}
+
+interface ChurchBoardPost {
+  boardIdx: number;
+  boardTitle: string;
+  boardContent: string;
+  churchIdx: number;
+  boardRegDate: string;
+  boardLike: number;
+  boardHits: number;
+  boardID: string;
+  church: Church;
+}
+
 interface ApiResponse {
   status: number;
   data: BoardPost[];
@@ -34,6 +53,11 @@ export default function HomePage() {
   const [recentPosts, setRecentPosts] = useState<BoardPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // 교회 후기 관련 상태
+  const [recentChurchPosts, setRecentChurchPosts] = useState<ChurchBoardPost[]>([]);
+  const [isChurchLoading, setIsChurchLoading] = useState(true);
+  const [churchError, setChurchError] = useState<string | null>(null);
 
   // 최근 게시글 데이터 가져오기
   useEffect(() => {
@@ -66,9 +90,45 @@ export default function HomePage() {
     fetchRecentPosts();
   }, []);
 
+  // 최근 교회 후기 데이터 가져오기
+  useEffect(() => {
+    const fetchRecentChurchPosts = async () => {
+      try {
+        setIsChurchLoading(true);
+        setChurchError(null);
+        
+        const response = await fetch('https://api.reviewhub.life/church/boards/recent');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.status === 200 && data.data) {
+          setRecentChurchPosts(data.data);
+        } else {
+          throw new Error('교회 후기 데이터를 불러올 수 없습니다.');
+        }
+      } catch (error) {
+        console.error('최근 교회 후기 로딩 오류:', error);
+        setChurchError(error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.');
+      } finally {
+        setIsChurchLoading(false);
+      }
+    };
+
+    fetchRecentChurchPosts();
+  }, []);
+
   // 게시글 클릭 시 해당 학교의 게시판 상세보기 페이지로 이동
   const handlePostClick = (post: BoardPost) => {
     router.push(`/board/${post.boardIdx}`);
+  };
+
+  // 교회 후기 클릭 시 해당 교회의 게시판 상세보기 페이지로 이동
+  const handleChurchPostClick = (post: ChurchBoardPost) => {
+    router.push(`/church-board/${post.boardIdx}`);
   };
 
   // 서비스 제목 클릭 시 해당 서비스 페이지로 이동
@@ -192,60 +252,84 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* 맛잘알 선배 섹션 */}
+            {/* 교회 선배 섹션 */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="p-4 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-gray-900">맛잘알 선배</h2>
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                <div 
+                  onClick={() => router.push('/church-mentor')}
+                  className="cursor-pointer"
+                >
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-bold text-gray-900">교회 오빠</h2>
+                    <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                      </svg>
+                    </div>
                   </div>
                 </div>
               </div>
               
-              {/* 맛잘알 내용 */}
+              {/* 교회 선배 내용 */}
               <div className="p-4">
-                <div className="space-y-3">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="p-2 rounded hover:bg-gray-50 transition-colors duration-150">
-                      <div className="flex items-start space-x-2">
-                        <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                          <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <span className="text-xs font-medium text-gray-900">질문자{i}</span>
-                            <span className="text-xs text-gray-500">•</span>
-                            <span className="text-xs text-gray-500">약 {i}시간 전</span>
+                {isChurchLoading ? (
+                  <div className="text-center py-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-600 mx-auto mb-2"></div>
+                    <p className="text-sm text-gray-500">교회 후기를 불러오는 중...</p>
+                  </div>
+                ) : churchError ? (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-red-500">{churchError}</p>
+                  </div>
+                ) : recentChurchPosts.length === 0 ? (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-gray-500">최근 교회 후기가 없습니다.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {recentChurchPosts.slice(0, 5).map((post) => (
+                      <div
+                        key={post.boardIdx}
+                        onClick={() => handleChurchPostClick(post)}
+                        className="cursor-pointer hover:bg-gray-50 transition-colors duration-150 p-2 rounded"
+                      >
+                        <div className="flex items-start space-x-2">
+                          <div className="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <svg className="w-3 h-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                            </svg>
                           </div>
-                          <p className="text-xs text-gray-900 line-clamp-1">맛잘알 질문 제목 {i}</p>
-                          <div className="flex items-center space-x-3 mt-1">
-                            <div className="flex items-center space-x-1">
-                              <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
-                              </svg>
-                              <span className="text-xs text-gray-500">{i * 5}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center space-x-2 mb-1">
+                              <span className="text-xs font-medium text-gray-900">{post.boardID}</span>
+                              <span className="text-xs text-gray-500">•</span>
+                              <span className="text-xs text-gray-500">{post.boardRegDate}</span>
                             </div>
-                            <div className="flex items-center space-x-1">
-                              <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                              </svg>
-                              <span className="text-xs text-gray-500">{i * 2}</span>
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              맛잘알 카테고리
+                            <p className="text-xs text-gray-900 line-clamp-1">{post.boardTitle}</p>
+                            <div className="flex items-center space-x-3 mt-1">
+                              <div className="flex items-center space-x-1">
+                                <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                                </svg>
+                                <span className="text-xs text-gray-500">{post.boardLike}</span>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                <span className="text-xs text-gray-500">{post.boardHits}</span>
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {post.church.churchName}
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -366,58 +450,53 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* 교회 선배 섹션 */}
+            {/* 맛잘알 선배 섹션 */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="p-4 border-b border-gray-200">
-                <div 
-                  onClick={() => router.push('/church-mentor')}
-                  className="cursor-pointer"
-                >
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-bold text-gray-900">교회 오빠</h2>
-                    <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                      <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                      </svg>
-                    </div>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-bold text-gray-900">맛잘알 선배</h2>
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                   </div>
                 </div>
               </div>
               
-              {/* 교회 선배 내용 */}
+              {/* 맛잘알 내용 */}
               <div className="p-4">
                 <div className="space-y-3">
                   {[1, 2, 3, 4, 5].map((i) => (
                     <div key={i} className="p-2 rounded hover:bg-gray-50 transition-colors duration-150">
                       <div className="flex items-start space-x-2">
-                        <div className="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
-                          <svg className="w-3 h-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                        <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-2 mb-1">
-                            <span className="text-xs font-medium text-gray-900">작성자</span>
+                            <span className="text-xs font-medium text-gray-900">질문자{i}</span>
                             <span className="text-xs text-gray-500">•</span>
-                            <span className="text-xs text-gray-500">약 {i}일 전</span>
+                            <span className="text-xs text-gray-500">약 {i}시간 전</span>
                           </div>
-                          <p className="text-xs text-gray-900 line-clamp-1">작성자 제목 {i}</p>
+                          <p className="text-xs text-gray-900 line-clamp-1">맛잘알 질문 제목 {i}</p>
                           <div className="flex items-center space-x-3 mt-1">
                             <div className="flex items-center space-x-1">
                               <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
                               </svg>
-                              <span className="text-xs text-gray-500">{i * 8}</span>
+                              <span className="text-xs text-gray-500">{i * 5}</span>
                             </div>
                             <div className="flex items-center space-x-1">
                               <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                               </svg>
-                              <span className="text-xs text-gray-500">{i * 5}</span>
+                              <span className="text-xs text-gray-500">{i * 2}</span>
                             </div>
                             <div className="text-xs text-gray-500">
-                              추천
+                              맛잘알 카테고리
                             </div>
                           </div>
                         </div>
