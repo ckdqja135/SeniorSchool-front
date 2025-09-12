@@ -134,7 +134,7 @@ export default function ChurchMentorPage() {
   const fetchPopularBoards = async () => {
     try {
       const backendURL = 'https://api.reviewhub.life';
-      const response = await fetch(`${backendURL}/church/board/top-viewed`);
+      const response = await fetch(`${backendURL}/church/boards/top-viewed`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -303,7 +303,7 @@ export default function ChurchMentorPage() {
     
     try {
       const backendURL = 'https://api.reviewhub.life';
-      const response = await fetch(`${backendURL}/admin/church/createChurch`, {
+      const response = await fetch(`${backendURL}/church/requests`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

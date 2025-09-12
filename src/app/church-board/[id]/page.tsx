@@ -18,6 +18,26 @@ export default function ChurchBoardDetailPage() {
   const [commentError, setCommentError] = useState<string | null>(null);
   const [newComment, setNewComment] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [commentForm, setCommentForm] = useState({
+    content: '',
+    writer: '',
+    password: ''
+  });
+  const [isLiked, setIsLiked] = useState(false);
+  const [isLikeLoading, setIsLikeLoading] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [password, setPassword] = useState('');
+  const [editForm, setEditForm] = useState({
+    title: '',
+    content: ''
+  });
+  const [reportForm, setReportForm] = useState({
+    reportReason: '',
+    reporterId: ''
+  });
 
   // 게시글 상세 정보 가져오기
   useEffect(() => {
@@ -27,17 +47,24 @@ export default function ChurchBoardDetailPage() {
         setError(null);
         
         const backendURL = 'https://api.reviewhub.life';
-        const response = await fetch(`${backendURL}/church/board/detail?boardIdx=${boardIdx}`);
+        const response = await fetch(`${backendURL}/church/boards/detail?boardIdx=${boardIdx}`);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        const data: ApiResponse<ChurchBoard> = await response.json();
+        const data = await response.json();
         
-        if (data.status === 200 && data.data) {
+        // API 응답이 직접 객체인 경우
+        if (data && data.boardIdx) {
+          setBoard(data);
+        } 
+        // API 응답이 객체이고 status가 있는 경우
+        else if (data && typeof data === 'object' && data.status === 200 && data.data) {
           setBoard(data.data);
-        } else {
+        } 
+        // 기타 경우
+        else {
           throw new Error('게시글을 찾을 수 없습니다.');
         }
       } catch (error) {
@@ -67,12 +94,23 @@ export default function ChurchBoardDetailPage() {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        const data: ApiResponse<ChurchComment[]> = await response.json();
+        const data = await response.json();
         
-        if (data.status === 200 && data.data) {
+        // API 응답이 직접 배열인 경우
+        if (Array.isArray(data)) {
+          setComments(data);
+        } 
+        // API 응답이 객체이고 status가 있는 경우
+        else if (data && typeof data === 'object' && data.status === 200) {
+          if (data.data && Array.isArray(data.data)) {
           setComments(data.data);
         } else {
-          throw new Error('댓글을 찾을 수 없습니다.');
+            setComments([]);
+          }
+        } 
+        // 기타 경우
+        else {
+          setComments([]);
         }
       } catch (error) {
         console.error('댓글 로딩 오류:', error);
@@ -91,8 +129,8 @@ export default function ChurchBoardDetailPage() {
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!newComment.trim()) {
-      alert('댓글 내용을 입력해주세요.');
+    if (!commentForm.content.trim() || !commentForm.writer.trim() || !commentForm.password.trim()) {
+      alert('모든 필드를 입력해주세요.');
       return;
     }
 
@@ -107,13 +145,14 @@ export default function ChurchBoardDetailPage() {
         },
         body: JSON.stringify({
           boardIdx: boardIdx,
-          commentContent: newComment.trim(),
-          commentID: '익명' // 실제로는 로그인한 사용자 ID를 사용해야 함
+          commentContent: commentForm.content.trim(),
+          commentID: commentForm.writer.trim(),
+          commentPw: commentForm.password.trim()
         }),
       });
 
       if (response.ok) {
-        setNewComment('');
+        setCommentForm({ content: '', writer: '', password: '' });
         // 댓글 목록 새로고침
         window.location.reload();
       } else {
@@ -129,11 +168,12 @@ export default function ChurchBoardDetailPage() {
 
   // 좋아요 토글 핸들러
   const handleLikeToggle = async () => {
-    if (!board) return;
+    if (!board || isLikeLoading) return;
     
     try {
+      setIsLikeLoading(true);
       const backendURL = 'https://api.reviewhub.life';
-      const response = await fetch(`${backendURL}/church/board/like`, {
+      const response = await fetch(`${backendURL}/church/boards/like`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -145,11 +185,122 @@ export default function ChurchBoardDetailPage() {
       });
 
       if (response.ok) {
-        // 좋아요 상태 업데이트 (실제로는 서버에서 업데이트된 값을 받아와야 함)
-        setBoard(prev => prev ? { ...prev, boardLike: prev.boardLike + 1 } : null);
+        // 좋아요 상태 토글
+        setIsLiked(!isLiked);
+        // 좋아요 수 업데이트
+        setBoard(prev => prev ? { 
+          ...prev, 
+          boardLike: isLiked ? prev.boardLike - 1 : prev.boardLike + 1 
+        } : null);
       }
     } catch (error) {
       console.error('좋아요 토글 오류:', error);
+    } finally {
+      setIsLikeLoading(false);
+    }
+  };
+
+  // 신고하기 핸들러
+  const handleReportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!board) return;
+    
+    try {
+      const backendURL = 'https://api.reviewhub.life';
+      const reportData = {
+        boardIdx: board.boardIdx,
+        serviceType: 'church',
+        reportReason: reportForm.reportReason.trim(),
+        reporterId: reportForm.reporterId.trim()
+      };
+
+      const response = await fetch(`${backendURL}/admin/report/createReport`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(reportData),
+      });
+
+      if (response.ok) {
+        alert('신고가 성공적으로 등록되었습니다.');
+        setShowReportModal(false);
+        setReportForm({ reportReason: '', reporterId: '' });
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || '신고 등록에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('신고 등록 오류:', error);
+      alert('신고 등록 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 수정하기 핸들러
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!board) return;
+    
+    try {
+      const backendURL = 'https://api.reviewhub.life';
+      const response = await fetch(`${backendURL}/church/boards/correct`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          boardIdx: board.boardIdx,
+          boardTitle: editForm.title,
+          boardContent: editForm.content,
+          boardPw: password
+        }),
+      });
+
+      if (response.ok) {
+        alert('게시글이 수정되었습니다.');
+        setShowEditModal(false);
+        setPassword('');
+        // 게시글 다시 불러오기
+        window.location.reload();
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || '게시글 수정에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('게시글 수정 오류:', error);
+      alert('게시글 수정 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 삭제하기 핸들러
+  const handleDeletePost = async () => {
+    if (!board) return;
+    
+    try {
+      const backendURL = 'https://api.reviewhub.life';
+      const response = await fetch(`${backendURL}/church/boards/delete`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          boardIdx: board.boardIdx,
+          boardPw: password
+        }),
+      });
+
+      if (response.ok) {
+        alert('게시글이 삭제되었습니다.');
+        router.back();
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || '게시글 삭제에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('게시글 삭제 오류:', error);
+      alert('게시글 삭제 중 오류가 발생했습니다.');
     }
   };
 
@@ -185,114 +336,211 @@ export default function ChurchBoardDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* 헤더 */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <nav className="bg-gray-800 text-white shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <Link 
-                href={`/church-mentor/${encodeURIComponent(board.church.churchName)}`}
-                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                <span className="font-medium">{board.church.churchName}</span>
+          <div className="flex justify-between items-center py-4">
+            <Link href="/church-mentor" className="text-2xl font-bold text-red-400">
+              교회 오빠
               </Link>
-              <div className="text-gray-300">|</div>
-              <h1 className="text-xl font-bold text-gray-900">게시글</h1>
+            <div className="text-gray-300">
+              {board.church.churchName ? `${board.church.churchName} 후기` : '교회 후기'}
             </div>
           </div>
         </div>
-      </header>
+      </nav>
 
-      {/* 메인 컨텐츠 */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* 게시글 카드 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-8">
-          <div className="p-6">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">{board.boardTitle}</h1>
-                <div className="flex items-center space-x-4 text-sm text-gray-500">
-                  <span>{board.boardID}</span>
-                  <span>•</span>
-                  <span>{board.boardRegDate}</span>
-                  <span>•</span>
-                  <span>📍 {board.church.churchName}</span>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* 뒤로가기 버튼 - 상단에 배치 */}
+        <div className="mb-6">
+          <button 
+            onClick={() => {
+              // 교회 이름이 있으면 교회 오빠 페이지로, 없으면 뒤로가기
+              if (board.church.churchName) {
+                router.push(`/church-mentor/${encodeURIComponent(board.church.churchName)}`);
+              } else {
+                router.back();
+              }
+            }}
+            className="flex items-center text-gray-600 hover:text-gray-800 transition-colors"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            뒤로가기
+          </button>
+        </div>
+        {/* 게시글 헤더 */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <div className="flex justify-between items-start mb-4">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{board.boardTitle}</h1>
+            
+            {/* 액션 버튼들 */}
+            <div className="flex items-center space-x-2">
+              {/* 신고 버튼 */}
+              <button
+                onClick={() => setShowReportModal(true)}
+                className="px-2 sm:px-4 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-lg transition-colors text-xs sm:text-sm font-medium cursor-pointer"
+              >
+                <svg className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                <span className="hidden sm:inline">신고하기</span>
+                <span className="sm:hidden">신고</span>
+              </button>
+              
+              {/* 설정 드롭다운 */}
+              <div className="relative">
+                <button
+                  className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                  onClick={() => setShowPasswordModal(true)}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                  </svg>
+                </button>
+                
+                {/* 드롭다운 메뉴 */}
+                {showPasswordModal && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+                    <button
+                      onClick={() => {
+                        if (!board) return;
+                        setShowPasswordModal(false);
+                        setPassword('');
+                        setEditForm({ title: board.boardTitle, content: board.boardContent });
+                        setShowEditModal(true);
+                      }}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    >
+                      수정하기
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowPasswordModal(false);
+                        setShowDeleteModal(true);
+                      }}
+                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      삭제하기
+                    </button>
                 </div>
+                )}
               </div>
+            </div>
+          </div>
+
+          {/* 게시글 메타 정보 */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+              <span className="text-xs text-blue-700 font-bold uppercase tracking-wider mb-1 block">작성자</span>
+              <p className="text-sm font-semibold text-gray-900">
+                {board.boardID || '작성자 정보 없음'}
+              </p>
+            </div>
+            <div className="bg-green-50 p-3 rounded-lg border border-green-100">
+              <span className="text-xs text-green-700 font-bold uppercase tracking-wider mb-1 block">작성일</span>
+              <p className="text-sm font-semibold text-gray-900">
+                {board.boardRegDate || '날짜 정보 없음'}
+              </p>
+            </div>
+            <div className="bg-purple-50 p-3 rounded-lg border border-purple-100">
+              <span className="text-xs text-purple-700 font-bold uppercase tracking-wider mb-1 block">조회수</span>
+              <p className="text-sm font-semibold text-gray-900">
+                {board.boardHits || 0}
+              </p>
+            </div>
+            <div className="bg-orange-50 p-3 rounded-lg border border-orange-100">
+              <span className="text-xs text-orange-700 font-bold uppercase tracking-wider mb-1 block">좋아요</span>
               <button
                 onClick={handleLikeToggle}
-                className="flex items-center space-x-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                disabled={isLikeLoading}
+                className={`text-sm font-semibold transition-colors flex items-center space-x-1 ${
+                  isLiked 
+                    ? 'text-red-500' 
+                    : 'text-gray-900 hover:text-red-500'
+                } ${isLikeLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                <svg className={`w-4 h-4 ${isLiked ? 'fill-current' : 'fill-none stroke-current'}`} viewBox="0 0 24 24">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                 </svg>
-                <span>{board.boardLike}</span>
+                <span>
+                  {isLikeLoading ? (
+                    <span className="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+                  ) : (
+                    board.boardLike || 0
+                  )}
+                </span>
               </button>
             </div>
-            
-            <div className="prose max-w-none">
-              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{board.boardContent}</p>
             </div>
             
-            <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
-              <div className="flex items-center space-x-6 text-sm text-gray-500">
-                <div className="flex items-center space-x-1">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                  <span>조회 {board.boardHits}</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
-                  </svg>
-                  <span>좋아요 {board.boardLike}</span>
-                </div>
+          {/* 게시글 내용 */}
+          <div className="border-t border-gray-200 pt-6">
+            <div className="prose max-w-none">
+              <div className="text-gray-800 leading-relaxed whitespace-pre-wrap">
+                {board.boardContent}
               </div>
             </div>
           </div>
         </div>
 
         {/* 댓글 섹션 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-bold text-gray-900">댓글</h2>
-          </div>
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-6">댓글</h2>
           
-          {/* 댓글 작성 폼 */}
-          <div className="p-6 border-b border-gray-200">
-            <form onSubmit={handleSubmitComment} className="space-y-4">
-              <div>
+          {/* 댓글 작성 폼 - 반응형 */}
+          <div className="border-t border-gray-200 pt-4">
+            {/* 모바일: 2줄 레이아웃, PC: 1줄 레이아웃 */}
+            <form onSubmit={handleSubmitComment} className="flex flex-col md:flex-row md:items-center gap-3">
+              {/* 댓글 입력창 */}
                 <textarea
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="댓글을 작성해주세요..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
-                  rows={3}
+                className="w-full md:flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm resize-none"
+                rows={2}
+                maxLength={100}
+                placeholder="댓글을 입력하세요..."
+                value={commentForm.content}
+                onChange={(e) => setCommentForm({...commentForm, content: e.target.value})}
+                required
+              />
+              
+              {/* 아이디, 비밀번호, 작성 버튼 */}
+              <div className="flex items-center gap-2">
+                <input 
+                  type="text" 
+                  className="w-28 sm:w-32 px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+                  placeholder="아이디"
+                  maxLength={10}
+                  value={commentForm.writer}
+                  onChange={(e) => setCommentForm({...commentForm, writer: e.target.value})}
                   required
                 />
-              </div>
-              <div className="flex justify-end">
+              
+                <input 
+                  type="password" 
+                  className="w-28 sm:w-32 px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+                  placeholder="비밀번호"
+                  maxLength={8}
+                  value={commentForm.password}
+                  onChange={(e) => setCommentForm({...commentForm, password: e.target.value})}
+                  required
+                />
+              
                 <button
                   type="submit"
                   disabled={isSubmittingComment}
-                  className={`px-4 py-2 rounded-lg transition-colors ${
-                    isSubmittingComment
-                      ? 'bg-gray-400 text-white cursor-not-allowed'
-                      : 'bg-red-600 text-white hover:bg-red-700'
-                  }`}
+                  className="px-4 sm:px-6 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 text-sm font-medium shadow-md transform hover:scale-105 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isSubmittingComment ? '작성 중...' : '댓글 작성'}
+                  {isSubmittingComment ? '작성 중...' : '작성'}
                 </button>
               </div>
             </form>
+            <p className="text-xs text-gray-500 mt-1 text-right">
+              {commentForm.content.length}/100
+            </p>
           </div>
           
           {/* 댓글 목록 */}
-          <div className="p-6">
+          <div className="mt-6">
             {isCommentLoading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-2"></div>
@@ -311,17 +559,41 @@ export default function ChurchBoardDetailPage() {
             ) : (
               <div className="space-y-4">
                 {comments.map((comment) => (
-                  <div key={comment.commentIdx} className="border-b border-gray-100 last:border-b-0 pb-4 last:pb-0">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <span className="font-medium text-gray-900">{comment.commentID}</span>
-                          <span className="text-sm text-gray-500">•</span>
-                          <span className="text-sm text-gray-500">{comment.commentRegDate}</span>
+                  <div key={comment.commentIdx} className="border border-gray-200 rounded-lg p-3 bg-white hover:shadow-sm transition-shadow">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-gray-900">{comment.commentID}</span>
+                          {comment.commentRegDate && (
+                            <span className="text-xs text-gray-500">
+                              {new Date(comment.commentRegDate).toLocaleDateString('ko-KR', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              })}
+                              {new Date(comment.commentRegDate).toLocaleTimeString('ko-KR', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: true
+                              })}
+                            </span>
+                          )}
                         </div>
-                        <p className="text-gray-700">{comment.commentContent}</p>
                       </div>
-                      <div className="flex items-center space-x-2 ml-4">
+                    </div>
+                    <p className="text-gray-700 leading-relaxed mb-3">
+                      {comment.commentContent}
+                    </p>
+                    
+                    {/* 댓글 액션 버튼들 */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm">
+                        <button className="text-red-600 hover:text-red-800 transition-colors">
+                          답글
+                        </button>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
                         <button className="flex items-center space-x-1 text-gray-400 hover:text-red-500 transition-colors">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
@@ -336,7 +608,200 @@ export default function ChurchBoardDetailPage() {
             )}
           </div>
         </div>
-      </main>
+      </div>
+
+      {/* 신고 모달 */}
+      {showReportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="text-center mb-6">
+              <div className="text-red-600 text-6xl mb-4">🚨</div>
+              <h3 className="text-xl font-bold text-gray-800">후기 신고하기</h3>
+              <p className="text-gray-600 mt-2">부적절한 내용을 신고해주세요</p>
+            </div>
+            
+            <form onSubmit={handleReportSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  후기 고유 ID
+                </label>
+                <input
+                  type="text"
+                  value={board?.boardIdx || ''}
+                  disabled
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  신고 사유 <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={reportForm.reportReason}
+                  onChange={(e) => setReportForm({ ...reportForm, reportReason: e.target.value })}
+                  placeholder="신고 사유를 입력해주세요..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  rows={3}
+                  maxLength={200}
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1 text-right">
+                  {reportForm.reportReason.length}/200
+                </p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  신고자 ID <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={reportForm.reporterId}
+                  onChange={(e) => setReportForm({ ...reportForm, reporterId: e.target.value })}
+                  placeholder="신고자 ID를 입력하세요"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  maxLength={20}
+                  required
+                />
+              </div>
+              
+              <div className="flex space-x-3 justify-center pt-4">
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setShowReportModal(false);
+                    setReportForm({ reportReason: '', reporterId: '' });
+                  }}
+                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                >
+                  취소
+                </button>
+                <button 
+                  type="submit"
+                  className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                >
+                  신고하기
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 수정 모달 */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-bold text-gray-800">게시글 수정</h3>
+            </div>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  제목
+                </label>
+                <input
+                  type="text"
+                  value={editForm.title}
+                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  maxLength={40}
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {editForm.title.length}/40
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  내용
+                </label>
+                <textarea
+                  value={editForm.content}
+                  onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  rows={6}
+                  maxLength={700}
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {editForm.content.length}/700
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  비밀번호
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  placeholder="비밀번호를 입력하세요"
+                  required
+                />
+              </div>
+              <div className="flex space-x-3 justify-center pt-4">
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setPassword('');
+                  }}
+                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                >
+                  취소
+                </button>
+                <button 
+                  type="submit"
+                  className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  수정
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 삭제 확인 모달 */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-bold text-gray-800">게시글 삭제</h3>
+              <p className="text-gray-600 mt-2">정말로 이 게시글을 삭제하시겠습니까?</p>
+            </div>
+            <div className="space-y-4">
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="비밀번호를 입력하세요"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              />
+              <div className="flex space-x-3 justify-center">
+                <button 
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setPassword('');
+                  }}
+                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                >
+                  취소
+                </button>
+                <button 
+                  onClick={handleDeletePost}
+                  className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  삭제
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

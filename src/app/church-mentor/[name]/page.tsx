@@ -17,6 +17,16 @@ export default function ChurchDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [boardError, setBoardError] = useState<string | null>(null);
   
+  // 후기 작성 모달 관련 상태
+  const [showWriteModal, setShowWriteModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [writeForm, setWriteForm] = useState({
+    boardTitle: '',
+    boardContent: '',
+    boardID: '',
+    writerPw: ''
+  });
+  
   // 카카오맵 관련 상태
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<any>(null);
@@ -145,12 +155,26 @@ export default function ChurchDetailPage() {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        const data: ApiResponse<ChurchBoard[]> = await response.json();
+        const data = await response.json();
         
-        if (data.status === 200 && data.data) {
-          setBoards(data.data);
-        } else {
-          throw new Error('게시판 정보를 찾을 수 없습니다.');
+        // API 응답 구조 확인을 위한 로그
+        console.log('교회 후기 API 응답:', data);
+        
+        // API 응답이 직접 배열인 경우
+        if (Array.isArray(data)) {
+          setBoards(data);
+        } 
+        // API 응답이 객체이고 status가 있는 경우
+        else if (data && typeof data === 'object' && data.status === 200) {
+          if (data.data && Array.isArray(data.data)) {
+            setBoards(data.data);
+          } else {
+            setBoards([]);
+          }
+        } 
+        // 기타 경우
+        else {
+          setBoards([]);
         }
       } catch (error) {
         console.error('게시판 로딩 오류:', error);
@@ -359,9 +383,94 @@ export default function ChurchDetailPage() {
 
   // 새 게시글 작성 핸들러
   const handleWriteBoard = () => {
-    if (church) {
-      router.push(`/church-board/write?churchIdx=${church.churchIdx}`);
+    setShowWriteModal(true);
+  };
+
+  // 후기 작성 제출
+  const handleWriteSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!writeForm.boardTitle.trim() || !writeForm.boardContent.trim() || !writeForm.boardID.trim() || !writeForm.writerPw.trim()) {
+      alert('모든 필드를 입력해주세요.');
+      return;
     }
+
+    if (!church) {
+      alert('교회 정보를 찾을 수 없습니다.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      const backendURL = 'https://api.reviewhub.life';
+      
+      // 오늘 날짜 포맷
+      const date = new Date();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const year = date.getFullYear();
+      const dateFormat = `${year}-${month}-${day}`;
+
+      const requestData = {
+        churchIdx: church.churchIdx,
+        boardTitle: writeForm.boardTitle.trim(),
+        boardContent: writeForm.boardContent.trim(),
+        boardReg: dateFormat,
+        boardLike: 0,
+        boardHits: 0,
+        boardId: writeForm.boardID.trim(),
+        boardPw: writeForm.writerPw.trim()
+      };
+      
+      console.log('후기 작성 요청 데이터:', requestData);
+      
+      const response = await fetch(`${backendURL}/church/board/insert`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      console.log('후기 작성 응답 상태:', response.status);
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('후기 작성 성공 응답:', result);
+        alert('후기가 성공적으로 작성되었습니다.');
+        setShowWriteModal(false);
+        setWriteForm({
+          boardTitle: '',
+          boardContent: '',
+          boardID: '',
+          writerPw: ''
+        });
+        // 후기 목록 새로고침
+        window.location.reload();
+      } else {
+        const errorData = await response.json();
+        console.error('후기 작성 에러 응답:', errorData);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('후기 작성 오류:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert(`후기 작성 중 오류가 발생했습니다: ${errorMessage}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // 모달 닫기
+  const handleCloseWriteModal = () => {
+    setShowWriteModal(false);
+    setWriteForm({
+      boardTitle: '',
+      boardContent: '',
+      boardID: '',
+      writerPw: ''
+    });
   };
 
   if (isLoading) {
@@ -429,17 +538,17 @@ export default function ChurchDetailPage() {
                   <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-900 leading-relaxed">{church.churchLocation}</p>
                 </div>
                 <div className="bg-green-50 p-3 rounded-lg border border-green-100 hover:shadow-md transition-all duration-200">
-                  <span className="text-xs text-green-700 font-bold uppercase tracking-wider mb-1 block">종류</span>
+                  <span className="text-xs text-green-700 font-bold uppercase tracking-wider mb-1 block">구분</span>
                   <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-900 leading-relaxed">{church.churchType}</p>
                 </div>
                 <div className="bg-purple-50 p-3 rounded-lg border border-purple-100 hover:shadow-md transition-all duration-200">
                   <span className="text-xs text-purple-700 font-bold uppercase tracking-wider mb-1 block">설립</span>
                   <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-900 leading-relaxed">
-                    {church.churchEstablished ? church.churchEstablished : '정보 없음'}
+                    {church.churchEstablished ? `${church.churchEstablished}년` : '정보 없음'}
                   </p>
                 </div>
                 <div className="bg-orange-50 p-3 rounded-lg border border-orange-100 hover:shadow-md transition-all duration-200">
-                  <span className="text-xs text-orange-700 font-bold uppercase tracking-wider mb-1 block">담임목사</span>
+                  <span className="text-xs text-orange-700 font-bold uppercase tracking-wider mb-1 block">총장</span>
                   <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-900 leading-relaxed">{church.churchPastor}</p>
                 </div>
               </div>
@@ -535,7 +644,7 @@ export default function ChurchDetailPage() {
                 <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-3">
                   <button
                     onClick={handleWriteBoard}
-                    className="px-1.5 sm:px-3 md:px-6 py-1 sm:py-1.5 md:py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center space-x-0.5 sm:space-x-1 md:space-x-2"
+                    className="px-1.5 sm:px-3 md:px-6 py-1 sm:py-1.5 md:py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center space-x-0.5 sm:space-x-1 md:space-x-2"
                   >
                     <svg className="w-2.5 h-2.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -557,10 +666,8 @@ export default function ChurchDetailPage() {
                     <p className="text-sm text-red-500">{boardError}</p>
                   </div>
                 ) : boards.length === 0 ? (
-                  <div className="text-center py-8">
-                    <div className="text-gray-400 text-4xl mb-3">📝</div>
-                    <p className="text-sm text-gray-500">아직 게시글이 없습니다.</p>
-                    <p className="text-xs text-gray-400 mt-1">첫 번째 게시글을 작성해보세요!</p>
+                  <div className="text-center py-8 text-gray-500">
+                    교회 후기를 등록해 보세요!
                   </div>
                 ) : (
                   boards.map((board) => (
@@ -569,37 +676,14 @@ export default function ChurchDetailPage() {
                       onClick={() => handleBoardClick(board)}
                       className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
                     >
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-semibold text-gray-900 text-sm sm:text-base md:text-lg line-clamp-2">{board.boardTitle}</h3>
-                        <div className="flex items-center space-x-2 ml-2">
-                          <span className="text-xs text-gray-500">{board.boardRegDate}</span>
-                        </div>
+                      <h3 className="font-semibold text-gray-900 mb-2">{board.boardTitle}</h3>
+                      <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
+                        <span>작성자: {board.boardID}</span>
+                        <span>{board.boardRegDate}</span>
                       </div>
-                      <p className="text-gray-600 text-xs sm:text-sm mb-3 line-clamp-2">{board.boardContent}</p>
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center space-x-4 text-xs text-gray-500">
-                          <span className="flex items-center">
-                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                            {board.boardID}
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-3 text-xs text-gray-500">
-                          <span className="flex items-center">
-                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
-                            </svg>
-                            {board.boardLike}
-                          </span>
-                          <span className="flex items-center">
-                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                            {board.boardHits}
-                          </span>
-                        </div>
+                      <div className="flex justify-between items-center text-xs text-gray-400">
+                        <span>조회수: {board.boardHits}</span>
+                        <span>좋아요: {board.boardLike}</span>
                       </div>
                     </div>
                   ))
@@ -609,6 +693,128 @@ export default function ChurchDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* 후기 작성 모달 */}
+      {showWriteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* 모달 헤더 */}
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-900">교회 후기</h2>
+                <button
+                  onClick={handleCloseWriteModal}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-gray-600 mt-2">{church?.churchName}에 대한 후기를 작성해주세요.</p>
+            </div>
+
+            {/* 모달 폼 */}
+            <form onSubmit={handleWriteSubmit} className="p-6 space-y-4">
+              {/* 제목 */}
+              <div>
+                <label htmlFor="boardTitle" className="block text-sm font-medium text-gray-700 mb-2">
+                  제목 *
+                </label>
+                <input
+                  type="text"
+                  id="boardTitle"
+                  value={writeForm.boardTitle}
+                  onChange={(e) => setWriteForm({...writeForm, boardTitle: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="후기 제목을 입력하세요"
+                  maxLength={50}
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {writeForm.boardTitle.length}/50
+                </p>
+              </div>
+
+              {/* 내용 */}
+              <div>
+                <label htmlFor="boardContent" className="block text-sm font-medium text-gray-700 mb-2">
+                  내용 *
+                </label>
+                <textarea
+                  id="boardContent"
+                  value={writeForm.boardContent}
+                  onChange={(e) => setWriteForm({...writeForm, boardContent: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  rows={6}
+                  placeholder="교회에 대한 후기를 자유롭게 작성해주세요"
+                  maxLength={1000}
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {writeForm.boardContent.length}/1000
+                </p>
+              </div>
+
+              {/* 작성자 ID */}
+              <div>
+                <label htmlFor="boardID" className="block text-sm font-medium text-gray-700 mb-2">
+                  작성자 ID *
+                </label>
+                <input
+                  type="text"
+                  id="boardID"
+                  value={writeForm.boardID}
+                  onChange={(e) => setWriteForm({...writeForm, boardID: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="작성자 ID를 입력하세요"
+                  maxLength={20}
+                  required
+                />
+              </div>
+
+              {/* 비밀번호 */}
+              <div>
+                <label htmlFor="writerPw" className="block text-sm font-medium text-gray-700 mb-2">
+                  비밀번호 *
+                </label>
+                <input
+                  type="password"
+                  id="writerPw"
+                  value={writeForm.writerPw}
+                  onChange={(e) => setWriteForm({...writeForm, writerPw: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="비밀번호를 입력하세요"
+                  maxLength={20}
+                  required
+                />
+              </div>
+
+              {/* 제출 버튼 */}
+              <div className="flex space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={handleCloseWriteModal}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors ${
+                    isSubmitting
+                      ? 'bg-blue-400 cursor-not-allowed'
+                      : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
+                >
+                  {isSubmitting ? '작성 중...' : '후기 작성'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
