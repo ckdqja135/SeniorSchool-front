@@ -41,6 +41,24 @@ interface ChurchBoardPost {
   church: Church;
 }
 
+interface CompanyBoardPost {
+  boardIdx: number;
+  boardTitle: string;
+  boardContent: string;
+  compIdx: number;
+  boardRegDate: string;
+  boardLike: number;
+  boardHits: number;
+  boardID: string;
+  company: {
+    compIdx: number;
+    compName: string;
+    compLocation: string;
+    compType: string;
+    compIndustry: string;
+  };
+}
+
 interface ApiResponse {
   status: number;
   data: BoardPost[];
@@ -58,6 +76,11 @@ export default function HomePage() {
   const [recentChurchPosts, setRecentChurchPosts] = useState<ChurchBoardPost[]>([]);
   const [isChurchLoading, setIsChurchLoading] = useState(true);
   const [churchError, setChurchError] = useState<string | null>(null);
+  
+  // 회사 후기 관련 상태
+  const [recentCompanyPosts, setRecentCompanyPosts] = useState<CompanyBoardPost[]>([]);
+  const [isCompanyLoading, setIsCompanyLoading] = useState(true);
+  const [companyError, setCompanyError] = useState<string | null>(null);
 
   // 최근 게시글 데이터 가져오기
   useEffect(() => {
@@ -121,6 +144,39 @@ export default function HomePage() {
     fetchRecentChurchPosts();
   }, []);
 
+  // 최근 회사 후기 데이터 가져오기
+  useEffect(() => {
+    const fetchRecentCompanyPosts = async () => {
+      try {
+        setIsCompanyLoading(true);
+        setCompanyError(null);
+        
+        const response = await fetch('https://api.reviewhub.life/comp/board/recent');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.status === 200 && data.data) {
+          setRecentCompanyPosts(data.data);
+        } else {
+          throw new Error('회사 후기 데이터를 불러올 수 없습니다.');
+        }
+      } catch (error) {
+        console.error('최근 회사 후기 로딩 오류:', error);
+        // 에러가 발생해도 사용자에게 에러 메시지를 보여주지 않고 빈 상태로 처리
+        setCompanyError(null);
+        setRecentCompanyPosts([]);
+      } finally {
+        setIsCompanyLoading(false);
+      }
+    };
+
+    fetchRecentCompanyPosts();
+  }, []);
+
   // 게시글 클릭 시 해당 학교의 게시판 상세보기 페이지로 이동
   const handlePostClick = (post: BoardPost) => {
     router.push(`/board/${post.boardIdx}`);
@@ -129,6 +185,11 @@ export default function HomePage() {
   // 교회 후기 클릭 시 해당 교회의 게시판 상세보기 페이지로 이동
   const handleChurchPostClick = (post: ChurchBoardPost) => {
     router.push(`/church-board/${post.boardIdx}`);
+  };
+
+  // 회사 후기 클릭 시 해당 회사의 게시판 상세보기 페이지로 이동
+  const handleCompanyPostClick = (post: CompanyBoardPost) => {
+    router.push(`/company-board/${post.boardIdx}`);
   };
 
   // 서비스 제목 클릭 시 해당 서비스 페이지로 이동
@@ -339,57 +400,77 @@ export default function HomePage() {
             {/* 회사 선배 섹션 */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="p-4 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-gray-900">회사 선배</h2>
-                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
+                <div 
+                  onClick={() => router.push('/company-mentor')}
+                  className="cursor-pointer"
+                >
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-bold text-gray-900">회사 선배</h2>
+                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    </div>
                   </div>
                 </div>
               </div>
               
               {/* 회사 내용 */}
               <div className="p-4">
-                <div className="space-y-3">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="p-2 rounded hover:bg-gray-50 transition-colors duration-150">
-                      <div className="flex items-start space-x-2">
-                        <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                          <svg className="w-3 h-3 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                          </svg>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <span className="text-xs font-medium text-gray-900">작성자{i}</span>
-                            <span className="text-xs text-gray-500">•</span>
-                            <span className="text-xs text-gray-500">약 {i}시간 전</span>
+                {isCompanyLoading ? (
+                  <div className="text-center py-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600 mx-auto mb-2"></div>
+                    <p className="text-sm text-gray-500">로딩 중...</p>
+                  </div>
+                ) : recentCompanyPosts.length === 0 ? (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-gray-500">최근 회사 후기가 없습니다.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {recentCompanyPosts.slice(0, 5).map((post) => (
+                      <div
+                        key={post.boardIdx}
+                        onClick={() => handleCompanyPostClick(post)}
+                        className="cursor-pointer hover:bg-gray-50 transition-colors duration-150 p-2 rounded"
+                      >
+                        <div className="flex items-start space-x-2">
+                          <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <svg className="w-3 h-3 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
                           </div>
-                          <p className="text-xs text-gray-900 line-clamp-1">회사 게시글 제목 {i}</p>
-                          <div className="flex items-center space-x-3 mt-1">
-                            <div className="flex items-center space-x-1">
-                              <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
-                              </svg>
-                              <span className="text-xs text-gray-500">{i * 7}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center space-x-2 mb-1">
+                              <span className="text-xs font-medium text-gray-900">{post.boardID}</span>
+                              <span className="text-xs text-gray-500">•</span>
+                              <span className="text-xs text-gray-500">{post.boardRegDate}</span>
                             </div>
-                            <div className="flex items-center space-x-1">
-                              <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                              </svg>
-                              <span className="text-xs text-gray-500">{i * 3}</span>
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              회사
+                            <p className="text-xs text-gray-900 line-clamp-1">{post.boardTitle}</p>
+                            <div className="flex items-center space-x-3 mt-1">
+                              <div className="flex items-center space-x-1">
+                                <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                                </svg>
+                                <span className="text-xs text-gray-500">{post.boardLike}</span>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                <span className="text-xs text-gray-500">{post.boardHits}</span>
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {post.company.compName}
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
