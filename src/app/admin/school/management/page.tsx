@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 interface UnivData {
   univIdx: number;
@@ -43,6 +43,7 @@ const SchoolManagementPage = () => {
   const [loading, setLoading] = useState(true);
   const [editingSchool, setEditingSchool] = useState<UnivData | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const hasFetchedSchools = useRef(false);
 
   // 새 학교 데이터 폼
   const [newSchool, setNewSchool] = useState({
@@ -112,12 +113,15 @@ const SchoolManagementPage = () => {
 
   // 초기 데이터 로드
   useEffect(() => {
+    if (hasFetchedSchools.current) return;
+    hasFetchedSchools.current = true;
     searchSchools("", 1, rowsPerPage);
   }, []);
 
   // 검색 실행
   const handleSearch = () => {
     setCurrentPage(1);
+    hasFetchedSchools.current = false; // 검색 시에는 다시 호출 허용
     searchSchools(searchKeyword, 1, rowsPerPage);
   };
 
@@ -214,6 +218,7 @@ const SchoolManagementPage = () => {
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
+      hasFetchedSchools.current = false; // 페이지 변경 시에는 다시 호출 허용
       searchSchools(searchKeyword, page, rowsPerPage);
     }
   };
@@ -223,6 +228,7 @@ const SchoolManagementPage = () => {
     console.log(`rowsPerPage 변경: ${rowsPerPage} → ${newRowsPerPage}`);
     setRowsPerPage(newRowsPerPage);
     setCurrentPage(1); // 첫 페이지로 이동
+    hasFetchedSchools.current = false; // 행 수 변경 시에는 다시 호출 허용
     searchSchools(searchKeyword, 1, newRowsPerPage);
   };
 

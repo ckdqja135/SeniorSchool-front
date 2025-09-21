@@ -55,7 +55,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
       icon: "✍️",
       label: "회사 오빠",
       href: "/admin/company",
-      subItems: [],
+      subItems: [
+        { label: "회사 관리", href: "/admin/company" },
+        { label: "회사 추가 요청", href: "/admin/company/requests" },
+      ],
     },
     {
       icon: "👥",

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 
@@ -41,6 +41,7 @@ const ChurchRequestsPage: React.FC = () => {
   const [selectedRequests, setSelectedRequests] = useState<Set<number>>(new Set());
   const [adminNote, setAdminNote] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const hasFetchedRequests = useRef(false);
 
   const fetchRequests = async (page: number = 1) => {
     try {
@@ -83,11 +84,14 @@ const ChurchRequestsPage: React.FC = () => {
   };
 
   useEffect(() => {
+    if (hasFetchedRequests.current) return;
+    hasFetchedRequests.current = true;
     fetchRequests();
   }, []);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+    hasFetchedRequests.current = false; // 페이지 변경 시에는 다시 호출 허용
     fetchRequests(page);
   };
 

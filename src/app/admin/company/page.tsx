@@ -2,36 +2,45 @@
 
 import React, { useState, useEffect, useRef } from "react";
 
-interface ChurchData {
-  churchIdx: number;
-  churchName: string;
-  churchLocation: string;
-  churchType: string;
-  churchEstablished: string;
-  churchPastor: string;
-  churchLatX: number;
-  churchLatY: number;
-  churchURL: string;
-  churchLotAddr: string;
-  churchAddr: string;
-  churchMapIMG: string;
-  churchStatus: number;
-  churchViewCount: number;
+interface CompanyData {
+  compIdx: number;
+  compName: string;
+  compLocation: string;
+  compType: string;
+  compIndustry: string;
+  compEstablish: string;
+  compCEO: string;
+  compLateX: number;
+  compLateY: number;
+  compURL: string;
+  compLotAddr: string;
+  compAddr: string;
+  compMapIMG: string;
+  compStatus: number;
+  compViewCount: number;
 }
 
 interface ApiResponse {
   status: number;
-  data: ChurchData[];
-  totalCount: number;
-  currentPage: number;
-  rowsPerPage: number;
+  data: CompanyData[];
+  totalCount?: number;
+  currentPage?: number;
+  rowsPerPage?: number;
+  pagination?: {
+    totalCount: number;
+    totalPages: number;
+    currentPage: number;
+    rowsPerPage: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
 }
 
-const ChurchManagementPage = () => {
+const CompanyManagementPage = () => {
   const [searchKeyword, setSearchKeyword] = useState("");
-  const [churches, setChurches] = useState<ChurchData[]>([]);
-  const [selectedChurch, setSelectedChurch] = useState<ChurchData | null>(null);
-  const [selectedChurches, setSelectedChurches] = useState<number[]>([]);
+  const [companies, setCompanies] = useState<CompanyData[]>([]);
+  const [selectedCompany, setSelectedCompany] = useState<CompanyData | null>(null);
+  const [selectedCompanies, setSelectedCompanies] = useState<number[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -40,44 +49,45 @@ const ChurchManagementPage = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [editingChurch, setEditingChurch] = useState<ChurchData | null>(null);
+  const [editingCompany, setEditingCompany] = useState<CompanyData | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
-  const hasFetchedChurches = useRef(false);
+  const hasFetchedCompanies = useRef(false);
 
-  // 새 교회 데이터 폼
-  const [newChurch, setNewChurch] = useState({
-    churchName: "",
-    churchLocation: "",
-    churchType: "",
-    churchEstablished: "",
-    churchPastor: "",
-    churchLatX: 0,
-    churchLatY: 0,
-    churchURL: "",
-    churchLotAddr: "",
-    churchAddr: "",
-    churchMapIMG: "",
-    churchStatus: 1
+  // 새 회사 데이터 폼
+  const [newCompany, setNewCompany] = useState({
+    compName: "",
+    compLocation: "",
+    compType: "",
+    compIndustry: "",
+    compEstablish: "",
+    compCEO: "",
+    compLateX: 0,
+    compLateY: 0,
+    compURL: "",
+    compLotAddr: "",
+    compAddr: "",
+    compMapIMG: "",
+    compStatus: 1
   });
 
-  // 교회 검색
-  const searchChurches = async (keyword = "", page = 1, pageSize = rowsPerPage) => {
+  // 회사 검색
+  const searchCompanies = async (keyword = "", page = 1, pageSize = rowsPerPage) => {
     setLoading(true);
     console.log(`API 호출: keyword="${keyword}", page=${page}, pageSize=${pageSize}`);
     
     try {
       const url = keyword 
-        ? `https://api.reviewhub.life/admin/church/searchChurch?churchName=${encodeURIComponent(keyword)}&page=${page}&rowsPerPage=${pageSize}`
-        : `https://api.reviewhub.life/admin/church/searchChurch?page=${page}&rowsPerPage=${pageSize}`;
+        ? `https://api.reviewhub.life/admin/comp/searchComp?compName=${encodeURIComponent(keyword)}&page=${page}&rowsPerPage=${pageSize}`
+        : `https://api.reviewhub.life/admin/comp/searchComp?page=${page}&rowsPerPage=${pageSize}`;
       
       console.log(`요청 URL: ${url}`);
       
       const accessToken = localStorage.getItem("accessToken");
       
       const response = await fetch(url, {
+        method: "GET",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
         },
       });
       const data: ApiResponse = await response.json();
@@ -85,20 +95,30 @@ const ChurchManagementPage = () => {
       console.log(`API 응답:`, data);
       
       if (data && data.data) {
-        setChurches(data.data || []);
-        setTotalPages(Math.ceil((data.totalCount || 0) / (data.rowsPerPage || pageSize)));
-        setCurrentPage(page);
-        if (data.rowsPerPage) {
-          setRowsPerPage(data.rowsPerPage);
+        setCompanies(data.data || []);
+        // pagination 객체에서 페이징 정보 가져오기
+        if (data.pagination) {
+          setTotalPages(data.pagination.totalPages || 1);
+          setCurrentPage(data.pagination.currentPage || page);
+          if (data.pagination.rowsPerPage) {
+            setRowsPerPage(data.pagination.rowsPerPage);
+          }
+        } else {
+          // pagination 객체가 없는 경우 기존 방식 사용
+          setTotalPages(Math.ceil((data.totalCount || 0) / (data.rowsPerPage || pageSize)));
+          setCurrentPage(page);
+          if (data.rowsPerPage) {
+            setRowsPerPage(data.rowsPerPage);
+          }
         }
       } else {
-        setChurches([]);
+        setCompanies([]);
         setTotalPages(1);
         setCurrentPage(page);
       }
     } catch (error) {
       console.error("검색 실패:", error);
-      setChurches([]);
+      setCompanies([]);
       setTotalPages(1);
       setCurrentPage(page);
     } finally {
@@ -108,103 +128,103 @@ const ChurchManagementPage = () => {
 
   // 초기 데이터 로드
   useEffect(() => {
-    if (hasFetchedChurches.current) return;
-    hasFetchedChurches.current = true;
-    searchChurches("", 1, rowsPerPage);
+    if (hasFetchedCompanies.current) return;
+    hasFetchedCompanies.current = true;
+    searchCompanies("", 1, rowsPerPage);
   }, []);
 
   // 검색 실행
   const handleSearch = () => {
     setCurrentPage(1);
-    hasFetchedChurches.current = false; // 검색 시에는 다시 호출 허용
-    searchChurches(searchKeyword, 1, rowsPerPage);
+    hasFetchedCompanies.current = false; // 검색 시에는 다시 호출 허용
+    searchCompanies(searchKeyword, 1, rowsPerPage);
   };
 
   // 체크박스 선택
-  const handleSelectChurch = (churchIdx: number) => {
-    setSelectedChurches(prev => 
-      prev.includes(churchIdx) 
-        ? prev.filter(id => id !== churchIdx)
-        : [...prev, churchIdx]
+  const handleSelectCompany = (compIdx: number) => {
+    setSelectedCompanies(prev => 
+      prev.includes(compIdx) 
+        ? prev.filter(id => id !== compIdx)
+        : [...prev, compIdx]
     );
   };
 
   // 전체 선택/해제
   const handleSelectAll = () => {
-    if (!churches || churches.length === 0) return;
+    if (!companies || companies.length === 0) return;
     
-    if (selectedChurches.length === churches.length) {
-      setSelectedChurches([]);
+    if (selectedCompanies.length === companies.length) {
+      setSelectedCompanies([]);
     } else {
-      setSelectedChurches(churches.map(church => church.churchIdx));
+      setSelectedCompanies(companies.map(company => company.compIdx));
     }
   };
 
-  // 교회 추가
-  const handleAddChurch = async () => {
+  // 회사 추가
+  const handleAddCompany = async () => {
     try {
       const accessToken = localStorage.getItem("accessToken");
       
-      const response = await fetch("https://api.reviewhub.life/admin/church/createChurch", {
+      const response = await fetch("https://api.reviewhub.life/admin/comp/createComp", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newChurch),
+        body: JSON.stringify(newCompany),
       });
 
       if (response.ok) {
-        alert("교회가 성공적으로 추가되었습니다.");
+        alert("회사가 성공적으로 추가되었습니다.");
         setIsAddMode(false);
-        setNewChurch({
-          churchName: "",
-          churchLocation: "",
-          churchType: "",
-          churchEstablished: "",
-          churchPastor: "",
-          churchLatX: 0,
-          churchLatY: 0,
-          churchURL: "",
-          churchLotAddr: "",
-          churchAddr: "",
-          churchMapIMG: "",
-          churchStatus: 1
+        setNewCompany({
+          compName: "",
+          compLocation: "",
+          compType: "",
+          compIndustry: "",
+          compEstablish: "",
+          compCEO: "",
+          compLateX: 0,
+          compLateY: 0,
+          compURL: "",
+          compLotAddr: "",
+          compAddr: "",
+          compMapIMG: "",
+          compStatus: 1
         });
-        searchChurches(searchKeyword);
+        searchCompanies(searchKeyword);
       }
     } catch (error) {
-      console.error("교회 추가 실패:", error);
-      alert("교회 추가에 실패했습니다.");
+      console.error("회사 추가 실패:", error);
+      alert("회사 추가에 실패했습니다.");
     }
   };
 
-  // 교회 삭제
-  const handleDeleteChurches = async () => {
+  // 회사 삭제
+  const handleDeleteCompanies = async () => {
     try {
-      const deleteData = selectedChurches.length === 1 
-        ? { churchIdx: selectedChurches[0] }
-        : { churchIdx: selectedChurches };
+      const deleteData = selectedCompanies.length === 1 
+        ? { compIdx: selectedCompanies[0] }
+        : { compIdx: selectedCompanies };
 
       const accessToken = localStorage.getItem("accessToken");
 
-      const response = await fetch("https://api.reviewhub.life/admin/church/deleteChurch", {
+      const response = await fetch(`https://api.reviewhub.life/admin/comp/comp/${selectedCompanies[0]}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(deleteData),
       });
 
       if (response.ok) {
         setShowDeleteModal(true);
-        setSelectedChurches([]);
-        searchChurches(searchKeyword);
+        setSelectedCompanies([]);
+        searchCompanies(searchKeyword);
       }
     } catch (error) {
-      console.error("교회 삭제 실패:", error);
-      alert("교회 삭제에 실패했습니다.");
+      console.error("회사 삭제 실패:", error);
+      alert("회사 삭제에 실패했습니다.");
     }
   };
 
@@ -212,8 +232,8 @@ const ChurchManagementPage = () => {
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
-      hasFetchedChurches.current = false; // 페이지 변경 시에는 다시 호출 허용
-      searchChurches(searchKeyword, page, rowsPerPage);
+      hasFetchedCompanies.current = false; // 페이지 변경 시에는 다시 호출 허용
+      searchCompanies(searchKeyword, page, rowsPerPage);
     }
   };
 
@@ -222,14 +242,14 @@ const ChurchManagementPage = () => {
     console.log(`rowsPerPage 변경: ${rowsPerPage} → ${newRowsPerPage}`);
     setRowsPerPage(newRowsPerPage);
     setCurrentPage(1);
-    hasFetchedChurches.current = false; // 행 수 변경 시에는 다시 호출 허용
-    searchChurches(searchKeyword, 1, newRowsPerPage);
+    hasFetchedCompanies.current = false; // 행 수 변경 시에는 다시 호출 허용
+    searchCompanies(searchKeyword, 1, newRowsPerPage);
   };
 
   // 편집 시작
   const handleEditStart = () => {
-    if (selectedChurch) {
-      setEditingChurch({ ...selectedChurch });
+    if (selectedCompany) {
+      setEditingCompany({ ...selectedCompany });
       setIsEditMode(true);
       setHasChanges(false);
     }
@@ -241,7 +261,7 @@ const ChurchManagementPage = () => {
       setShowCancelModal(true);
     } else {
       setIsEditMode(false);
-      setEditingChurch(null);
+      setEditingCompany(null);
       setHasChanges(false);
     }
   };
@@ -249,38 +269,38 @@ const ChurchManagementPage = () => {
   // 편집 취소 확인
   const handleCancelConfirm = () => {
     setIsEditMode(false);
-    setEditingChurch(null);
+    setEditingCompany(null);
     setHasChanges(false);
     setShowCancelModal(false);
   };
 
   // 편집 데이터 변경
-  const handleEditChange = (field: keyof ChurchData, value: string | number) => {
-    if (editingChurch && selectedChurch) {
-      const updatedChurch = { ...editingChurch, [field]: value };
-      setEditingChurch(updatedChurch);
+  const handleEditChange = (field: keyof CompanyData, value: string | number) => {
+    if (editingCompany && selectedCompany) {
+      const updatedCompany = { ...editingCompany, [field]: value };
+      setEditingCompany(updatedCompany);
       
-      const isChanged = JSON.stringify(updatedChurch) !== JSON.stringify(selectedChurch);
+      const isChanged = JSON.stringify(updatedCompany) !== JSON.stringify(selectedCompany);
       setHasChanges(isChanged);
     }
   };
 
-  // 교회 수정
-  const handleUpdateChurch = async () => {
-    if (!editingChurch || !selectedChurch) return;
+  // 회사 수정
+  const handleUpdateCompany = async () => {
+    if (!editingCompany || !selectedCompany) return;
 
     try {
       const accessToken = localStorage.getItem("accessToken");
       
-      const changedData: Partial<ChurchData> = { churchIdx: editingChurch.churchIdx };
-      Object.keys(editingChurch).forEach(key => {
-        const typedKey = key as keyof ChurchData;
-        if (editingChurch[typedKey] !== selectedChurch[typedKey]) {
-          (changedData as Record<string, string | number>)[key] = editingChurch[typedKey];
+      const changedData: Partial<CompanyData> = { compIdx: editingCompany.compIdx };
+      Object.keys(editingCompany).forEach(key => {
+        const typedKey = key as keyof CompanyData;
+        if (editingCompany[typedKey] !== selectedCompany[typedKey]) {
+          (changedData as Record<string, string | number>)[key] = editingCompany[typedKey];
         }
       });
 
-      const response = await fetch("https://api.reviewhub.life/admin/church/putChurchData", {
+      const response = await fetch(`https://api.reviewhub.life/admin/comp/comp/${editingCompany.compIdx}`, {
         method: "PUT",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
@@ -290,46 +310,140 @@ const ChurchManagementPage = () => {
       });
 
       if (response.ok) {
-        alert("교회 정보가 성공적으로 수정되었습니다.");
-        setSelectedChurch(editingChurch);
+        alert("회사 정보가 성공적으로 수정되었습니다.");
+        setSelectedCompany(editingCompany);
         setIsEditMode(false);
-        setEditingChurch(null);
+        setEditingCompany(null);
         setHasChanges(false);
-        searchChurches(searchKeyword);
+        searchCompanies(searchKeyword);
       }
     } catch (error) {
-      console.error("교회 수정 실패:", error);
-      alert("교회 수정에 실패했습니다.");
+      console.error("회사 수정 실패:", error);
+      alert("회사 수정에 실패했습니다.");
     }
   };
 
-  // 단일 교회 삭제
-  const handleDeleteSingleChurch = async () => {
-    if (!selectedChurch) return;
+  // 회사 상세보기
+  const handleViewCompanyDetails = async (compIdx: number) => {
+    try {
+      const accessToken = localStorage.getItem("accessToken");
+      
+      const response = await fetch(`https://api.reviewhub.life/admin/comp/comp/${compIdx}`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const companyData = await response.json();
+        console.log("회사 상세 정보:", companyData);
+        // 상세 정보를 모달이나 별도 페이지에서 표시할 수 있습니다
+        alert(`회사 상세 정보를 조회했습니다.\n회사명: ${companyData.compName}`);
+      }
+    } catch (error) {
+      console.error("회사 상세보기 실패:", error);
+      alert("회사 상세보기에 실패했습니다.");
+    }
+  };
+
+  // 회사 상태 변경
+  const handleChangeCompanyStatus = async (compIdx: number, newStatus: number) => {
+    try {
+      const accessToken = localStorage.getItem("accessToken");
+      
+      const response = await fetch(`https://api.reviewhub.life/admin/comp/comp/${compIdx}/status`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ compStatus: newStatus }),
+      });
+
+      if (response.ok) {
+        alert("회사 상태가 변경되었습니다.");
+        searchCompanies(searchKeyword);
+      }
+    } catch (error) {
+      console.error("회사 상태 변경 실패:", error);
+      alert("회사 상태 변경에 실패했습니다.");
+    }
+  };
+
+  // 회사 통계 업데이트
+  const handleUpdateCompanyStatistics = async (compIdx: number) => {
+    try {
+      const accessToken = localStorage.getItem("accessToken");
+      
+      const response = await fetch(`https://api.reviewhub.life/admin/comp/comp/${compIdx}/statistics`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        alert("회사 통계가 업데이트되었습니다.");
+        searchCompanies(searchKeyword);
+      }
+    } catch (error) {
+      console.error("회사 통계 업데이트 실패:", error);
+      alert("회사 통계 업데이트에 실패했습니다.");
+    }
+  };
+
+  // 회사 통계 일괄 업데이트
+  const handleBatchUpdateStatistics = async () => {
+    try {
+      const accessToken = localStorage.getItem("accessToken");
+      
+      const response = await fetch(`https://api.reviewhub.life/admin/comp/statistics/batch`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        alert("모든 회사 통계가 일괄 업데이트되었습니다.");
+        searchCompanies(searchKeyword);
+      }
+    } catch (error) {
+      console.error("회사 통계 일괄 업데이트 실패:", error);
+      alert("회사 통계 일괄 업데이트에 실패했습니다.");
+    }
+  };
+
+  // 단일 회사 삭제
+  const handleDeleteSingleCompany = async () => {
+    if (!selectedCompany) return;
 
     try {
       const accessToken = localStorage.getItem("accessToken");
 
-      const response = await fetch("https://api.reviewhub.life/admin/church/deleteChurch", {
+      const response = await fetch(`https://api.reviewhub.life/admin/comp/comp/${selectedCompany.compIdx}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ churchIdx: selectedChurch.churchIdx }),
       });
 
       if (response.ok) {
         setShowDeleteModal(true);
-        setSelectedChurch(null);
+        setSelectedCompany(null);
         setIsEditMode(false);
-        setEditingChurch(null);
+        setEditingCompany(null);
         setHasChanges(false);
-        searchChurches(searchKeyword);
+        searchCompanies(searchKeyword);
       }
     } catch (error) {
-      console.error("교회 삭제 실패:", error);
-      alert("교회 삭제에 실패했습니다.");
+      console.error("회사 삭제 실패:", error);
+      alert("회사 삭제에 실패했습니다.");
     }
   };
 
@@ -339,7 +453,7 @@ const ChurchManagementPage = () => {
       <div className="w-1/2 bg-white rounded-lg shadow p-4">
         {/* 메뉴 경로 */}
         <div className="mb-4">
-          <h2 className="text-lg font-semibold">교회선택 - 교회 관리</h2>
+          <h2 className="text-lg font-semibold">회사선택 - 회사 관리</h2>
         </div>
 
         {/* 검색 영역 */}
@@ -354,7 +468,7 @@ const ChurchManagementPage = () => {
           />
           <button
             onClick={handleSearch}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+            className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600"
           >
             검색
           </button>
@@ -365,19 +479,26 @@ const ChurchManagementPage = () => {
           <button
             onClick={() => setIsAddMode(true)}
             className="w-8 h-8 bg-green-500 text-white rounded-full hover:bg-green-600"
-            title="교회 추가"
+            title="회사 추가"
           >
             +
           </button>
           <button
-            onClick={handleDeleteChurches}
-            disabled={selectedChurches.length === 0}
+            onClick={handleBatchUpdateStatistics}
+            className="w-8 h-8 bg-blue-500 text-white rounded-full hover:bg-blue-600"
+            title="통계 일괄 업데이트"
+          >
+            📊
+          </button>
+          <button
+            onClick={handleDeleteCompanies}
+            disabled={selectedCompanies.length === 0}
             className={`w-8 h-8 rounded-full text-white ${
-              selectedChurches.length > 0 
+              selectedCompanies.length > 0 
                 ? 'bg-red-500 hover:bg-red-600' 
                 : 'bg-gray-300 cursor-not-allowed'
             }`}
-            title="선택된 교회 삭제"
+            title="선택된 회사 삭제"
           >
             🗑️
           </button>
@@ -392,14 +513,15 @@ const ChurchManagementPage = () => {
                   <th className="px-3 py-2 text-left">
                     <input
                       type="checkbox"
-                      checked={churches && churches.length > 0 && selectedChurches.length === churches.length}
+                      checked={companies && companies.length > 0 && selectedCompanies.length === companies.length}
                       onChange={handleSelectAll}
                     />
                   </th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">교회 ID</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">교회 이름</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">교회 위치</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">교회 종류</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">회사 ID</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">회사 이름</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">회사 위치</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">회사 종류</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">액션</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -407,31 +529,69 @@ const ChurchManagementPage = () => {
                   <tr>
                     <td colSpan={6} className="px-3 py-4 text-center">로딩 중...</td>
                   </tr>
-                ) : !churches || churches.length === 0 ? (
+                ) : !companies || companies.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-3 py-4 text-center">검색 결과가 없습니다.</td>
                   </tr>
                 ) : (
-                  churches.map((church) => (
+                  companies.map((company) => (
                     <tr 
-                      key={church.churchIdx}
+                      key={company.compIdx}
                       className={`hover:bg-gray-50 cursor-pointer ${
-                        selectedChurch?.churchIdx === church.churchIdx ? 'bg-blue-50' : ''
+                        selectedCompany?.compIdx === company.compIdx ? 'bg-purple-50' : ''
                       }`}
-                      onClick={() => setSelectedChurch(church)}
+                      onClick={() => setSelectedCompany(company)}
                     >
                       <td className="px-3 py-2">
                         <input
                           type="checkbox"
-                          checked={selectedChurches.includes(church.churchIdx)}
-                          onChange={() => handleSelectChurch(church.churchIdx)}
+                          checked={selectedCompanies.includes(company.compIdx)}
+                          onChange={() => handleSelectCompany(company.compIdx)}
                           onClick={(e) => e.stopPropagation()}
                         />
                       </td>
-                      <td className="px-3 py-2 text-sm">{church.churchIdx}</td>
-                      <td className="px-3 py-2 text-sm">{church.churchName}</td>
-                      <td className="px-3 py-2 text-sm">{church.churchLocation}</td>
-                      <td className="px-3 py-2 text-sm">{church.churchType}</td>
+                      <td className="px-3 py-2 text-sm">{company.compIdx}</td>
+                      <td className="px-3 py-2 text-sm">{company.compName}</td>
+                      <td className="px-3 py-2 text-sm">{company.compLocation}</td>
+                      <td className="px-3 py-2 text-sm">{company.compType}</td>
+                      <td className="px-3 py-2 text-sm">
+                        <div className="flex gap-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewCompanyDetails(company.compIdx);
+                            }}
+                            className="w-6 h-6 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
+                            title="상세보기"
+                          >
+                            👁️
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUpdateCompanyStatistics(company.compIdx);
+                            }}
+                            className="w-6 h-6 bg-green-500 text-white rounded text-xs hover:bg-green-600"
+                            title="통계 업데이트"
+                          >
+                            📈
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleChangeCompanyStatus(company.compIdx, company.compStatus === 1 ? 0 : 1);
+                            }}
+                            className={`w-6 h-6 text-white rounded text-xs ${
+                              company.compStatus === 1 
+                                ? 'bg-yellow-500 hover:bg-yellow-600' 
+                                : 'bg-gray-500 hover:bg-gray-600'
+                            }`}
+                            title={company.compStatus === 1 ? "비활성화" : "활성화"}
+                          >
+                            {company.compStatus === 1 ? '⏸️' : '▶️'}
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -531,14 +691,14 @@ const ChurchManagementPage = () => {
       <div className="w-1/2 bg-white rounded-lg shadow p-4 flex flex-col">
         {isAddMode ? (
           <div className="flex flex-col h-full">
-            <h3 className="text-lg font-semibold mb-4">교회 추가</h3>
+            <h3 className="text-lg font-semibold mb-4">회사 추가</h3>
             <div className="flex-1 overflow-y-auto space-y-4 pr-2">
               <div>
-                <label className="block text-sm font-medium mb-1">교회명</label>
+                <label className="block text-sm font-medium mb-1">회사명</label>
                 <input
                   type="text"
-                  value={newChurch.churchName}
-                  onChange={(e) => setNewChurch({...newChurch, churchName: e.target.value})}
+                  value={newCompany.compName}
+                  onChange={(e) => setNewCompany({...newCompany, compName: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 />
               </div>
@@ -546,17 +706,26 @@ const ChurchManagementPage = () => {
                 <label className="block text-sm font-medium mb-1">위치</label>
                 <input
                   type="text"
-                  value={newChurch.churchLocation}
-                  onChange={(e) => setNewChurch({...newChurch, churchLocation: e.target.value})}
+                  value={newCompany.compLocation}
+                  onChange={(e) => setNewCompany({...newCompany, compLocation: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">교회 종류</label>
+                <label className="block text-sm font-medium mb-1">회사 종류</label>
                 <input
                   type="text"
-                  value={newChurch.churchType}
-                  onChange={(e) => setNewChurch({...newChurch, churchType: e.target.value})}
+                  value={newCompany.compType}
+                  onChange={(e) => setNewCompany({...newCompany, compType: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">산업군</label>
+                <input
+                  type="text"
+                  value={newCompany.compIndustry}
+                  onChange={(e) => setNewCompany({...newCompany, compIndustry: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 />
               </div>
@@ -564,17 +733,17 @@ const ChurchManagementPage = () => {
                 <label className="block text-sm font-medium mb-1">설립년도</label>
                 <input
                   type="text"
-                  value={newChurch.churchEstablished}
-                  onChange={(e) => setNewChurch({...newChurch, churchEstablished: e.target.value})}
+                  value={newCompany.compEstablish}
+                  onChange={(e) => setNewCompany({...newCompany, compEstablish: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">담임목사</label>
+                <label className="block text-sm font-medium mb-1">대표자</label>
                 <input
                   type="text"
-                  value={newChurch.churchPastor}
-                  onChange={(e) => setNewChurch({...newChurch, churchPastor: e.target.value})}
+                  value={newCompany.compCEO}
+                  onChange={(e) => setNewCompany({...newCompany, compCEO: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 />
               </div>
@@ -583,8 +752,8 @@ const ChurchManagementPage = () => {
                   <label className="block text-sm font-medium mb-1">위도</label>
                   <input
                     type="number"
-                    value={newChurch.churchLatX}
-                    onChange={(e) => setNewChurch({...newChurch, churchLatX: parseFloat(e.target.value)})}
+                    value={newCompany.compLateX}
+                    onChange={(e) => setNewCompany({...newCompany, compLateX: parseFloat(e.target.value)})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
                     step="any"
                   />
@@ -593,8 +762,8 @@ const ChurchManagementPage = () => {
                   <label className="block text-sm font-medium mb-1">경도</label>
                   <input
                     type="number"
-                    value={newChurch.churchLatY}
-                    onChange={(e) => setNewChurch({...newChurch, churchLatY: parseFloat(e.target.value)})}
+                    value={newCompany.compLateY}
+                    onChange={(e) => setNewCompany({...newCompany, compLateY: parseFloat(e.target.value)})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
                     step="any"
                   />
@@ -604,8 +773,8 @@ const ChurchManagementPage = () => {
                 <label className="block text-sm font-medium mb-1">웹사이트 URL</label>
                 <input
                   type="url"
-                  value={newChurch.churchURL}
-                  onChange={(e) => setNewChurch({...newChurch, churchURL: e.target.value})}
+                  value={newCompany.compURL}
+                  onChange={(e) => setNewCompany({...newCompany, compURL: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 />
               </div>
@@ -613,8 +782,8 @@ const ChurchManagementPage = () => {
                 <label className="block text-sm font-medium mb-1">지번</label>
                 <input
                   type="text"
-                  value={newChurch.churchLotAddr}
-                  onChange={(e) => setNewChurch({...newChurch, churchLotAddr: e.target.value})}
+                  value={newCompany.compLotAddr}
+                  onChange={(e) => setNewCompany({...newCompany, compLotAddr: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 />
               </div>
@@ -622,8 +791,8 @@ const ChurchManagementPage = () => {
                 <label className="block text-sm font-medium mb-1">주소</label>
                 <input
                   type="text"
-                  value={newChurch.churchAddr}
-                  onChange={(e) => setNewChurch({...newChurch, churchAddr: e.target.value})}
+                  value={newCompany.compAddr}
+                  onChange={(e) => setNewCompany({...newCompany, compAddr: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 />
               </div>
@@ -631,16 +800,16 @@ const ChurchManagementPage = () => {
                 <label className="block text-sm font-medium mb-1">이미지 URL</label>
                 <input
                   type="url"
-                  value={newChurch.churchMapIMG}
-                  onChange={(e) => setNewChurch({...newChurch, churchMapIMG: e.target.value})}
+                  value={newCompany.compMapIMG}
+                  onChange={(e) => setNewCompany({...newCompany, compMapIMG: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 />
               </div>
             </div>
             <div className="flex gap-2 mt-4 pt-4 border-t">
               <button
-                onClick={handleAddChurch}
-                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                onClick={handleAddCompany}
+                className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600"
               >
                 저장
               </button>
@@ -652,34 +821,34 @@ const ChurchManagementPage = () => {
               </button>
             </div>
           </div>
-        ) : selectedChurch ? (
+        ) : selectedCompany ? (
           <div className="flex flex-col h-full">
             {/* 상단 카드 */}
             <div className="mb-6 p-4 bg-gray-50 rounded-lg">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <span className="bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                    {selectedChurch.churchIdx}
+                    {selectedCompany.compIdx}
                   </span>
-                  <span className="text-lg font-semibold">{selectedChurch.churchName}</span>
-                  <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm">
-                    {selectedChurch.churchType}
-                  </span>
+                  <span className="text-lg font-semibold">{selectedCompany.compName}</span>
                   <span className="bg-purple-500 text-white px-3 py-1 rounded-full text-sm">
-                    {selectedChurch.churchLocation}
+                    {selectedCompany.compType}
+                  </span>
+                  <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm">
+                    {selectedCompany.compLocation}
                   </span>
                 </div>
                 {!isEditMode && (
                   <div className="flex gap-2">
                     <button
                       onClick={handleEditStart}
-                      className="w-8 h-8 bg-blue-500 text-white rounded-md hover:bg-blue-600 flex items-center justify-center"
+                      className="w-8 h-8 bg-purple-500 text-white rounded-md hover:bg-purple-600 flex items-center justify-center"
                       title="수정"
                     >
                       ✏️
                     </button>
                     <button
-                      onClick={handleDeleteSingleChurch}
+                      onClick={handleDeleteSingleCompany}
                       className="w-8 h-8 bg-red-500 text-white rounded-md hover:bg-red-600 flex items-center justify-center"
                       title="삭제"
                     >
@@ -691,15 +860,15 @@ const ChurchManagementPage = () => {
             </div>
 
             {/* 상세 정보 */}
-            <h3 className="text-lg font-semibold mb-4">교회 상세 정보</h3>
+            <h3 className="text-lg font-semibold mb-4">회사 상세 정보</h3>
             <div className="flex-1 overflow-y-auto pr-2">
               <div className="grid grid-cols-2 gap-x-6 gap-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">교회명</label>
+                  <label className="block text-sm font-medium mb-1">회사명</label>
                   <input
                     type="text"
-                    value={isEditMode ? editingChurch?.churchName || "" : selectedChurch.churchName}
-                    onChange={(e) => handleEditChange("churchName", e.target.value)}
+                    value={isEditMode ? editingCompany?.compName || "" : selectedCompany.compName}
+                    onChange={(e) => handleEditChange("compName", e.target.value)}
                     readOnly={!isEditMode}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
                       isEditMode ? "bg-white" : "bg-gray-50"
@@ -710,8 +879,8 @@ const ChurchManagementPage = () => {
                   <label className="block text-sm font-medium mb-1">위치</label>
                   <input
                     type="text"
-                    value={isEditMode ? editingChurch?.churchLocation || "" : selectedChurch.churchLocation}
-                    onChange={(e) => handleEditChange("churchLocation", e.target.value)}
+                    value={isEditMode ? editingCompany?.compLocation || "" : selectedCompany.compLocation}
+                    onChange={(e) => handleEditChange("compLocation", e.target.value)}
                     readOnly={!isEditMode}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
                       isEditMode ? "bg-white" : "bg-gray-50"
@@ -719,20 +888,39 @@ const ChurchManagementPage = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">교회 종류</label>
+                  <label className="block text-sm font-medium mb-1">회사 종류</label>
                   <select
-                    value={isEditMode ? editingChurch?.churchType || "" : selectedChurch.churchType}
-                    onChange={(e) => handleEditChange("churchType", e.target.value)}
+                    value={isEditMode ? editingCompany?.compType || "" : selectedCompany.compType}
+                    onChange={(e) => handleEditChange("compType", e.target.value)}
                     disabled={!isEditMode}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
                       isEditMode ? "bg-white" : "bg-gray-50"
                     }`}
                   >
-                    <option value="감리교">감리교</option>
-                    <option value="장로교">장로교</option>
-                    <option value="침례교">침례교</option>
-                    <option value="성결교">성결교</option>
-                    <option value="순복음">순복음</option>
+                    <option value="대기업">대기업</option>
+                    <option value="중소기업">중소기업</option>
+                    <option value="스타트업">스타트업</option>
+                    <option value="공기업">공기업</option>
+                    <option value="외국계">외국계</option>
+                    <option value="기타">기타</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">산업군</label>
+                  <select
+                    value={isEditMode ? editingCompany?.compIndustry || "" : selectedCompany.compIndustry}
+                    onChange={(e) => handleEditChange("compIndustry", e.target.value)}
+                    disabled={!isEditMode}
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
+                      isEditMode ? "bg-white" : "bg-gray-50"
+                    }`}
+                  >
+                    <option value="IT">IT</option>
+                    <option value="금융">금융</option>
+                    <option value="제조업">제조업</option>
+                    <option value="서비스업">서비스업</option>
+                    <option value="의료">의료</option>
+                    <option value="교육">교육</option>
                     <option value="기타">기타</option>
                   </select>
                 </div>
@@ -740,8 +928,8 @@ const ChurchManagementPage = () => {
                   <label className="block text-sm font-medium mb-1">설립년도</label>
                   <input
                     type="text"
-                    value={isEditMode ? editingChurch?.churchEstablished || "" : selectedChurch.churchEstablished}
-                    onChange={(e) => handleEditChange("churchEstablished", e.target.value)}
+                    value={isEditMode ? editingCompany?.compEstablish || "" : selectedCompany.compEstablish}
+                    onChange={(e) => handleEditChange("compEstablish", e.target.value)}
                     readOnly={!isEditMode}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
                       isEditMode ? "bg-white" : "bg-gray-50"
@@ -749,11 +937,11 @@ const ChurchManagementPage = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">담임목사</label>
+                  <label className="block text-sm font-medium mb-1">대표자</label>
                   <input
                     type="text"
-                    value={isEditMode ? editingChurch?.churchPastor || "" : selectedChurch.churchPastor}
-                    onChange={(e) => handleEditChange("churchPastor", e.target.value)}
+                    value={isEditMode ? editingCompany?.compCEO || "" : selectedCompany.compCEO}
+                    onChange={(e) => handleEditChange("compCEO", e.target.value)}
                     readOnly={!isEditMode}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
                       isEditMode ? "bg-white" : "bg-gray-50"
@@ -764,8 +952,8 @@ const ChurchManagementPage = () => {
                   <label className="block text-sm font-medium mb-1">위도</label>
                   <input
                     type="number"
-                    value={isEditMode ? editingChurch?.churchLatX || 0 : selectedChurch.churchLatX}
-                    onChange={(e) => handleEditChange("churchLatX", parseFloat(e.target.value))}
+                    value={isEditMode ? editingCompany?.compLateX || 0 : selectedCompany.compLateX}
+                    onChange={(e) => handleEditChange("compLateX", parseFloat(e.target.value))}
                     readOnly={!isEditMode}
                     step="any"
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
@@ -777,8 +965,8 @@ const ChurchManagementPage = () => {
                   <label className="block text-sm font-medium mb-1">경도</label>
                   <input
                     type="number"
-                    value={isEditMode ? editingChurch?.churchLatY || 0 : selectedChurch.churchLatY}
-                    onChange={(e) => handleEditChange("churchLatY", parseFloat(e.target.value))}
+                    value={isEditMode ? editingCompany?.compLateY || 0 : selectedCompany.compLateY}
+                    onChange={(e) => handleEditChange("compLateY", parseFloat(e.target.value))}
                     readOnly={!isEditMode}
                     step="any"
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
@@ -790,8 +978,8 @@ const ChurchManagementPage = () => {
                   <label className="block text-sm font-medium mb-1">웹사이트 URL</label>
                   <input
                     type="url"
-                    value={isEditMode ? editingChurch?.churchURL || "" : selectedChurch.churchURL}
-                    onChange={(e) => handleEditChange("churchURL", e.target.value)}
+                    value={isEditMode ? editingCompany?.compURL || "" : selectedCompany.compURL}
+                    onChange={(e) => handleEditChange("compURL", e.target.value)}
                     readOnly={!isEditMode}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
                       isEditMode ? "bg-white" : "bg-gray-50"
@@ -802,8 +990,8 @@ const ChurchManagementPage = () => {
                   <label className="block text-sm font-medium mb-1">지번</label>
                   <input
                     type="text"
-                    value={isEditMode ? editingChurch?.churchLotAddr || "" : selectedChurch.churchLotAddr}
-                    onChange={(e) => handleEditChange("churchLotAddr", e.target.value)}
+                    value={isEditMode ? editingCompany?.compLotAddr || "" : selectedCompany.compLotAddr}
+                    onChange={(e) => handleEditChange("compLotAddr", e.target.value)}
                     readOnly={!isEditMode}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
                       isEditMode ? "bg-white" : "bg-gray-50"
@@ -814,8 +1002,8 @@ const ChurchManagementPage = () => {
                   <label className="block text-sm font-medium mb-1">주소</label>
                   <input
                     type="text"
-                    value={isEditMode ? editingChurch?.churchAddr || "" : selectedChurch.churchAddr}
-                    onChange={(e) => handleEditChange("churchAddr", e.target.value)}
+                    value={isEditMode ? editingCompany?.compAddr || "" : selectedCompany.compAddr}
+                    onChange={(e) => handleEditChange("compAddr", e.target.value)}
                     readOnly={!isEditMode}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
                       isEditMode ? "bg-white" : "bg-gray-50"
@@ -826,8 +1014,8 @@ const ChurchManagementPage = () => {
                   <label className="block text-sm font-medium mb-1">이미지 URL</label>
                   <input
                     type="url"
-                    value={isEditMode ? editingChurch?.churchMapIMG || "" : selectedChurch.churchMapIMG}
-                    onChange={(e) => handleEditChange("churchMapIMG", e.target.value)}
+                    value={isEditMode ? editingCompany?.compMapIMG || "" : selectedCompany.compMapIMG}
+                    onChange={(e) => handleEditChange("compMapIMG", e.target.value)}
                     readOnly={!isEditMode}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
                       isEditMode ? "bg-white" : "bg-gray-50"
@@ -838,8 +1026,8 @@ const ChurchManagementPage = () => {
                   <label className="block text-sm font-medium mb-1">상태</label>
                   <input
                     type="number"
-                    value={isEditMode ? editingChurch?.churchStatus || 0 : selectedChurch.churchStatus}
-                    onChange={(e) => handleEditChange("churchStatus", parseInt(e.target.value))}
+                    value={isEditMode ? editingCompany?.compStatus || 0 : selectedCompany.compStatus}
+                    onChange={(e) => handleEditChange("compStatus", parseInt(e.target.value))}
                     readOnly={!isEditMode}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
                       isEditMode ? "bg-white" : "bg-gray-50"
@@ -850,8 +1038,8 @@ const ChurchManagementPage = () => {
                   <label className="block text-sm font-medium mb-1">조회수</label>
                   <input
                     type="number"
-                    value={isEditMode ? editingChurch?.churchViewCount || 0 : selectedChurch.churchViewCount}
-                    onChange={(e) => handleEditChange("churchViewCount", parseInt(e.target.value))}
+                    value={isEditMode ? editingCompany?.compViewCount || 0 : selectedCompany.compViewCount}
+                    onChange={(e) => handleEditChange("compViewCount", parseInt(e.target.value))}
                     readOnly={!isEditMode}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
                       isEditMode ? "bg-white" : "bg-gray-50"
@@ -865,8 +1053,8 @@ const ChurchManagementPage = () => {
             {isEditMode && (
               <div className="flex gap-2 mt-4 pt-4 border-t">
                 <button
-                  onClick={handleUpdateChurch}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                  onClick={handleUpdateCompany}
+                  className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600"
                 >
                   저장
                 </button>
@@ -881,7 +1069,7 @@ const ChurchManagementPage = () => {
           </div>
         ) : (
           <div className="flex items-center justify-center h-full text-gray-500">
-            교회를 선택하거나 추가 버튼을 클릭하세요.
+            회사를 선택하거나 추가 버튼을 클릭하세요.
           </div>
         )}
       </div>
@@ -894,7 +1082,7 @@ const ChurchManagementPage = () => {
             <p className="mb-4">삭제가 완료되었습니다.</p>
             <button
               onClick={() => setShowDeleteModal(false)}
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+              className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600"
             >
               확인
             </button>
@@ -929,4 +1117,4 @@ const ChurchManagementPage = () => {
   );
 };
 
-export default ChurchManagementPage;
+export default CompanyManagementPage;

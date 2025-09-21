@@ -661,10 +661,38 @@ export default function CompanyBoardDetailPage() {
 
     setIsReportLoading(true);
     try {
-      // 신고 API 호출 (구현 필요)
-      alert('신고가 접수되었습니다.');
-      setShowReportModal(false);
-      setReportForm({ reportReason: '', reporterId: '' });
+      console.log('신고 API 호출 시작:', {
+        boardIdx: boardId,
+        reportReason: reportForm.reportReason,
+        reporterId: reportForm.reporterId
+      });
+
+      const response = await fetch('https://api.reviewhub.life/admin/report/createReport', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          boardIdx: parseInt(boardId),
+          reportReason: reportForm.reportReason,
+          reporterId: reportForm.reporterId,
+          reportType: 'company' // 회사 게시판 신고임을 명시
+        })
+      });
+
+      console.log('신고 API 응답 상태:', response.status);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('신고 API 응답 데이터:', data);
+        alert('신고가 성공적으로 접수되었습니다.');
+        setShowReportModal(false);
+        setReportForm({ reportReason: '', reporterId: '' });
+      } else {
+        const errorData = await response.json();
+        console.error('신고 API 오류:', errorData);
+        alert(`신고 접수에 실패했습니다: ${errorData.message || '알 수 없는 오류'}`);
+      }
     } catch (error) {
       console.error('신고 처리 오류:', error);
       alert('신고 처리 중 오류가 발생했습니다.');
