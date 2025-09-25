@@ -95,18 +95,33 @@ const CompanyManagementPage = () => {
       console.log(`API 응답:`, data);
       
       if (data && data.data) {
+        // 회사 데이터의 위치 정보 확인을 위한 로그
+        if (data.data.length > 0) {
+          console.log("첫 번째 회사 데이터:", data.data[0]);
+          console.log("compLocation:", data.data[0].compLocation);
+          console.log("compAddr:", data.data[0].compAddr);
+          console.log("compLotAddr:", data.data[0].compLotAddr);
+        }
         setCompanies(data.data || []);
         // pagination 객체에서 페이징 정보 가져오기
         if (data.pagination) {
-          setTotalPages(data.pagination.totalPages || 1);
-          setCurrentPage(data.pagination.currentPage || page);
+          const totalPagesFromAPI = data.pagination.totalPages || 1;
+          
+          console.log(`페이징 정보 업데이트: totalPages=${totalPagesFromAPI}, currentPage=${page}`);
+          
+          setTotalPages(totalPagesFromAPI);
+          // currentPage는 goToPage에서 이미 설정했으므로 여기서는 설정하지 않음
           if (data.pagination.rowsPerPage) {
             setRowsPerPage(data.pagination.rowsPerPage);
           }
         } else {
           // pagination 객체가 없는 경우 기존 방식 사용
-          setTotalPages(Math.ceil((data.totalCount || 0) / (data.rowsPerPage || pageSize)));
-          setCurrentPage(page);
+          const calculatedTotalPages = Math.max(1, Math.ceil((data.totalCount || 0) / (data.rowsPerPage || pageSize))); // 최소 1페이지 보장
+          
+          console.log(`계산된 페이징 정보: totalPages=${calculatedTotalPages}, currentPage=${page}`);
+          
+          setTotalPages(calculatedTotalPages);
+          // currentPage는 goToPage에서 이미 설정했으므로 여기서는 설정하지 않음
           if (data.rowsPerPage) {
             setRowsPerPage(data.rowsPerPage);
           }
@@ -230,10 +245,13 @@ const CompanyManagementPage = () => {
 
   // 페이지 이동
   const goToPage = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
+    console.log(`페이지 이동 시도: ${page}, totalPages: ${totalPages}`);
+    if (page >= 1 && totalPages > 0 && page <= totalPages) {
+      setCurrentPage(page); // 즉시 페이지 상태 업데이트
       hasFetchedCompanies.current = false; // 페이지 변경 시에는 다시 호출 허용
       searchCompanies(searchKeyword, page, rowsPerPage);
+    } else {
+      console.log(`페이지 이동 실패: page=${page}, totalPages=${totalPages}`);
     }
   };
 
@@ -519,9 +537,9 @@ const CompanyManagementPage = () => {
                   </th>
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">회사 ID</th>
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">회사 이름</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">회사 위치</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">주소</th>
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">회사 종류</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">액션</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">대표명</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -552,46 +570,11 @@ const CompanyManagementPage = () => {
                       </td>
                       <td className="px-3 py-2 text-sm">{company.compIdx}</td>
                       <td className="px-3 py-2 text-sm">{company.compName}</td>
-                      <td className="px-3 py-2 text-sm">{company.compLocation}</td>
-                      <td className="px-3 py-2 text-sm">{company.compType}</td>
                       <td className="px-3 py-2 text-sm">
-                        <div className="flex gap-1">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleViewCompanyDetails(company.compIdx);
-                            }}
-                            className="w-6 h-6 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
-                            title="상세보기"
-                          >
-                            👁️
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleUpdateCompanyStatistics(company.compIdx);
-                            }}
-                            className="w-6 h-6 bg-green-500 text-white rounded text-xs hover:bg-green-600"
-                            title="통계 업데이트"
-                          >
-                            📈
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleChangeCompanyStatus(company.compIdx, company.compStatus === 1 ? 0 : 1);
-                            }}
-                            className={`w-6 h-6 text-white rounded text-xs ${
-                              company.compStatus === 1 
-                                ? 'bg-yellow-500 hover:bg-yellow-600' 
-                                : 'bg-gray-500 hover:bg-gray-600'
-                            }`}
-                            title={company.compStatus === 1 ? "비활성화" : "활성화"}
-                          >
-                            {company.compStatus === 1 ? '⏸️' : '▶️'}
-                          </button>
-                        </div>
+                        {company.compLocation || company.compAddr || company.compLotAddr || '-'}
                       </td>
+                      <td className="px-3 py-2 text-sm">{company.compType}</td>
+                      <td className="px-3 py-2 text-sm">{company.compCEO}</td>
                     </tr>
                   ))
                 )}
@@ -621,9 +604,9 @@ const CompanyManagementPage = () => {
           <div className="flex items-center gap-2">
             <button 
               onClick={() => goToPage(1)}
-              disabled={currentPage === 1}
+              disabled={currentPage === 1 || totalPages <= 0}
               className={`px-2 py-1 text-sm border rounded transition-colors ${
-                currentPage === 1 
+                currentPage === 1 || totalPages <= 0
                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
                   : 'bg-white text-gray-700 hover:bg-gray-50 cursor-pointer'
               }`}
@@ -633,9 +616,9 @@ const CompanyManagementPage = () => {
             </button>
             <button 
               onClick={() => goToPage(currentPage - 1)}
-              disabled={currentPage === 1}
+              disabled={currentPage === 1 || totalPages <= 0}
               className={`px-2 py-1 text-sm border rounded transition-colors ${
-                currentPage === 1 
+                currentPage === 1 || totalPages <= 0
                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
                   : 'bg-white text-gray-700 hover:bg-gray-50 cursor-pointer'
               }`}
@@ -647,23 +630,44 @@ const CompanyManagementPage = () => {
               <input
                 type="number"
                 value={currentPage}
-                onChange={(e) => {
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    const page = parseInt(e.currentTarget.value);
+                    console.log(`페이지 입력 (Enter): ${page}, totalPages: ${totalPages}`);
+                    
+                    if (!isNaN(page) && page >= 1 && totalPages > 0 && page <= totalPages) {
+                      goToPage(page);
+                    } else {
+                      console.log(`페이지 입력 유효하지 않음: page=${page}, totalPages=${totalPages}`);
+                      // 유효하지 않은 값이면 현재 페이지로 복원
+                      e.currentTarget.value = currentPage.toString();
+                    }
+                  }
+                }}
+                onBlur={(e) => {
                   const page = parseInt(e.target.value);
-                  if (page >= 1 && page <= totalPages) {
+                  console.log(`페이지 입력 (Blur): ${page}, totalPages: ${totalPages}`);
+                  
+                  if (!isNaN(page) && page >= 1 && totalPages > 0 && page <= totalPages) {
                     goToPage(page);
+                  } else {
+                    console.log(`페이지 입력 유효하지 않음 (복원): page=${page}, totalPages=${totalPages}`);
+                    // 유효하지 않은 값이면 현재 페이지로 복원
+                    e.target.value = currentPage.toString();
                   }
                 }}
                 className="w-12 px-1 py-1 text-sm text-center border rounded"
                 min={1}
-                max={totalPages}
+                max={totalPages || 1}
+                placeholder="1"
               />
               <span className="text-sm text-gray-600">of {totalPages}</span>
             </div>
             <button 
               onClick={() => goToPage(currentPage + 1)}
-              disabled={currentPage === totalPages}
+              disabled={currentPage === totalPages || totalPages <= 0}
               className={`px-2 py-1 text-sm border rounded transition-colors ${
-                currentPage === totalPages 
+                currentPage === totalPages || totalPages <= 0
                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
                   : 'bg-white text-gray-700 hover:bg-gray-50 cursor-pointer'
               }`}
@@ -673,9 +677,9 @@ const CompanyManagementPage = () => {
             </button>
             <button 
               onClick={() => goToPage(totalPages)}
-              disabled={currentPage === totalPages}
+              disabled={currentPage === totalPages || totalPages <= 0}
               className={`px-2 py-1 text-sm border rounded transition-colors ${
-                currentPage === totalPages 
+                currentPage === totalPages || totalPages <= 0
                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
                   : 'bg-white text-gray-700 hover:bg-gray-50 cursor-pointer'
               }`}

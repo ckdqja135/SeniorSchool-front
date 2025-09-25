@@ -14,7 +14,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const router = useRouter();
 
   const handleHomeClick = () => {
-    router.push("/admin");
+    router.push("/myoriadmin");
   };
 
   const handleLogout = () => {
@@ -23,7 +23,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     localStorage.removeItem("accessToken");
     
     // 로그인 페이지로 리다이렉트
-    router.push("/admin/sign-in");
+    router.push("/myoriadmin/sign-in");
   };
 
   return (

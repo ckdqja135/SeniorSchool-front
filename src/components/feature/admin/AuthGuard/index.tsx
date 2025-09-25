@@ -22,8 +22,8 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
       } else {
         setIsAuthenticated(false);
         // 로그인 페이지가 아닌 경우에만 리다이렉트
-        if (pathname !== "/admin/sign-in") {
-          router.push("/admin/sign-in");
+        if (pathname !== "/myoriadmin/sign-in") {
+          router.push("/myoriadmin/sign-in");
         }
       }
     };
@@ -37,7 +37,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   }
 
   // 인증되지 않은 경우
-  if (!isAuthenticated && pathname !== "/admin/sign-in") {
+  if (!isAuthenticated && pathname !== "/myoriadmin/sign-in") {
     return null;
   }
 

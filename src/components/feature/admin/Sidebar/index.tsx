@@ -30,48 +30,48 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
     {
       icon: "📊",
       label: "Dashboard",
-      href: "/admin",
+      href: "/myoriadmin",
       subItems: [],
     },
     {
       icon: "🎓",
       label: "학교 오빠",
-      href: "/admin/school",
+      href: "/myoriadmin/school",
       subItems: [
-        { label: "학교 관리", href: "/admin/school/management" },
-        { label: "대학교 추가 요청", href: "/admin/school/requests" },
+        { label: "학교 관리", href: "/myoriadmin/school/management" },
+        { label: "대학교 추가 요청", href: "/myoriadmin/school/requests" },
       ],
     },
     {
       icon: "⛪",
       label: "교회 오빠",
-      href: "/admin/church",
+      href: "/myoriadmin/church",
       subItems: [
-        { label: "교회 관리", href: "/admin/church" },
-        { label: "교회 추가 요청", href: "/admin/church/requests" },
+        { label: "교회 관리", href: "/myoriadmin/church" },
+        { label: "교회 추가 요청", href: "/myoriadmin/church/requests" },
       ],
     },
     {
       icon: "✍️",
       label: "회사 오빠",
-      href: "/admin/company",
+      href: "/myoriadmin/company",
       subItems: [
-        { label: "회사 관리", href: "/admin/company" },
-        { label: "회사 추가 요청", href: "/admin/company/requests" },
+        { label: "회사 관리", href: "/myoriadmin/company" },
+        { label: "회사 추가 요청", href: "/myoriadmin/company/requests" },
       ],
     },
     {
       icon: "👥",
       label: "관리자 관리",
-      href: "/admin/admin",
+      href: "/myoriadmin/admin",
       subItems: [],
     },
     {
       icon: "📝",
       label: "게시글 관리",
-      href: "/admin/posts",
+      href: "/myoriadmin/posts",
       subItems: [
-        { label: "신고 게시글", href: "/admin/posts/reported" }
+        { label: "신고 게시글", href: "/myoriadmin/posts/reported" }
       ],
     }
   ];

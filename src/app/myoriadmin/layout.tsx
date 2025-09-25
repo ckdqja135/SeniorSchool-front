@@ -14,7 +14,7 @@ export default function AdminLayout({
   const pathname = usePathname();
   
   // 로그인 페이지에서는 DashboardLayout을 사용하지 않음
-  if (pathname === "/admin/sign-in") {
+  if (pathname === "/myoriadmin/sign-in") {
     return <>{children}</>;
   }
 

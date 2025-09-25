@@ -51,7 +51,7 @@ const CompanyRequestsPage: React.FC = () => {
       
       const accessToken = localStorage.getItem("accessToken");
       if (!accessToken) {
-        router.push("/admin/sign-in");
+        router.push("/myoriadmin/sign-in");
         return;
       }
 
