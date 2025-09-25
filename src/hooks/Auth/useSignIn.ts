@@ -13,7 +13,7 @@ export default function useSignIn() {
     setError("");
     try {
       const data = await signIn(username, password);
-      router.replace("/admin");
+      router.replace("/myoriadmin");
 
       localStorage.setItem("user", JSON.stringify(data.user));
       localStorage.setItem("accessToken", data.accessToken);
