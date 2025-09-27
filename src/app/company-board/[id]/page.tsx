@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CompanyBoard, CompanyComment } from '@/types/Company';
 
@@ -96,7 +96,9 @@ const CommentItem = ({ comment, onEdit, onDelete, onReply }: {
 export default function CompanyBoardDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const boardId = params.id as string;
+  const companyName = searchParams.get('company');
   
   const [board, setBoard] = useState<CompanyBoard | null>(null);
   const [company, setCompany] = useState<any>(null);
@@ -215,19 +217,9 @@ export default function CompanyBoardDetailPage() {
           setBoard(data);
           setLikeCount(data.boardLike);
           
-          // 회사 정보도 함께 가져오기
-          if (data.compIdx) {
-            try {
-              const companyResponse = await fetch(`${backendURL}/search/comp/${data.compIdx}`);
-              if (companyResponse.ok) {
-                const companyData = await companyResponse.json();
-                if (companyData.status === 200 && companyData.data) {
-                  setCompany(companyData.data);
-                }
-              }
-            } catch (error) {
-              console.error('회사 정보 로딩 오류:', error);
-            }
+          // 회사 정보는 URL 파라미터에서 받은 companyName을 사용
+          if (companyName) {
+            setCompany({ compName: companyName });
           }
         } else {
           throw new Error('게시글을 찾을 수 없습니다.');
@@ -853,7 +845,15 @@ export default function CompanyBoardDetailPage() {
         {/* 뒤로가기 버튼 */}
         <div className="mb-6">
           <button 
-            onClick={() => router.back()}
+            onClick={() => {
+              if (companyName) {
+                router.push(`/company-mentor/${encodeURIComponent(companyName)}`);
+              } else if (company?.compName) {
+                router.push(`/company-mentor/${encodeURIComponent(company.compName)}`);
+              } else {
+                router.back();
+              }
+            }}
             className="flex items-center text-gray-600 hover:text-gray-800 transition-colors"
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

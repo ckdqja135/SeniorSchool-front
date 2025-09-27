@@ -139,20 +139,17 @@ export default function CompanyMentorPage() {
       const data = await response.json();
       
       if (data.status === 200 && data.data) {
-        console.log('인기 회사 TOP10 API 응답:', data); // 디버깅용
         // 인기 회사 TOP10 데이터를 직접 사용
         const companies = data.data
           .map((company: any) => ({
-            compIdx: company.compIdx,
             compName: company.compName || '회사명 없음',
             compLocation: company.compLocate || company.compLocation || '위치 정보 없음',
             compType: company.compType || '회사',
             compIndustry: company.compIndustry || 'IT',
             viewCount: company.compViewCount || 0
           }))
-          .filter((company: PopularCompany) => company.compIdx);
+          .filter((company: PopularCompany) => company.compName);
         
-        console.log('인기 회사 TOP10:', companies); // 디버깅용
         setPopularCompanies(companies.slice(0, 10));
       }
     } catch (error) {
@@ -173,9 +170,13 @@ export default function CompanyMentorPage() {
       const data = await response.json();
       
       if (data.status === 200 && data.data) {
-        console.log('인기 후기 API 응답:', data); // 디버깅용
+        // company.compName을 compName으로 매핑
+        const mappedBoards = data.data.map((board: any) => ({
+          ...board,
+          compName: board.company?.compName || board.compName
+        }));
         // 최근 후기 데이터를 그대로 사용 (조회수 기준으로 정렬)
-        const sortedBoards = data.data.sort((a: CompanyBoard, b: CompanyBoard) => b.boardHits - a.boardHits);
+        const sortedBoards = mappedBoards.sort((a: CompanyBoard, b: CompanyBoard) => b.boardHits - a.boardHits);
         setPopularBoards(sortedBoards.slice(0, 10));
       }
     } catch (error) {
@@ -223,7 +224,7 @@ export default function CompanyMentorPage() {
     setError(null);
     addToRecentSearches(suggestion.compName);
     // 자동완성 선택 시에는 바로 상세 페이지로 이동
-    router.push(`/company-mentor/${suggestion.compIdx}`);
+    router.push(`/company-mentor/${encodeURIComponent(suggestion.compName)}`);
   };
 
   // 검색 수행 및 결과에 따른 라우팅
@@ -243,18 +244,14 @@ export default function CompanyMentorPage() {
 
       const autoData = await autoResponse.json();
       
-      // 디버깅을 위한 로그 출력
-      console.log('회사 자동완성 API 결과:', autoData);
-      console.log('검색어:', searchTerm);
       
       const results = Array.isArray(autoData) ? autoData : (autoData.data || []);
-      console.log('결과 개수:', results.length);
 
       // 자동완성 결과가 배열인지 확인
       if (Array.isArray(results)) {
         if (results.length === 1) {
           // 정확히 1개 결과가 있으면 바로 상세 페이지로 이동
-          router.push(`/company-mentor/${results[0].compIdx}`);
+          router.push(`/company-mentor/${encodeURIComponent(results[0].compName)}`);
         } else {
           // 2개 이상의 결과가 있으면 검색 결과 페이지로 이동
           router.push(`/company-search?name=${encodeURIComponent(searchTerm)}`);
@@ -321,12 +318,16 @@ export default function CompanyMentorPage() {
 
   // 인기 회사 클릭
   const handlePopularCompanyClick = (company: PopularCompany) => {
-    router.push(`/company-mentor/${company.compIdx}`);
+    router.push(`/company-mentor/${encodeURIComponent(company.compName)}`);
   };
 
   // 인기 후기 클릭
   const handlePopularBoardClick = (board: CompanyBoard) => {
-    router.push(`/company-board/${board.boardIdx}`);
+    if (board.compName) {
+      router.push(`/company-board/${board.boardIdx}?company=${encodeURIComponent(board.compName)}`);
+    } else {
+      router.push(`/company-board/${board.boardIdx}`);
+    }
   };
 
   // 회사 추가 요청 제출

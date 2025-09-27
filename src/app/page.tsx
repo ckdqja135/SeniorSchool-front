@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useRecentOutsourceBoards } from '@/hooks/Outsource/useOutsource';
 
 interface University {
   univName: string;
@@ -81,6 +82,28 @@ export default function HomePage() {
   const [recentCompanyPosts, setRecentCompanyPosts] = useState<CompanyBoardPost[]>([]);
   const [isCompanyLoading, setIsCompanyLoading] = useState(true);
   const [companyError, setCompanyError] = useState<string | null>(null);
+  
+  // 외주 후기 관련 상태 (훅 사용)
+  const { boards: recentOutsourceBoards, loading: isOutsourceLoading, error: outsourceError } = useRecentOutsourceBoards();
+
+  // 시간 포맷팅 함수
+  const formatTimeAgo = (dateString: string) => {
+    const now = new Date();
+    const createdDate = new Date(dateString);
+    const diffInHours = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return '방금 전';
+    if (diffInHours < 24) return `약 ${diffInHours}시간 전`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `${diffInDays}일 전`;
+    
+    const diffInWeeks = Math.floor(diffInDays / 7);
+    if (diffInWeeks < 4) return `${diffInWeeks}주 전`;
+    
+    const diffInMonths = Math.floor(diffInDays / 30);
+    return `${diffInMonths}개월 전`;
+  };
 
   // 최근 게시글 데이터 가져오기
   useEffect(() => {
@@ -474,60 +497,108 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* 외주 선배 섹션 */}
+            {/* 외주 오빠 섹션 */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="p-4 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-gray-900">외주 선배</h2>
-                  <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                    </svg>
+                <div 
+                  onClick={() => router.push('/outsource-mentor')}
+                  className="cursor-pointer group"
+                >
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-bold text-gray-900 group-hover:text-yellow-600 transition-colors duration-300">외주 오빠</h2>
+                    <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center group-hover:animate-pulse group-hover:bg-yellow-200 transition-all duration-300">
+                      <svg className="w-5 h-5 text-yellow-600 group-hover:text-yellow-600 transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                      </svg>
+                    </div>
                   </div>
                 </div>
               </div>
               
-              {/* 외주 내용 */}
+              {/* 외주 오빠 내용 */}
               <div className="p-4">
-                <div className="space-y-3">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="p-2 rounded hover:bg-gray-50 transition-colors duration-150">
-                      <div className="flex items-start space-x-2">
-                        <div className="w-6 h-6 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
-                          <svg className="w-3 h-3 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                          </svg>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <span className="text-xs font-medium text-gray-900">작성자{i}</span>
-                            <span className="text-xs text-gray-500">•</span>
-                            <span className="text-xs text-gray-500">약 {i}시간 전</span>
-                          </div>
-                          <p className="text-xs text-gray-900 line-clamp-1">외주 제목 {i}</p>
-                          <div className="flex items-center space-x-3 mt-1">
-                            <div className="flex items-center space-x-1">
-                              <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
-                              </svg>
-                              <span className="text-xs text-gray-500">{i * 12}</span>
+                {isOutsourceLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <div key={i} className="p-2 rounded animate-pulse">
+                        <div className="flex items-start space-x-2">
+                          <div className="w-6 h-6 bg-gray-200 rounded-full flex-shrink-0"></div>
+                          <div className="flex-1 min-w-0 space-y-2">
+                            <div className="flex items-center space-x-2">
+                              <div className="h-3 bg-gray-200 rounded w-16"></div>
+                              <div className="h-3 bg-gray-200 rounded w-20"></div>
                             </div>
-                            <div className="flex items-center space-x-1">
-                              <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                              </svg>
-                              <span className="text-xs text-gray-500">{i * 8}</span>
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              외주
+                            <div className="h-3 bg-gray-200 rounded w-full"></div>
+                            <div className="flex items-center space-x-3">
+                              <div className="h-3 bg-gray-200 rounded w-8"></div>
+                              <div className="h-3 bg-gray-200 rounded w-8"></div>
+                              <div className="h-3 bg-gray-200 rounded w-12"></div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : outsourceError ? (
+                  <div className="text-center py-8">
+                    <p className="text-sm text-gray-500">외주 오빠 후기를 불러오는데 실패했습니다.</p>
+                    <p className="text-xs text-gray-400 mt-1">{outsourceError}</p>
+                  </div>
+                ) : !recentOutsourceBoards || recentOutsourceBoards.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-sm text-gray-500">아직 등록된 외주 오빠 후기가 없습니다.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {recentOutsourceBoards?.slice(0, 5).map((board) => (
+                      <div 
+                        key={board.boardIdx} 
+                        className="p-2 rounded hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/outsource-board/${board.boardIdx}`);
+                        }}
+                      >
+                        <div className="flex items-start space-x-2">
+                          <div className="w-6 h-6 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <svg className="w-3 h-3 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                            </svg>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center space-x-2 mb-1">
+                              <span className="text-xs font-medium text-gray-900">{board.boardID}</span>
+                              <span className="text-xs text-gray-500">•</span>
+                              <span className="text-xs text-gray-500">{formatTimeAgo(board.boardRegDate)}</span>
+                            </div>
+                            <p className="text-xs text-gray-900 line-clamp-1">{board.boardTitle}</p>
+                            {board.outsourceName && (
+                              <p className="text-xs text-gray-600 line-clamp-1 mt-1">📍 {board.outsourceName}</p>
+                            )}
+                            <div className="flex items-center space-x-3 mt-1">
+                              <div className="flex items-center space-x-1">
+                                <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                                </svg>
+                                <span className="text-xs text-gray-500">{board.boardLike || 0}</span>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                <span className="text-xs text-gray-500">{board.boardHits || 0}</span>
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                외주 오빠
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 

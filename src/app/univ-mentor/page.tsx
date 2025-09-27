@@ -683,25 +683,25 @@ export default function SchoolPage() {
                           <div
                             key={board.boardIdx}
                             onClick={() => handlePopularBoardClick(board)}
-                            className={`group p-1.5 rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-300 cursor-pointer transform hover:scale-105 ${
+                            className={`group p-1.5 rounded-lg border border-gray-200 hover:border-green-300 hover:shadow-md transition-all duration-300 cursor-pointer transform hover:scale-105 ${
                               isBoardRefreshing ? 'animate-pulse' : ''
                             }`}
                           >
                             <div className="flex items-center space-x-1.5">
                               <div className={`w-4 h-4 rounded-full flex items-center justify-center text-white font-bold text-xs ${
-                                index < 3 ? 'bg-gradient-to-r from-blue-400 to-indigo-500' : 'bg-gradient-to-r from-gray-400 to-gray-600'
+                                index < 3 ? 'bg-gradient-to-r from-green-400 to-green-500' : 'bg-gradient-to-r from-gray-400 to-gray-600'
                               }`}>
                                 {index + 1}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-200 text-xs truncate">
+                                <h3 className="font-semibold text-gray-900 group-hover:text-green-600 transition-colors duration-200 text-xs truncate">
                                   {board.boardTitle}
                                 </h3>
                                 <p className="text-xs text-gray-500 truncate">📍 {board.university.univName}</p>
                                 <p className="text-xs text-gray-400 truncate">❤️ {board.boardLike} • 👁️ {board.boardHits}</p>
                               </div>
                               <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
-                                <svg className="w-2.5 h-2.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-2.5 h-2.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                 </svg>
                               </div>
@@ -747,7 +747,7 @@ export default function SchoolPage() {
                   id="univName"
                   value={requestForm.univName}
                   onChange={(e) => setRequestForm({...requestForm, univName: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="대학교 이름을 입력하세요"
                   required
                 />
@@ -763,7 +763,7 @@ export default function SchoolPage() {
                   id="univPresident"
                   value={requestForm.univPresident}
                   onChange={(e) => setRequestForm({...requestForm, univPresident: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="총장 이름을 입력하세요"
                   required
                 />
@@ -778,7 +778,7 @@ export default function SchoolPage() {
                   id="univYears"
                   value={requestForm.univYears}
                   onChange={(e) => setRequestForm({...requestForm, univYears: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   required
                 >
                   <option value="4년제">4년제</option>
@@ -797,7 +797,7 @@ export default function SchoolPage() {
                   id="univAddr"
                   value={requestForm.univAddr}
                   onChange={(e) => setRequestForm({...requestForm, univAddr: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="학교 주소를 입력하세요"
                   required
                 />
@@ -817,8 +817,8 @@ export default function SchoolPage() {
                   disabled={isSubmitting}
                   className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors ${
                     isSubmitting
-                      ? 'bg-blue-400 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700'
+                      ? 'bg-green-400 cursor-not-allowed'
+                      : 'bg-green-600 hover:bg-green-700'
                   }`}
                 >
                   {isSubmitting ? '요청 중...' : '요청하기'}

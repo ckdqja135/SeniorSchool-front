@@ -57,7 +57,7 @@ function CompanySearchContent() {
 
   // 회사 클릭 핸들러
   const handleCompanyClick = (company: CompanyAutoSearchResult) => {
-    router.push(`/company-mentor/${company.compIdx}`);
+    router.push(`/company-mentor/${encodeURIComponent(company.compName)}`);
   };
 
   // 새 검색 핸들러

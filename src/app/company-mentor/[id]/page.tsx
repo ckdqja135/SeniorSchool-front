@@ -159,7 +159,7 @@ export default function CompanyDetailPage() {
         setError(null);
 
         const backendURL = 'https://api.reviewhub.life';
-        const response = await fetch(`${backendURL}/search/comp/${companyId}`);
+        const response = await fetch(`${backendURL}/search/comp/?compName=${encodeURIComponent(companyId)}`);
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -168,7 +168,9 @@ export default function CompanyDetailPage() {
         const data = await response.json();
         
         if (data.status === 200 && data.data) {
-          setCompany(data.data);
+          // API 응답이 배열인 경우 첫 번째 요소 사용
+          const companyData = Array.isArray(data.data) ? data.data[0] : data.data;
+          setCompany(companyData);
         } else {
           throw new Error('회사 정보를 찾을 수 없습니다.');
         }

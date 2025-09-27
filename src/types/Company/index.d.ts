@@ -48,6 +48,7 @@ export interface CompanyBoard {
   boardTitle: string;
   boardContent: string;
   compIdx: number;
+  compName?: string; // 회사명 추가
   boardRegDate: string;
   boardLike: number;
   boardHits: number;

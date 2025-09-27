@@ -1,0 +1,1083 @@
+'use client';
+
+import { useState, useEffect, useMemo } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { getOutsourceBoardDetail } from '@/lib/outsource/outsourceAPI';
+import { OutsourceBoard } from '@/types/Outsource';
+
+interface Comment {
+  commentIdx: number;
+  boardIdx: number;
+  commentLike: number;
+  commentDepth: number;
+  writerId: string;
+  commentPerent?: number;
+  commentParent?: number;
+  commentContent: string;
+  regDate?: string;
+  modDate?: string;
+  replies?: Comment[];
+}
+
+// 재귀적으로 댓글을 렌더링하는 컴포넌트
+const CommentItem = ({ 
+  comment, 
+  level = 0,
+  setReplyForm,
+  setShowReplyInput,
+  showReplyInput,
+  setEditCommentForm,
+  setShowEditCommentModal,
+  setDeleteCommentData,
+  setShowDeleteCommentModal,
+  setActiveCommentMenu,
+  activeCommentMenu,
+  showEditCommentModal,
+  showDeleteCommentModal,
+  handleReplySubmit,
+  replyForm
+}: {
+  comment: Comment;
+  level: number;
+  setReplyForm: any;
+  setShowReplyInput: any;
+  showReplyInput: number | null;
+  setEditCommentForm: any;
+  setShowEditCommentModal: any;
+  setDeleteCommentData: any;
+  setShowDeleteCommentModal: any;
+  setActiveCommentMenu: any;
+  activeCommentMenu: number | null;
+  showEditCommentModal: boolean;
+  showDeleteCommentModal: boolean;
+  handleReplySubmit: any;
+  replyForm: any;
+}) => {
+  // level을 1로 제한하여 모든 답글 레벨을 동일하게 표시
+  const normalizedLevel = level > 0 ? 1 : 0;
+  const bgColor = normalizedLevel === 0 ? 'bg-white' : 'bg-gray-50';
+  
+  return (
+    <div className={`border border-gray-200 rounded-lg p-3 ${bgColor} hover:shadow-sm transition-shadow`}>
+      <div className="flex justify-between items-start mb-2">
+        <div className="flex items-center gap-3">
+          {normalizedLevel > 0 && <span className="text-yellow-600 text-sm">↳</span>}
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-gray-900">{comment.writerId}</span>
+            {comment.regDate && (
+              <span className="text-xs text-gray-500">
+                {new Date(comment.regDate).toLocaleDateString('ko-KR', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric'
+                })} {new Date(comment.regDate).toLocaleTimeString('ko-KR', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: true
+                })}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="relative">
+          <button
+            onClick={() => setActiveCommentMenu(activeCommentMenu === comment.commentIdx ? null : comment.commentIdx)}
+            className="p-1 hover:bg-gray-100 rounded"
+          >
+            <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+            </svg>
+          </button>
+          
+          {activeCommentMenu === comment.commentIdx && (
+            <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+              <button
+                onClick={() => {
+                  setEditCommentForm({
+                    commentIdx: comment.commentIdx,
+                    content: comment.commentContent,
+                    writerId: comment.writerId
+                  });
+                  setShowEditCommentModal(true);
+                  setActiveCommentMenu(null);
+                }}
+                className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+              >
+                수정
+              </button>
+              <button
+                onClick={() => {
+                  setDeleteCommentData({
+                    commentIdx: comment.commentIdx,
+                    writerId: comment.writerId
+                  });
+                  setShowDeleteCommentModal(true);
+                  setActiveCommentMenu(null);
+                }}
+                className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+              >
+                삭제
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      <div className="text-gray-800 mb-3 whitespace-pre-wrap">
+        {comment.commentContent}
+      </div>
+      
+      <div className="flex items-center gap-4">
+        <button
+          onClick={() => setShowReplyInput(showReplyInput === comment.commentIdx ? null : comment.commentIdx)}
+          className="flex items-center gap-1 text-sm text-gray-500 hover:text-yellow-600 transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+          </svg>
+          답글
+        </button>
+        <span className="text-xs text-gray-400">좋아요 {comment.commentLike}</span>
+      </div>
+
+      {showReplyInput === comment.commentIdx && (
+        <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-yellow-200">
+          <div className="space-y-3">
+            <textarea
+              value={replyForm.content}
+              onChange={(e) => setReplyForm({...replyForm, content: e.target.value})}
+              placeholder="답글을 입력하세요..."
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 resize-none"
+              rows={3}
+            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={replyForm.writerId}
+                onChange={(e) => setReplyForm({...replyForm, writerId: e.target.value})}
+                placeholder="아이디"
+                className="flex-1 p-2 border border-gray-300 rounded focus:ring-yellow-500 focus:border-yellow-500"
+              />
+              <input
+                type="password"
+                value={replyForm.password}
+                onChange={(e) => setReplyForm({...replyForm, password: e.target.value})}
+                placeholder="비밀번호"
+                className="flex-1 p-2 border border-gray-300 rounded focus:ring-yellow-500 focus:border-yellow-500"
+              />
+              <button
+                onClick={() => handleReplySubmit(comment.commentIdx)}
+                className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors"
+              >
+                작성
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default function OutsourceBoardDetailPage() {
+  const router = useRouter();
+  const params = useParams();
+  const boardId = params.id as string;
+
+  const [board, setBoard] = useState<OutsourceBoard | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [outsourceInfo, setOutsourceInfo] = useState<any>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentForm, setCommentForm] = useState({
+    content: '',
+    writerId: '',
+    password: ''
+  });
+  const [replyForm, setReplyForm] = useState({
+    content: '',
+    writerId: '',
+    password: '',
+    parentCommentIdx: 0
+  });
+  const [showReplyInput, setShowReplyInput] = useState<number | null>(null);
+  const [activeCommentMenu, setActiveCommentMenu] = useState<number | null>(null);
+  const [showEditCommentModal, setShowEditCommentModal] = useState(false);
+  const [editCommentForm, setEditCommentForm] = useState({
+    commentIdx: 0,
+    content: '',
+    writerId: '',
+    password: ''
+  });
+  const [showDeleteCommentModal, setShowDeleteCommentModal] = useState(false);
+  const [deleteCommentData, setDeleteCommentData] = useState({
+    commentIdx: 0,
+    writerId: '',
+    password: ''
+  });
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [password, setPassword] = useState('');
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+  const [editForm, setEditForm] = useState({
+    title: '',
+    content: ''
+  });
+  const [isLiked, setIsLiked] = useState(false);
+  const [isLikeLoading, setIsLikeLoading] = useState(false);
+
+  // 시간 포맷팅 함수
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // 댓글 구조화 함수
+  const organizeComments = (comments: Comment[]) => {
+    console.log('댓글 구조화 시작:', comments);
+    const commentMap = new Map();
+    const rootComments: Comment[] = [];
+
+    comments.forEach(comment => {
+      commentMap.set(comment.commentIdx, { ...comment, replies: [] });
+    });
+
+    comments.forEach(comment => {
+      // commentParent가 0이거나 commentPerent가 0인 경우, 또는 둘 다 없는 경우 루트 댓글로 처리
+      if ((comment.commentParent === 0) || 
+          (comment.commentPerent === 0) || 
+          (!comment.commentParent && !comment.commentPerent)) {
+        console.log('루트 댓글 추가:', comment.commentIdx);
+        rootComments.push(commentMap.get(comment.commentIdx));
+      } else {
+        const parentId = comment.commentParent || comment.commentPerent;
+        const parent = commentMap.get(parentId);
+        if (parent) {
+          console.log('답글 추가:', comment.commentIdx, '부모:', parentId);
+          parent.replies.push(commentMap.get(comment.commentIdx));
+        } else {
+          // 부모를 찾을 수 없는 경우 루트 댓글로 처리
+          console.log('부모를 찾을 수 없어 루트 댓글로 처리:', comment.commentIdx);
+          rootComments.push(commentMap.get(comment.commentIdx));
+        }
+      }
+    });
+
+    console.log('구조화된 댓글:', rootComments);
+    return rootComments;
+  };
+
+  // 구조화된 댓글들
+  const organizedComments = useMemo(() => {
+    return organizeComments(comments);
+  }, [comments]);
+
+  // 댓글 렌더링 함수
+  const renderComments = (comments: Comment[], level = 0) => {
+    return comments.map(comment => (
+      <div key={comment.commentIdx}>
+        <CommentItem
+          comment={comment}
+          level={level}
+          setReplyForm={setReplyForm}
+          setShowReplyInput={setShowReplyInput}
+          showReplyInput={showReplyInput}
+          setEditCommentForm={setEditCommentForm}
+          setShowEditCommentModal={setShowEditCommentModal}
+          setDeleteCommentData={setDeleteCommentData}
+          setShowDeleteCommentModal={setShowDeleteCommentModal}
+          setActiveCommentMenu={setActiveCommentMenu}
+          activeCommentMenu={activeCommentMenu}
+          showEditCommentModal={showEditCommentModal}
+          showDeleteCommentModal={showDeleteCommentModal}
+          handleReplySubmit={handleReplySubmit}
+          replyForm={replyForm}
+        />
+        {comment.replies && comment.replies.length > 0 && (
+          <div className="mt-2 ml-4">
+            {renderComments(comment.replies, level + 1)}
+          </div>
+        )}
+      </div>
+    ));
+  };
+
+  // 댓글 작성 핸들러
+  const handleCommentSubmit = async () => {
+    if (!commentForm.content.trim() || !commentForm.writerId.trim() || !commentForm.password.trim()) {
+      alert('모든 필드를 입력해주세요.');
+      return;
+    }
+
+    try {
+      const response = await fetch('https://api.reviewhub.life/outsource/comment/insert', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          boardIdx: parseInt(boardId),
+          commentContent: commentForm.content,
+          writerId: commentForm.writerId,
+          writerPw: commentForm.password,
+          commentParent: 0,
+          commentPerent: 0,
+          commentDepth: 0
+        }),
+      });
+
+      if (response.ok) {
+        setCommentForm({ content: '', writerId: '', password: '' });
+        // 댓글 목록 새로고침
+        await fetchComments();
+        alert('댓글이 성공적으로 작성되었습니다!');
+      } else {
+        alert('댓글 작성에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('댓글 작성 오류:', error);
+      alert('댓글 작성 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 답글 작성 핸들러
+  const handleReplySubmit = async (parentCommentIdx: number) => {
+    if (!replyForm.content.trim() || !replyForm.writerId.trim() || !replyForm.password.trim()) {
+      alert('모든 필드를 입력해주세요.');
+      return;
+    }
+
+    try {
+      const response = await fetch('https://api.reviewhub.life/outsource/comment/insert', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          boardIdx: parseInt(boardId),
+          commentContent: replyForm.content,
+          writerId: replyForm.writerId,
+          writerPw: replyForm.password,
+          commentParent: parentCommentIdx,
+          commentPerent: parentCommentIdx,
+          commentDepth: 1
+        }),
+      });
+
+      if (response.ok) {
+        setReplyForm({ content: '', writerId: '', password: '', parentCommentIdx: 0 });
+        setShowReplyInput(null);
+        // 댓글 목록 새로고침
+        await fetchComments();
+        alert('답글이 성공적으로 작성되었습니다!');
+      } else {
+        alert('답글 작성에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('답글 작성 오류:', error);
+      alert('답글 작성 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 댓글 목록 조회
+  const fetchComments = async () => {
+    try {
+      const response = await fetch(`https://api.reviewhub.life/outsource/comment?boardIdx=${boardId}`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('댓글 API 응답:', data);
+        
+        // API 응답 구조에 따라 데이터 추출
+        let commentsData = [];
+        if (Array.isArray(data)) {
+          // 응답이 직접 배열인 경우
+          commentsData = data;
+        } else if (data.data && Array.isArray(data.data)) {
+          // 응답이 {data: [...]} 형태인 경우
+          commentsData = data.data;
+        }
+        
+        console.log('추출된 댓글 데이터:', commentsData);
+        setComments(commentsData);
+      }
+    } catch (error) {
+      console.error('댓글 조회 오류:', error);
+    }
+  };
+
+  // 외주업체 정보 조회
+  const fetchOutsourceInfo = async (outsourceIdx: number) => {
+    try {
+      const response = await fetch(`https://api.reviewhub.life/outsource?limit=1000`);
+      if (response.ok) {
+        const data = await response.json();
+        const outsource = data.data?.find((item: any) => item.outsourceIdx === outsourceIdx);
+        if (outsource) {
+          setOutsourceInfo(outsource);
+        }
+      }
+    } catch (error) {
+      console.error('외주업체 정보 조회 오류:', error);
+    }
+  };
+
+  // 좋아요 토글
+  const handleLike = async () => {
+    // 이미 로딩 중이거나 좋아요 처리 중이면 무시
+    if (isLikeLoading) {
+      return;
+    }
+
+    // boardId 유효성 검사
+    if (!boardId || isNaN(parseInt(boardId))) {
+      console.error('유효하지 않은 boardId:', boardId);
+      return;
+    }
+
+    try {
+      setIsLikeLoading(true); // 로딩 시작
+      
+      const backendURL = 'https://api.reviewhub.life';
+      const parsedBoardId = parseInt(boardId);
+      const requestBody = { 
+        boardIdx: parsedBoardId,
+        isLiked: !isLiked // 현재 상태의 반대값을 전송 (토글)
+      };
+      
+      const response = await fetch(`${backendURL}/outsource/boards/like`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('좋아요 처리 성공:', data);
+        
+        // 상태 업데이트
+        setIsLiked(!isLiked);
+        
+        // 게시글의 좋아요 수 업데이트
+        setBoard(prev => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            boardLike: data.likeCount !== undefined ? data.likeCount : (prev.boardLike || 0) + (isLiked ? -1 : 1)
+          };
+        });
+        
+      } else {
+        const errorData = await response.json();
+        console.error('좋아요 처리 실패:', response.status, errorData);
+        alert('좋아요 처리에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('좋아요 처리 오류:', error);
+      alert('좋아요 처리 중 오류가 발생했습니다.');
+    } finally {
+      setIsLikeLoading(false); // 로딩 종료
+    }
+  };
+
+  // 게시글 수정
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!board) return;
+    
+    try {
+      const backendURL = 'https://api.reviewhub.life';
+      const response = await fetch(`${backendURL}/outsource/boards/correct`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          boardIdx: board.boardIdx,
+          boardTitle: editForm.title,
+          boardContent: editForm.content,
+          writerPw: password
+        }),
+      });
+
+      if (response.ok) {
+        alert('게시글이 수정되었습니다.');
+        setShowEditModal(false);
+        setPassword('');
+        // 게시글 다시 불러오기
+        window.location.reload();
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || '게시글 수정에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('게시글 수정 오류:', error);
+      alert('게시글 수정 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 게시글 삭제
+  const handleDeletePost = async () => {
+    if (!board) return;
+    
+    try {
+      const backendURL = 'https://api.reviewhub.life';
+      const response = await fetch(`${backendURL}/outsource/boards/delete`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          boardIdx: board.boardIdx,
+          writerPw: password
+        }),
+      });
+
+      if (response.ok) {
+        alert('게시글이 삭제되었습니다.');
+        // 외주업체 이름이 있으면 해당 상세 페이지로, 없으면 뒤로가기
+        if (outsourceInfo?.outsourceName) {
+          router.push(`/outsource-mentor/${encodeURIComponent(outsourceInfo.outsourceName)}`);
+        } else {
+          router.back();
+        }
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || '게시글 삭제에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('게시글 삭제 오류:', error);
+      alert('게시글 삭제 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 댓글 수정
+  const handleEditComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const backendURL = 'https://api.reviewhub.life';
+      const editData = {
+        commentIdx: editCommentForm.commentIdx,
+        commentContent: editCommentForm.content.trim(),
+        commentPw: editCommentForm.password.trim(),
+        modDate: new Date().toISOString()
+      };
+
+      const response = await fetch(`${backendURL}/outsource/comment/modify`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editData),
+      });
+
+      if (response.ok) {
+        setShowEditCommentModal(false);
+        setEditCommentForm({ commentIdx: 0, content: '', writerId: '', password: '' });
+        setActiveCommentMenu(null);
+        fetchComments();
+        alert('댓글이 성공적으로 수정되었습니다!');
+      } else {
+        alert('비밀번호가 일치하지 않습니다.');
+      }
+    } catch (error) {
+      console.error('댓글 수정 오류:', error);
+      alert('댓글 수정 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 댓글 삭제
+  const handleDeleteComment = async () => {
+    try {
+      const backendURL = 'https://api.reviewhub.life';
+      const deleteData = {
+        commentIdx: deleteCommentData.commentIdx,
+        commentPw: deleteCommentData.password.trim()
+      };
+
+      const response = await fetch(`${backendURL}/outsource/comment/delete`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(deleteData),
+      });
+
+      if (response.ok) {
+        setShowDeleteCommentModal(false);
+        setDeleteCommentData({ commentIdx: 0, writerId: '', password: '' });
+        setActiveCommentMenu(null);
+        fetchComments();
+        alert('댓글이 성공적으로 삭제되었습니다!');
+      } else {
+        alert('비밀번호가 일치하지 않습니다.');
+      }
+    } catch (error) {
+      console.error('댓글 삭제 오류:', error);
+      alert('댓글 삭제 중 오류가 발생했습니다.');
+    }
+  };
+
+  useEffect(() => {
+    const fetchBoardDetail = async () => {
+      if (!boardId || isNaN(parseInt(boardId))) return;
+      
+      setLoading(true);
+      setError(null);
+
+      try {
+        console.log('게시판 상세 API 호출 시작:', boardId);
+        const response = await getOutsourceBoardDetail(parseInt(boardId));
+        console.log('게시판 상세 API 응답:', response);
+        
+        // API 응답 구조에 따라 데이터 추출
+        let boardData: OutsourceBoard | null = null;
+        if (response.data) {
+          boardData = response.data;
+        } else if ((response as any).boardIdx) {
+          // 응답이 직접 게시판 객체인 경우
+          boardData = response as unknown as OutsourceBoard;
+        }
+        
+        console.log('추출된 게시판 데이터:', boardData);
+        setBoard(boardData);
+        
+        // 외주업체 정보 조회
+        if (boardData?.outsourceIdx) {
+          await fetchOutsourceInfo(boardData.outsourceIdx);
+        }
+        
+        // 댓글 목록도 함께 조회
+        await fetchComments();
+      } catch (err) {
+        console.error('게시판 상세 조회 오류:', err);
+        setError(err instanceof Error ? err.message : '게시글을 불러오는데 실패했습니다.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBoardDetail();
+  }, [boardId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="animate-pulse">
+              <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/4 mb-6"></div>
+              <div className="space-y-3">
+                <div className="h-4 bg-gray-200 rounded"></div>
+                <div className="h-4 bg-gray-200 rounded"></div>
+                <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !board) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
+            <h1 className="text-xl font-bold text-gray-900 mb-2">게시글을 찾을 수 없습니다</h1>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <button
+              onClick={() => router.push('/outsource-mentor')}
+              className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+            >
+              돌아가기
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      {/* 헤더 */}
+      <nav className="bg-gray-800 text-white shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="text-2xl font-bold text-yellow-400">
+              외주 오빠
+            </div>
+            <div className="text-gray-300">
+              {outsourceInfo?.outsourceName ? `${outsourceInfo.outsourceName} 후기` : '외주 후기'}
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* 뒤로가기 버튼 - 상단에 배치 */}
+        <div className="mb-6">
+          <button
+            onClick={() => {
+              if (board?.outsourceIdx) {
+                router.push(`/outsource-mentor/${board.outsourceIdx}`);
+              } else if (board?.outsourceName) {
+                router.push(`/outsource-mentor/${encodeURIComponent(board.outsourceName)}`);
+              } else {
+                router.back();
+              }
+            }}
+            className="flex items-center text-gray-600 hover:text-gray-800 transition-colors"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            뒤로가기
+          </button>
+        </div>
+
+        {/* 게시글 헤더 */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <div className="flex justify-between items-start mb-4">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{board.boardTitle}</h1>
+            
+            {/* 액션 버튼들 */}
+            <div className="flex items-center space-x-2">
+              {/* 신고 버튼 */}
+              <button
+                className="px-2 sm:px-4 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-lg transition-colors text-xs sm:text-sm font-medium cursor-pointer"
+              >
+                <svg className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                <span className="hidden sm:inline">신고하기</span>
+                <span className="sm:hidden">신고</span>
+              </button>
+              
+              {/* 설정 드롭다운 */}
+              <div className="relative">
+                <button
+                  className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                  onClick={() => setShowPasswordModal(true)}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                  </svg>
+                </button>
+              
+              {/* 드롭다운 메뉴 */}
+              {showPasswordModal && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+                  <button
+                    onClick={() => {
+                      if (!board) return;
+                      setShowPasswordModal(false);
+                      setPassword('');
+                      setEditForm({ title: board.boardTitle, content: board.boardContent });
+                      setShowEditModal(true);
+                    }}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    수정하기
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowPasswordModal(false);
+                      setShowDeleteConfirmModal(true);
+                    }}
+                    className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    삭제하기
+                  </button>
+                </div>
+              )}
+              </div>
+            </div>
+          </div>
+
+          {/* 게시글 메타 정보 */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-green-50 p-3 rounded-lg border border-green-100">
+              <span className="text-xs text-green-700 font-bold uppercase tracking-wider mb-1 block">작성자</span>
+              <p className="text-sm font-semibold text-gray-900">
+                {board.boardID || '작성자 정보 없음'}
+              </p>
+            </div>
+            <div className="bg-green-50 p-3 rounded-lg border border-green-100">
+              <span className="text-xs text-green-700 font-bold uppercase tracking-wider mb-1 block">작성일</span>
+              <p className="text-sm font-semibold text-gray-900">
+                {board.boardRegDate ? new Date(board.boardRegDate).toLocaleDateString('ko-KR', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit'
+                }).replace(/\./g, '').replace(/\s+/g, '-') : '날짜 정보 없음'}
+              </p>
+            </div>
+            <div className="bg-purple-50 p-3 rounded-lg border border-purple-100">
+              <span className="text-xs text-purple-700 font-bold uppercase tracking-wider mb-1 block">조회수</span>
+              <p className="text-sm font-semibold text-gray-900">
+                {board.boardHits || 0}
+              </p>
+            </div>
+            <div className="bg-orange-50 p-3 rounded-lg border border-orange-100">
+              <span className="text-xs text-orange-700 font-bold uppercase tracking-wider mb-1 block">좋아요</span>
+              <button 
+                onClick={handleLike} 
+                disabled={isLikeLoading}
+                className={`text-sm font-semibold transition-colors flex items-center space-x-1 ${
+                  isLiked 
+                    ? 'text-red-500' 
+                    : 'text-gray-900 hover:text-red-500'
+                } ${isLikeLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <svg className={`w-4 h-4 ${isLiked ? 'fill-current' : 'fill-none stroke-current'}`} viewBox="0 0 24 24">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+                <span>
+                  {board.boardLike || 0}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {/* 게시글 내용 */}
+          <div className="text-gray-800 leading-relaxed">
+            {board.boardContent}
+          </div>
+        </div>
+
+        {/* 댓글 섹션 */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-6">댓글</h3>
+          
+          {comments.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p className="text-lg">아직 댓글이 없습니다.</p>
+              <p className="text-sm mt-2">첫 번째 댓글을 작성해보세요!</p>
+            </div>
+          ) : (
+            <div className="space-y-4 mb-6">
+              {renderComments(organizedComments)}
+            </div>
+          )}
+
+          {/* 댓글 작성 폼 */}
+          <div className="border-t border-gray-200 pt-6">
+            <div className="space-y-4">
+              <textarea
+                value={commentForm.content}
+                onChange={(e) => setCommentForm({...commentForm, content: e.target.value})}
+                placeholder="댓글을 입력하세요..."
+                className="w-full p-4 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 resize-none"
+                rows={4}
+                maxLength={100}
+              />
+              <div className="flex gap-4 items-end">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={commentForm.writerId}
+                    onChange={(e) => setCommentForm({...commentForm, writerId: e.target.value})}
+                    placeholder="아이디"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500"
+                  />
+                </div>
+                <div className="flex-1">
+                  <input
+                    type="password"
+                    value={commentForm.password}
+                    onChange={(e) => setCommentForm({...commentForm, password: e.target.value})}
+                    placeholder="비밀번호"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500"
+                  />
+                </div>
+                <button
+                  onClick={handleCommentSubmit}
+                  className="px-6 py-3 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition-colors"
+                >
+                  작성
+                </button>
+              </div>
+              <div className="text-right text-sm text-gray-500">
+                {commentForm.content.length}/100
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 댓글 수정 모달 */}
+      {showEditCommentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">댓글 수정</h3>
+            <textarea
+              value={editCommentForm.content}
+              onChange={(e) => setEditCommentForm({...editCommentForm, content: e.target.value})}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 resize-none"
+              rows={4}
+            />
+            <input
+              type="password"
+              value={editCommentForm.password}
+              onChange={(e) => setEditCommentForm({...editCommentForm, password: e.target.value})}
+              placeholder="댓글 작성 시 사용한 비밀번호"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500"
+              required
+            />
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={() => setShowEditCommentModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleEditComment}
+                className="flex-1 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors"
+              >
+                수정
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 댓글 삭제 모달 */}
+      {showDeleteCommentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">댓글 삭제</h3>
+            <p className="text-gray-600 mb-6">정말로 이 댓글을 삭제하시겠습니까?</p>
+            <input
+              type="password"
+              value={deleteCommentData.password || ''}
+              onChange={(e) => setDeleteCommentData({...deleteCommentData, password: e.target.value})}
+              placeholder="댓글 작성 시 사용한 비밀번호"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 mb-4"
+              required
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowDeleteCommentModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleDeleteComment}
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+              >
+                삭제
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 게시글 수정 모달 */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-bold text-gray-800">게시글 수정</h3>
+            </div>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">제목</label>
+                <input
+                  type="text"
+                  value={editForm.title}
+                  onChange={(e) => setEditForm({...editForm, title: e.target.value})}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">내용</label>
+                <textarea
+                  value={editForm.content}
+                  onChange={(e) => setEditForm({...editForm, content: e.target.value})}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 h-40 resize-none"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">비밀번호</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500"
+                  placeholder="게시글 작성 시 사용한 비밀번호"
+                  required
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors"
+                >
+                  수정
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 게시글 삭제 확인 모달 */}
+      {showDeleteConfirmModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-bold text-gray-800">게시글 삭제</h3>
+              <p className="text-gray-600 mt-2">정말로 이 게시글을 삭제하시겠습니까?</p>
+            </div>
+            <div className="space-y-4">
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500"
+                placeholder="게시글 작성 시 사용한 비밀번호"
+                required
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowDeleteConfirmModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleDeletePost}
+                  className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                >
+                  삭제
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

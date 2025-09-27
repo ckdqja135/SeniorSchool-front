@@ -83,7 +83,7 @@ const CommentItem = ({
     <div className={`border border-gray-200 rounded-lg p-3 ${bgColor} hover:shadow-sm transition-shadow`}>
       <div className="flex justify-between items-start mb-2">
         <div className="flex items-center gap-3">
-          {normalizedLevel > 0 && <span className="text-blue-600 text-sm">↳</span>}
+          {normalizedLevel > 0 && <span className="text-green-600 text-sm">↳</span>}
           <div className="flex items-center gap-2">
             <span className="font-semibold text-gray-900">{comment.writerId}</span>
             {comment.regDate && (
@@ -123,7 +123,7 @@ const CommentItem = ({
               setReplyForm({ ...replyForm, parentIdx: comment.commentIdx });
               setShowReplyInput(showReplyInput === comment.commentIdx ? null : comment.commentIdx);
             }}
-            className="text-blue-600 hover:text-blue-800 transition-colors"
+            className="text-green-600 hover:text-green-800 transition-colors"
           >
             답글
           </button>
@@ -181,12 +181,12 @@ const CommentItem = ({
 
       {/* 답글 입력창 */}
       {showReplyInput === comment.commentIdx && (
-        <div className="mt-3 pl-4 border-l-2 border-blue-200">
+        <div className="mt-3 pl-4 border-l-2 border-green-200">
           <form onSubmit={handleReplySubmit} className="space-y-3">
             <textarea
               value={replyForm.content}
               onChange={(e) => setReplyForm({ ...replyForm, content: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm resize-none"
               rows={2}
               maxLength={100}
               placeholder="답글을 입력하세요..."
@@ -199,7 +199,7 @@ const CommentItem = ({
                 type="text"
                 value={replyForm.writer}
                 onChange={(e) => setReplyForm({ ...replyForm, writer: e.target.value })}
-                className="w-12 md:w-20 px-1 md:px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                className="w-12 md:w-20 px-1 md:px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
                 placeholder="아이디"
                 maxLength={10}
                 required
@@ -208,14 +208,14 @@ const CommentItem = ({
                 type="password"
                 value={replyForm.password}
                 onChange={(e) => setReplyForm({ ...replyForm, password: e.target.value })}
-                className="w-12 md:w-20 px-1 md:px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                className="w-12 md:w-20 px-1 md:px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
                 placeholder="비밀번호"
                 maxLength={8}
                 required
               />
               <button
                 type="submit"
-                className="px-1 md:px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs md:text-sm font-medium whitespace-nowrap"
+                className="px-1 md:px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs md:text-sm font-medium whitespace-nowrap"
               >
                 답글 작성
               </button>
@@ -1011,8 +1011,8 @@ export default function BoardDetailPage() {
 
           {/* 게시글 메타 정보 */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
-              <span className="text-xs text-blue-700 font-bold uppercase tracking-wider mb-1 block">작성자</span>
+            <div className="bg-green-50 p-3 rounded-lg border border-green-100">
+              <span className="text-xs text-green-700 font-bold uppercase tracking-wider mb-1 block">작성자</span>
                              <p className="text-sm font-semibold text-gray-900">
                  {(() => {
                    const author = boardPost.boardID || boardPost.boardId || boardPost.writer || boardPost.writerId;
@@ -1135,7 +1135,7 @@ export default function BoardDetailPage() {
              <form onSubmit={handleCommentSubmit} className="flex flex-col md:flex-row md:items-center gap-3">
                {/* 댓글 입력창 */}
                <textarea 
-                 className="w-full md:flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
+                 className="w-full md:flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm resize-none"
                  rows={2}
                  maxLength={100}
                  placeholder="댓글을 입력하세요..."
@@ -1148,7 +1148,7 @@ export default function BoardDetailPage() {
                <div className="flex items-center gap-2">
                     <input 
                       type="text" 
-                 className="w-28 sm:w-32 px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                 className="w-28 sm:w-32 px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
                  placeholder="아이디"
                       maxLength={10}
                       value={commentForm.writer}
@@ -1158,7 +1158,7 @@ export default function BoardDetailPage() {
                
                     <input 
                       type="password" 
-                 className="w-28 sm:w-32 px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                 className="w-28 sm:w-32 px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
                  placeholder="비밀번호"
                       maxLength={8}
                       value={commentForm.password}
@@ -1168,7 +1168,7 @@ export default function BoardDetailPage() {
                
                                <button 
                   type="submit" 
-                  className="px-4 sm:px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 text-sm font-medium shadow-md transform hover:scale-105 whitespace-nowrap"
+                  className="px-4 sm:px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 text-sm font-medium shadow-md transform hover:scale-105 whitespace-nowrap"
                 >
                   작성
                       </button>
@@ -1266,7 +1266,7 @@ export default function BoardDetailPage() {
                       type="text"
                       value={editForm.title}
                       onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                       maxLength={40}
                       required
                     />
@@ -1281,7 +1281,7 @@ export default function BoardDetailPage() {
                     <textarea
                       value={editForm.content}
                       onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
-                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                    rows={6}
                       maxLength={700}
                       required
@@ -1298,7 +1298,7 @@ export default function BoardDetailPage() {
                    type="password"
                    value={password}
                    onChange={(e) => setPassword(e.target.value)}
-                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                    placeholder="비밀번호를 입력하세요"
                    required
                  />
@@ -1316,7 +1316,7 @@ export default function BoardDetailPage() {
                  </button>
                  <button 
                    type="submit"
-                   className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                   className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                  >
                    수정
                  </button>
@@ -1341,7 +1341,7 @@ export default function BoardDetailPage() {
                  <textarea
                    value={editCommentForm.content}
                    onChange={(e) => setEditCommentForm({ ...editCommentForm, content: e.target.value })}
-                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                    rows={4}
                    maxLength={100}
                    required
@@ -1358,7 +1358,7 @@ export default function BoardDetailPage() {
                    type="password"
                    value={editCommentForm.password}
                    onChange={(e) => setEditCommentForm({ ...editCommentForm, password: e.target.value })}
-                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                    placeholder="비밀번호를 입력하세요"
                    required
                  />
@@ -1376,7 +1376,7 @@ export default function BoardDetailPage() {
                  </button>
                  <button 
                    type="submit"
-                   className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                   className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                  >
                    수정
                  </button>
@@ -1401,7 +1401,7 @@ export default function BoardDetailPage() {
                  value={deleteCommentData.password}
                  onChange={(e) => setDeleteCommentData({ ...deleteCommentData, password: e.target.value })}
                  placeholder="비밀번호를 입력하세요"
-                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
+                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent mb-4"
                />
                <div className="flex space-x-3 justify-center">
                  <button 
