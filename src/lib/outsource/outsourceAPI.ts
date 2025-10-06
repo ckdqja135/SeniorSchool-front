@@ -42,7 +42,7 @@ export const getOutsourceList = async (params?: OutsourceSearchParams): Promise<
     if (Array.isArray(data)) {
       return {
         success: true,
-        data: data,
+        data: data as any,
         total: data.length
       };
     }
@@ -72,11 +72,11 @@ export const getOutsourceDetail = async (outsourceName: string, outsourceAddr: s
 
     const data = await response.json();
     
-    // API 응답이 직접 배열인 경우 처리
+    // API 응답이 직접 배열인 경우 처리 (첫 번째 요소 반환)
     if (Array.isArray(data)) {
       return {
         success: true,
-        data: data,
+        data: data[0] || null,
         total: data.length
       };
     }
@@ -118,7 +118,7 @@ export const getOutsourceBoardList = async (params?: OutsourceBoardSearchParams)
     if (Array.isArray(data)) {
       return {
         success: true,
-        data: data,
+        data: data as any,
         total: data.length
       };
     }
@@ -148,11 +148,11 @@ export const getOutsourceBoardDetail = async (boardIdx: number): Promise<Outsour
 
     const data = await response.json();
     
-    // API 응답이 직접 배열인 경우 처리
+    // API 응답이 직접 배열인 경우 처리 (첫 번째 요소 반환)
     if (Array.isArray(data)) {
       return {
         success: true,
-        data: data,
+        data: data[0] || null as any,
         total: data.length
       };
     }
@@ -186,7 +186,7 @@ export const getRecentOutsourceBoards = async (): Promise<OutsourceBoardListResp
     if (Array.isArray(data)) {
       return {
         success: true,
-        data: data,
+        data: data as any,
         total: data.length
       };
     }
@@ -220,7 +220,7 @@ export const getTopViewedOutsourceBoards = async (): Promise<OutsourceBoardListR
     if (Array.isArray(data)) {
       return {
         success: true,
-        data: data,
+        data: data as any,
         total: data.length
       };
     }
@@ -259,9 +259,7 @@ export const createOutsourceBoard = async (boardData: {
     // API 응답이 직접 배열인 경우 처리
     if (Array.isArray(data)) {
       return {
-        success: true,
-        data: data,
-        total: data.length
+        success: true
       };
     }
     
@@ -295,8 +293,7 @@ export const toggleOutsourceBoardLike = async (boardIdx: number): Promise<{ succ
     if (Array.isArray(data)) {
       return {
         success: true,
-        data: data,
-        total: data.length
+        likes: 0
       };
     }
     
@@ -336,8 +333,7 @@ export const createOutsourceRequest = async (requestData: {
     if (Array.isArray(data)) {
       return {
         success: true,
-        data: data,
-        total: data.length
+        requestIdx: undefined
       };
     }
     

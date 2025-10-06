@@ -88,17 +88,20 @@ export interface OutsourceBoardListResponse {
 
 export interface OutsourceDetailResponse {
   success: boolean;
-  data: Outsource;
+  data: Outsource | null;
+  total?: number;
 }
 
 export interface OutsourceBoardDetailResponse {
   success: boolean;
   data: OutsourceBoard;
+  total?: number;
 }
 
 export interface OutsourceCommentListResponse {
   success: boolean;
   data: OutsourceComment[];
+  total?: number;
 }
 
 // 검색 파라미터 타입
