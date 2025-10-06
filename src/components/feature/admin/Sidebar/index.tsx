@@ -61,6 +61,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
       ],
     },
     {
+      icon: "💼",
+      label: "외주 오빠",
+      href: "/myoriadmin/outsource",
+      subItems: [
+        { label: "외주업체 관리", href: "/myoriadmin/outsource" },
+        { label: "외주업체 추가 요청", href: "/myoriadmin/outsource/requests" },
+      ],
+    },
+    {
       icon: "👥",
       label: "관리자 관리",
       href: "/myoriadmin/admin",

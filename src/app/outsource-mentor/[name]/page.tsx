@@ -44,23 +44,65 @@ export default function OutsourceDetailByNamePage() {
     boardPw: ''
   });
 
-  // 시간 포맷팅 함수
-  const formatTimeAgo = (dateString: string) => {
-    const now = new Date();
-    const createdDate = new Date(dateString);
-    const diffInHours = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60));
+  // 페이징 관련 상태
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  // 정렬 관련 상태
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc'); // desc: 최신순, asc: 오래된순
+
+  // 검색 관련 상태
+  const [searchType, setSearchType] = useState<'id' | 'title' | 'content'>('title');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+
+  // 정렬된 후기 목록 계산
+  const sortedBoards = [...boards].sort((a, b) => {
+    const dateA = new Date(a.boardRegDate).getTime();
+    const dateB = new Date(b.boardRegDate).getTime();
+    return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+  });
+
+  // 검색된 후기 목록 계산
+  const filteredBoards = sortedBoards.filter((board) => {
+    if (!searchQuery.trim()) return true;
     
-    if (diffInHours < 1) return '방금 전';
-    if (diffInHours < 24) return `약 ${diffInHours}시간 전`;
+    const query = searchQuery.toLowerCase();
     
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) return `${diffInDays}일 전`;
-    
-    const diffInWeeks = Math.floor(diffInDays / 7);
-    if (diffInWeeks < 4) return `${diffInWeeks}주 전`;
-    
-    const diffInMonths = Math.floor(diffInDays / 30);
-    return `${diffInMonths}개월 전`;
+    switch (searchType) {
+      case 'id':
+        return board.boardID.toLowerCase().includes(query);
+      case 'title':
+        return board.boardTitle.toLowerCase().includes(query);
+      case 'content':
+        return board.boardContent.toLowerCase().includes(query);
+      default:
+        return true;
+    }
+  });
+
+  // 페이지네이션
+  const totalPages = Math.ceil(filteredBoards.length / itemsPerPage);
+  const paginatedBoards = filteredBoards.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // 검색 핸들러
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSearching(true);
+    setCurrentPage(1);
+    setTimeout(() => setIsSearching(false), 300);
+  };
+
+  // 글쓰기 핸들러
+  const handleWriteBoard = () => {
+    if (!outsource) {
+      alert('외주업체 정보를 불러오는 중입니다.');
+      return;
+    }
+    setShowWriteModal(true);
   };
 
   // 카카오맵 API 동적 로딩
@@ -484,73 +526,152 @@ export default function OutsourceDetailByNamePage() {
           <div className="space-y-6">
             {/* 외주업체 후기 */}
             <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-800 tracking-wide">외주업체 후기</h2>
-                <div className="flex space-x-2">
-                  <button className="px-3 py-1 text-sm bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors">
-                    최신순
-                  </button>
-                  <button 
-                    onClick={() => setShowWriteModal(true)}
-                    className="px-4 py-2 bg-yellow-600 text-white text-sm rounded-lg hover:bg-yellow-700 transition-colors"
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xs sm:text-sm md:text-base lg:text-xl font-semibold text-gray-800">외주업체 후기</h2>
+                <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-3">
+                  {/* 정렬 필터 버튼 - 단일 토글 */}
+                  <button
+                    onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
+                    className="p-0.5 sm:p-1 md:p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all duration-200 flex items-center space-x-0.5 sm:space-x-1 md:space-x-2"
+                    title={sortOrder === 'desc' ? '최신순 (클릭시 오래된순으로 변경)' : '오래된순 (클릭시 최신순으로 변경)'}
                   >
-                    + 글쓰기
+                    <svg className="w-2.5 h-2.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      {sortOrder === 'desc' ? (
+                        // 최신순일 때: 위쪽 화살표
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 14l5-5 5 5" />
+                      ) : (
+                        // 오래된순일 때: 아래쪽 화살표
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      )}
+                    </svg>
+                    <span className="text-xs sm:text-sm font-semibold text-gray-600">
+                      {sortOrder === 'desc' ? '최신순' : '오래된순'}
+                    </span>
+                  </button>
+                  
+                  <button
+                    onClick={handleWriteBoard}
+                    className="px-1.5 sm:px-3 md:px-6 py-1 sm:py-1.5 md:py-2.5 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center space-x-0.5 sm:space-x-1 md:space-x-2"
+                  >
+                    <svg className="w-2.5 h-2.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span className="text-xs sm:text-sm font-semibold">글쓰기</span>
                   </button>
                 </div>
               </div>
 
-              {boardsLoading ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="animate-pulse">
-                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                    </div>
-                  ))}
-                </div>
-              ) : boards.length === 0 ? (
-                <div className="text-center py-8">
-                  <div className="text-gray-400 text-4xl mb-3">📝</div>
-                  <p className="text-gray-500">등록된 후기가 없습니다.</p>
-                  <p className="text-sm text-gray-400 mt-1">첫 번째 후기를 작성해보세요!</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {boards.map((board) => (
-                    <div
-                      key={board.boardIdx}
-                      className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow cursor-pointer"
-                      onClick={() => router.push(`/outsource-board/${board.boardIdx}`)}
+              {/* 후기 목록 */}
+              <div className="space-y-4">
+                {boardsLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-600 mx-auto mb-2"></div>
+                    <p className="text-sm text-gray-500">게시판을 불러오는 중...</p>
+                  </div>
+                ) : paginatedBoards.length > 0 ? (
+                  <>
+                    {paginatedBoards.map((board) => (
+                      <div
+                        key={board.boardIdx}
+                        className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                        onClick={() => router.push(`/outsource-board/${board.boardIdx}`)}
+                      >
+                        <h3 className="font-semibold text-gray-900 mb-2">{board.boardTitle}</h3>
+                        <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
+                          <span>작성자: {board.boardID}</span>
+                          <span>{board.boardRegDate}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs text-gray-400">
+                          <span>조회수: {board.boardHits}</span>
+                          <span>좋아요: {board.boardLike}</span>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {/* 페이징 */}
+                    {totalPages > 1 && (
+                      <div className="flex justify-center items-center space-x-2 mt-8">
+                        <button
+                          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                          disabled={currentPage === 1}
+                          className="px-4 py-2 text-sm font-medium bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 flex items-center space-x-1"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                          </svg>
+                          <span>이전</span>
+                        </button>
+                        
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                          <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                              currentPage === page
+                                ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white shadow-lg transform scale-105'
+                                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        ))}
+                        
+                        <button
+                          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                          disabled={currentPage === totalPages}
+                          className="px-4 py-2 text-sm font-medium bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 flex items-center space-x-1"
+                        >
+                          <span>다음</span>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    {searchQuery ? '검색 결과가 없습니다' : '아직 외주업체 후기가 없습니다.\n첫 번째 후기를 작성해보세요!'}
+                  </div>
+                )}
+
+                {/* 검색창 - 항상 표시 */}
+                <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
+                    {/* 검색 타입 선택 */}
+                    <select
+                      value={searchType}
+                      onChange={(e) => setSearchType(e.target.value as 'id' | 'title' | 'content')}
+                      className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent bg-white text-sm"
                     >
-                      <div className="flex items-start justify-between mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900 flex-1">{board.boardTitle}</h3>
-                        <span className="text-sm text-gray-500 ml-4">{formatTimeAgo(board.boardRegDate)}</span>
-                      </div>
-                      <p className="text-gray-600 line-clamp-2 mb-3">{board.boardContent}</p>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4 text-sm text-gray-500">
-                          <span>{board.boardID}</span>
-                        </div>
-                        <div className="flex items-center space-x-4 text-sm text-gray-500">
-                          <div className="flex items-center space-x-1">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
-                            </svg>
-                            <span>{board.boardLike || 0}</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                            <span>{board.boardHits || 0}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                      <option value="title">제목</option>
+                      <option value="id">작성자</option>
+                      <option value="content">내용</option>
+                    </select>
+                    
+                    {/* 검색어 입력 */}
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="검색어를 입력하세요"
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm"
+                    />
+                    
+                    {/* 검색 버튼 */}
+                    <button
+                      type="submit"
+                      disabled={isSearching}
+                      className="px-6 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-sm"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      <span>{isSearching ? '검색 중...' : '검색'}</span>
+                    </button>
+                  </form>
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>

@@ -23,6 +23,22 @@ export interface OutsourceBoard {
   outsourceName?: string;
   outsourceAddr?: string;
   commentCount?: number;
+  outsource?: {
+    outsourceIdx: number;
+    outsourceName: string;
+    outsourceLocation: string;
+    outsourceType: string;
+    outsourceEstablished: string;
+    outsourceCEO: string;
+    outsourceLatX: number;
+    outsourceLatY: number;
+    outsourceURL: string;
+    outsourceLotAddr: string;
+    outsourceAddr: string;
+    outsourceMapIMG: string;
+    outsourceStatus: number;
+    outsourceViewCount: number;
+  };
 }
 
 // 외주업체 후기 댓글 타입 정의

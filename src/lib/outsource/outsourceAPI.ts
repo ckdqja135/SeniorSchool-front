@@ -37,6 +37,16 @@ export const getOutsourceList = async (params?: OutsourceSearchParams): Promise<
     }
 
     const data = await response.json();
+    
+    // API 응답이 직접 배열인 경우 처리
+    if (Array.isArray(data)) {
+      return {
+        success: true,
+        data: data,
+        total: data.length
+      };
+    }
+    
     return data;
   } catch (error) {
     console.error('외주업체 목록 조회 실패:', error);
@@ -61,6 +71,16 @@ export const getOutsourceDetail = async (outsourceName: string, outsourceAddr: s
     }
 
     const data = await response.json();
+    
+    // API 응답이 직접 배열인 경우 처리
+    if (Array.isArray(data)) {
+      return {
+        success: true,
+        data: data,
+        total: data.length
+      };
+    }
+    
     return data;
   } catch (error) {
     console.error('외주업체 상세 조회 실패:', error);
@@ -93,6 +113,16 @@ export const getOutsourceBoardList = async (params?: OutsourceBoardSearchParams)
     }
 
     const data = await response.json();
+    
+    // API 응답이 직접 배열인 경우 처리
+    if (Array.isArray(data)) {
+      return {
+        success: true,
+        data: data,
+        total: data.length
+      };
+    }
+    
     return data;
   } catch (error) {
     console.error('외주업체 후기 목록 조회 실패:', error);
@@ -117,6 +147,16 @@ export const getOutsourceBoardDetail = async (boardIdx: number): Promise<Outsour
     }
 
     const data = await response.json();
+    
+    // API 응답이 직접 배열인 경우 처리
+    if (Array.isArray(data)) {
+      return {
+        success: true,
+        data: data,
+        total: data.length
+      };
+    }
+    
     return data;
   } catch (error) {
     console.error('외주업체 후기 상세 조회 실패:', error);
@@ -141,6 +181,16 @@ export const getRecentOutsourceBoards = async (): Promise<OutsourceBoardListResp
     }
 
     const data = await response.json();
+    
+    // API 응답이 직접 배열인 경우 처리
+    if (Array.isArray(data)) {
+      return {
+        success: true,
+        data: data,
+        total: data.length
+      };
+    }
+    
     return data;
   } catch (error) {
     console.error('최근 외주업체 후기 조회 실패:', error);
@@ -165,6 +215,16 @@ export const getTopViewedOutsourceBoards = async (): Promise<OutsourceBoardListR
     }
 
     const data = await response.json();
+    
+    // API 응답이 직접 배열인 경우 처리
+    if (Array.isArray(data)) {
+      return {
+        success: true,
+        data: data,
+        total: data.length
+      };
+    }
+    
     return data;
   } catch (error) {
     console.error('인기 외주업체 후기 조회 실패:', error);
@@ -195,6 +255,16 @@ export const createOutsourceBoard = async (boardData: {
     }
 
     const data = await response.json();
+    
+    // API 응답이 직접 배열인 경우 처리
+    if (Array.isArray(data)) {
+      return {
+        success: true,
+        data: data,
+        total: data.length
+      };
+    }
+    
     return data;
   } catch (error) {
     console.error('외주업체 후기 등록 실패:', error);
@@ -220,6 +290,16 @@ export const toggleOutsourceBoardLike = async (boardIdx: number): Promise<{ succ
     }
 
     const data = await response.json();
+    
+    // API 응답이 직접 배열인 경우 처리
+    if (Array.isArray(data)) {
+      return {
+        success: true,
+        data: data,
+        total: data.length
+      };
+    }
+    
     return data;
   } catch (error) {
     console.error('외주업체 후기 좋아요 실패:', error);
@@ -251,6 +331,16 @@ export const createOutsourceRequest = async (requestData: {
     }
 
     const data = await response.json();
+    
+    // API 응답이 직접 배열인 경우 처리
+    if (Array.isArray(data)) {
+      return {
+        success: true,
+        data: data,
+        total: data.length
+      };
+    }
+    
     return data;
   } catch (error) {
     console.error('외주업체 추가 요청 실패:', error);

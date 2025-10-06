@@ -194,12 +194,8 @@ export default function OutsourceMentorPage() {
     setError(null);
     addToRecentSearches(suggestion.outsourceName);
     
-    // 자동완성 선택 시에는 상세정보로 직접 이동 (outsourceIdx 우선 사용)
-    if (suggestion.outsourceIdx) {
-      router.push(`/outsource-mentor/${suggestion.outsourceIdx}`);
-    } else {
-      router.push(`/outsource-mentor/${encodeURIComponent(suggestion.outsourceName)}`);
-    }
+    // 자동완성 선택 시에는 상세정보로 직접 이동 (외주업체명 사용)
+    router.push(`/outsource-mentor/${encodeURIComponent(suggestion.outsourceName)}`);
   };
 
   // 검색 입력창 포커스
@@ -262,13 +258,8 @@ export default function OutsourceMentorPage() {
 
         // 단일 결과면 상세정보로, 다중 결과면 검색결과로
         if (searchResults.length === 1) {
-          // 단일 결과일 때는 상세정보 페이지로 이동 (outsourceIdx 사용)
-          if (searchResults[0].outsourceIdx) {
-            router.push(`/outsource-mentor/${searchResults[0].outsourceIdx}`);
-          } else {
-            // outsourceIdx가 없으면 외주업체명으로 이동
-            router.push(`/outsource-mentor/${encodeURIComponent(searchResults[0].outsourceName)}`);
-          }
+          // 단일 결과일 때는 상세정보 페이지로 이동 (외주업체명 사용)
+          router.push(`/outsource-mentor/${encodeURIComponent(searchResults[0].outsourceName)}`);
         } else {
           // 다중 결과일 때는 검색결과 페이지로 이동
           router.push(`/outsource-search?name=${encodeURIComponent(term)}`);
@@ -286,7 +277,7 @@ export default function OutsourceMentorPage() {
 
   // 인기 외주업체 클릭
   const handlePopularOutsourceClick = (outsource: Outsource) => {
-    router.push(`/outsource/${outsource.outsourceIdx}`);
+    router.push(`/outsource-mentor/${encodeURIComponent(outsource.outsourceName)}`);
   };
 
   // 인기 후기 클릭
@@ -572,70 +563,56 @@ export default function OutsourceMentorPage() {
                       onClick={handleRefresh}
                       disabled={isRefreshing}
                       className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg transition-all duration-300 ${
-                        isRefreshing 
-                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        isRefreshing
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200'
                       }`}
                     >
-                      <svg 
-                        className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} 
-                        fill="none" 
-                        stroke="currentColor" 
+                      <svg
+                        className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
                         viewBox="0 0 24 24"
                       >
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                       </svg>
-                      <span className="text-sm font-medium">새로고침</span>
+                      <span className="text-sm">{isRefreshing ? '갱신 중...' : '새로고침'}</span>
                     </button>
                   </div>
                 </div>
                 
                 <div className="p-3">
-                  {outsourcesLoading ? (
-                    <div className="space-y-3">
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <div key={i} className="flex items-center space-x-3 p-2 animate-pulse">
-                          <div className="w-6 h-6 bg-gray-200 rounded-full"></div>
-                          <div className="flex-1 space-y-2">
-                            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                            <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : popularOutsources && popularOutsources.length > 0 ? (
-                    <div className="space-y-3">
-                      {popularOutsources.slice(0, 10).map((outsource, index) => (
-                        <div
-                          key={outsource.outsourceIdx}
-                          onClick={() => handlePopularOutsourceClick(outsource)}
-                          className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
-                        >
-                          <div className="w-6 h-6 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-xs font-bold text-yellow-600">{index + 1}</span>
+                  <div className="grid grid-cols-1 gap-1.5">
+                    {popularOutsources.map((outsource, index) => (
+                      <div
+                        key={outsource.outsourceIdx}
+                        onClick={() => handlePopularOutsourceClick(outsource)}
+                        className={`group p-1.5 rounded-lg border border-gray-200 hover:border-yellow-300 hover:shadow-md transition-all duration-300 cursor-pointer transform hover:scale-105 ${
+                          isRefreshing ? 'animate-pulse' : ''
+                        }`}
+                      >
+                        <div className="flex items-center space-x-1.5">
+                          <div className={`w-4 h-4 rounded-full flex items-center justify-center text-white font-bold text-xs ${
+                            index < 3 ? 'bg-gradient-to-r from-yellow-400 to-orange-500' : 'bg-gradient-to-r from-gray-400 to-gray-600'
+                          }`}>
+                            {index + 1}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-gray-900 text-sm">{outsource.outsourceName}</div>
-                            <div className="flex items-center space-x-2 text-xs text-gray-500">
-                              <span>📍 {outsource.outsourceLocation}</span>
-                              <span>•</span>
-                              <span>🏢 {outsource.outsourceType}</span>
-                            </div>
+                            <h3 className="font-semibold text-gray-900 group-hover:text-yellow-600 transition-colors duration-200 text-xs truncate">
+                              {outsource.outsourceName}
+                            </h3>
+                            <p className="text-xs text-gray-500 truncate">📍 {outsource.outsourceLocation}</p>
+                            <p className="text-xs text-gray-400 truncate">🏢 {outsource.outsourceType}</p>
                           </div>
-                          <div className="flex items-center space-x-1">
-                            <svg className="w-3 h-3 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
+                            <svg className="w-2.5 h-2.5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                             </svg>
-                            <span className="text-xs text-gray-500">0</span>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-gray-500 text-sm">인기 외주업체 데이터를 불러오는 중...</p>
-                    </div>
-                  )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -649,76 +626,56 @@ export default function OutsourceMentorPage() {
                     onClick={handleBoardRefresh}
                     disabled={isBoardRefreshing}
                     className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg transition-all duration-300 ${
-                      isBoardRefreshing 
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      isBoardRefreshing
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200'
                     }`}
                   >
-                    <svg 
-                      className={`w-4 h-4 ${isBoardRefreshing ? 'animate-spin' : ''}`} 
-                      fill="none" 
-                      stroke="currentColor" 
+                    <svg
+                      className={`w-3 h-3 ${isBoardRefreshing ? 'animate-spin' : ''}`}
+                      fill="none"
+                      stroke="currentColor"
                       viewBox="0 0 24 24"
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
-                    <span className="text-sm font-medium">새로고침</span>
+                    <span className="text-sm">{isBoardRefreshing ? '갱신 중...' : '새로고침'}</span>
                   </button>
                 </div>
               </div>
               
               <div className="p-3">
-                {boardsLoading ? (
-                  <div className="space-y-3">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <div key={i} className="flex items-center space-x-3 p-2 animate-pulse">
-                        <div className="w-6 h-6 bg-gray-200 rounded-full"></div>
-                        <div className="flex-1 space-y-2">
-                          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                          <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : popularBoards && popularBoards.length > 0 ? (
-                  <div className="space-y-3">
-                    {popularBoards.slice(0, 10).map((board, index) => (
-                      <div
-                        key={board.boardIdx}
-                        onClick={() => handlePopularBoardClick(board)}
-                        className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
-                      >
-                        <div className="w-6 h-6 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
-                          <span className="text-xs font-bold text-yellow-600">{index + 1}</span>
+                <div className="grid grid-cols-1 gap-1.5">
+                  {popularBoards.map((board, index) => (
+                    <div
+                      key={board.boardIdx}
+                      onClick={() => handlePopularBoardClick(board)}
+                      className={`group p-1.5 rounded-lg border border-gray-200 hover:border-yellow-300 hover:shadow-md transition-all duration-300 cursor-pointer transform hover:scale-105 ${
+                        isBoardRefreshing ? 'animate-pulse' : ''
+                      }`}
+                    >
+                      <div className="flex items-center space-x-1.5">
+                        <div className={`w-4 h-4 rounded-full flex items-center justify-center text-white font-bold text-xs ${
+                          index < 3 ? 'bg-gradient-to-r from-yellow-400 to-yellow-500' : 'bg-gradient-to-r from-gray-400 to-gray-600'
+                        }`}>
+                          {index + 1}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-gray-900 text-sm line-clamp-1">{board.boardTitle}</div>
-                          {board.outsourceName && (
-                            <div className="text-xs text-gray-500">🏢 {board.outsourceName}</div>
-                          )}
+                          <h3 className="font-semibold text-gray-900 group-hover:text-yellow-600 transition-colors duration-200 text-xs truncate">
+                            {board.boardTitle}
+                          </h3>
+                          <p className="text-xs text-gray-500 truncate">📍 {board.outsourceName || board.outsource?.outsourceName}</p>
+                          <p className="text-xs text-gray-400 truncate">❤️ {board.boardLike} • 👁️ {board.boardHits}</p>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <div className="flex items-center space-x-1">
-                            <svg className="w-3 h-3 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
-                            </svg>
-                            <span className="text-xs text-gray-500">{board.boardLike || 0}</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                            </svg>
-                            <span className="text-xs text-gray-500">{board.commentCount || 0}</span>
-                          </div>
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
+                          <svg className="w-2.5 h-2.5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500 text-sm">인기 후기 데이터를 불러오는 중...</p>
-                  </div>
-                )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

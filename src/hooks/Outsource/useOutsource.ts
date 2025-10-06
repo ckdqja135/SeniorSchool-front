@@ -24,9 +24,11 @@ export const useOutsourceList = (params?: OutsourceSearchParams) => {
     
     try {
       const response = await getOutsourceList(params);
+      console.log('외주업체 목록 API 응답:', response);
       setOutsources(response.data);
       setTotal(response.total || 0);
     } catch (err) {
+      console.error('외주업체 목록 조회 오류:', err);
       setError(err instanceof Error ? err.message : '외주업체 목록을 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
@@ -79,8 +81,10 @@ export const useTopViewedOutsourceBoards = () => {
     
     try {
       const response = await getTopViewedOutsourceBoards();
+      console.log('인기 후기 API 응답:', response);
       setBoards(response.data);
     } catch (err) {
+      console.error('인기 후기 조회 오류:', err);
       setError(err instanceof Error ? err.message : '인기 후기를 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);

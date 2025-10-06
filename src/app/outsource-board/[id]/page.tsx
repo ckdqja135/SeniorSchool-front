@@ -90,7 +90,7 @@ const CommentItem = ({
           </button>
           
           {activeCommentMenu === comment.commentIdx && (
-            <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+            <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[80px]">
               <button
                 onClick={() => {
                   setEditCommentForm({
@@ -101,7 +101,7 @@ const CommentItem = ({
                   setShowEditCommentModal(true);
                   setActiveCommentMenu(null);
                 }}
-                className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 whitespace-nowrap"
               >
                 수정
               </button>
@@ -114,7 +114,7 @@ const CommentItem = ({
                   setShowDeleteCommentModal(true);
                   setActiveCommentMenu(null);
                 }}
-                className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 whitespace-nowrap"
               >
                 삭제
               </button>
@@ -150,7 +150,7 @@ const CommentItem = ({
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 resize-none"
               rows={3}
             />
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <input
                 type="text"
                 value={replyForm.writerId}
@@ -167,7 +167,7 @@ const CommentItem = ({
               />
               <button
                 onClick={() => handleReplySubmit(comment.commentIdx)}
-                className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors"
+                className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors whitespace-nowrap"
               >
                 작성
               </button>
@@ -225,6 +225,14 @@ export default function OutsourceBoardDetailPage() {
   });
   const [isLiked, setIsLiked] = useState(false);
   const [isLikeLoading, setIsLikeLoading] = useState(false);
+  
+  // 신고 관련 상태
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportForm, setReportForm] = useState({
+    reportReason: '',
+    reporterId: ''
+  });
+  const [isReportLoading, setIsReportLoading] = useState(false);
 
   // 시간 포맷팅 함수
   const formatDate = (dateString: string) => {
@@ -243,11 +251,14 @@ export default function OutsourceBoardDetailPage() {
     console.log('댓글 구조화 시작:', comments);
     const commentMap = new Map();
     const rootComments: Comment[] = [];
+    const orphanComments: { orphan: Comment; deletedParentId: number }[] = [];
 
+    // 1단계: 모든 댓글을 맵에 저장
     comments.forEach(comment => {
       commentMap.set(comment.commentIdx, { ...comment, replies: [] });
     });
 
+    // 2단계: 댓글 구조 생성
     comments.forEach(comment => {
       // commentParent가 0이거나 commentPerent가 0인 경우, 또는 둘 다 없는 경우 루트 댓글로 처리
       if ((comment.commentParent === 0) || 
@@ -262,11 +273,82 @@ export default function OutsourceBoardDetailPage() {
           console.log('답글 추가:', comment.commentIdx, '부모:', parentId);
           parent.replies.push(commentMap.get(comment.commentIdx));
         } else {
-          // 부모를 찾을 수 없는 경우 루트 댓글로 처리
-          console.log('부모를 찾을 수 없어 루트 댓글로 처리:', comment.commentIdx);
-          rootComments.push(commentMap.get(comment.commentIdx));
+          // 부모를 찾을 수 없는 경우 일단 보류
+          console.log('부모를 찾을 수 없는 댓글:', comment.commentIdx, '부모 ID:', parentId);
+          if (parentId) {
+            orphanComments.push({ orphan: comment, deletedParentId: parentId });
+          }
         }
       }
+    });
+
+    // 3단계: 고아 댓글 처리
+    // 문제: 삭제된 부모의 부모를 알 수 없으므로, 휴리스틱 방법 사용
+    
+    // 먼저 삭제된 부모 ID별로 그룹화
+    const orphansByParent = new Map<number, Comment[]>();
+    orphanComments.forEach(({ orphan, deletedParentId }) => {
+      if (!orphansByParent.has(deletedParentId)) {
+        orphansByParent.set(deletedParentId, []);
+      }
+      orphansByParent.get(deletedParentId)!.push(orphan);
+    });
+
+    console.log('삭제된 부모별 고아 그룹:', Array.from(orphansByParent.entries()).map(([k, v]) => [k, v.map(c => c.commentIdx)]));
+
+    // 각 그룹별로 처리
+    orphansByParent.forEach((orphanGroup, deletedParentId) => {
+      console.log(`고아 그룹 처리 시작 - 삭제된 부모 ID: ${deletedParentId}, 고아 수: ${orphanGroup.length}`);
+      
+      let groupAttached = false;
+      let targetComment: Comment | null = null;
+
+      // 방법 1: 이 삭제된 부모를 부모로 가진 댓글이 이미 배치되어 있는지 찾기
+      const findLocationByDeletedParentId = (commentsList: Comment[], parent: Comment | null = null): boolean => {
+        for (const comment of commentsList) {
+          // 현재 댓글이 삭제된 부모를 가리키고 있는지 확인
+          const commentParentId = comment.commentParent || comment.commentPerent;
+          if (commentParentId === deletedParentId) {
+            // 이 댓글과 같은 레벨에 배치해야 함
+            targetComment = parent; // parent가 할아버지
+            console.log(`  → 형제 발견: commentIdx ${comment.commentIdx}, 할아버지: ${parent?.commentIdx || 'ROOT'}`);
+            return true;
+          }
+
+          // 재귀적으로 replies 탐색
+          if (comment.replies && comment.replies.length > 0) {
+            if (findLocationByDeletedParentId(comment.replies, comment)) {
+              return true;
+            }
+          }
+        }
+        return false;
+      };
+
+      groupAttached = findLocationByDeletedParentId(rootComments, null);
+
+      // 고아들을 적절한 위치에 배치
+      orphanGroup.forEach(orphan => {
+        const orphanNode = commentMap.get(orphan.commentIdx);
+        
+        if (groupAttached && targetComment) {
+          // 할아버지를 찾았으므로 그 아래에 추가
+          console.log(`  → commentIdx ${orphan.commentIdx}를 할아버지 ${targetComment.commentIdx}의 replies에 추가`);
+          if (!targetComment.replies) {
+            targetComment.replies = [];
+          }
+          targetComment.replies.push(orphanNode);
+        } else if (groupAttached && targetComment === null) {
+          // 할아버지가 ROOT인 경우
+          console.log(`  → commentIdx ${orphan.commentIdx}를 ROOT에 추가`);
+          rootComments.push(orphanNode);
+        } else {
+          // 방법 2: 삭제된 부모가 루트 댓글이었다고 가정
+          // (즉, 고아는 원래 대댓글이었고, 이제 루트가 되어야 함)
+          console.log(`  → commentIdx ${orphan.commentIdx}를 ROOT로 처리 (형제를 찾지 못함)`);
+          rootComments.push(orphanNode);
+        }
+      });
     });
 
     console.log('구조화된 댓글:', rootComments);
@@ -300,8 +382,9 @@ export default function OutsourceBoardDetailPage() {
           replyForm={replyForm}
         />
         {comment.replies && comment.replies.length > 0 && (
-          <div className="mt-2 ml-4">
-            {renderComments(comment.replies, level + 1)}
+          <div className={`mt-2 ${level === 0 ? 'ml-4' : 'ml-0'}`}>
+            {/* 대댓글의 레벨을 1로 고정하여 대댓글-대댓글 뎁스를 동일하게 표시 */}
+            {renderComments(comment.replies, 1)}
           </div>
         )}
       </div>
@@ -559,6 +642,47 @@ export default function OutsourceBoardDetailPage() {
     }
   };
 
+  // 신고 제출 핸들러
+  const handleReportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!board) return;
+    
+    try {
+      setIsReportLoading(true);
+      
+      const backendURL = 'https://api.reviewhub.life';
+      const reportData = {
+        boardIdx: board.boardIdx,
+        serviceType: 'outsource',
+        reportReason: reportForm.reportReason.trim(),
+        reporterId: reportForm.reporterId.trim()
+      };
+
+      const response = await fetch(`${backendURL}/admin/report/createReport`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(reportData),
+      });
+
+      if (response.ok) {
+        alert('신고가 성공적으로 등록되었습니다.');
+        setShowReportModal(false);
+        setReportForm({ reportReason: '', reporterId: '' });
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || '신고 등록에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('신고 등록 오류:', error);
+      alert('신고 등록 중 오류가 발생했습니다.');
+    } finally {
+      setIsReportLoading(false);
+    }
+  };
+
   // 댓글 수정
   const handleEditComment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -567,10 +691,13 @@ export default function OutsourceBoardDetailPage() {
       const backendURL = 'https://api.reviewhub.life';
       const editData = {
         commentIdx: editCommentForm.commentIdx,
+        commentWriter: editCommentForm.writerId.trim(),
         commentContent: editCommentForm.content.trim(),
         commentPw: editCommentForm.password.trim(),
         modDate: new Date().toISOString()
       };
+
+      console.log('댓글 수정 요청 데이터:', editData);
 
       const response = await fetch(`${backendURL}/outsource/comment/modify`, {
         method: 'PUT',
@@ -601,11 +728,14 @@ export default function OutsourceBoardDetailPage() {
       const backendURL = 'https://api.reviewhub.life';
       const deleteData = {
         commentIdx: deleteCommentData.commentIdx,
+        commentWriter: deleteCommentData.writerId.trim(),
         commentPw: deleteCommentData.password.trim()
       };
 
+      console.log('댓글 삭제 요청 데이터:', deleteData);
+
       const response = await fetch(`${backendURL}/outsource/comment/delete`, {
-        method: 'PUT',
+        method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -755,6 +885,7 @@ export default function OutsourceBoardDetailPage() {
             <div className="flex items-center space-x-2">
               {/* 신고 버튼 */}
               <button
+                onClick={() => setShowReportModal(true)}
                 className="px-2 sm:px-4 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-lg transition-colors text-xs sm:text-sm font-medium cursor-pointer"
               >
                 <svg className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -882,7 +1013,7 @@ export default function OutsourceBoardDetailPage() {
                 rows={4}
                 maxLength={100}
               />
-              <div className="flex gap-4 items-end">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-end">
                 <div className="flex-1">
                   <input
                     type="text"
@@ -903,7 +1034,7 @@ export default function OutsourceBoardDetailPage() {
                 </div>
                 <button
                   onClick={handleCommentSubmit}
-                  className="px-6 py-3 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition-colors"
+                  className="w-full sm:w-auto px-6 py-3 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition-colors whitespace-nowrap"
                 >
                   작성
                 </button>
@@ -1075,6 +1206,86 @@ export default function OutsourceBoardDetailPage() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 신고 모달 */}
+      {showReportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="text-center mb-6">
+              <div className="text-red-600 text-6xl mb-4">🚨</div>
+              <h3 className="text-xl font-bold text-gray-800">후기 신고하기</h3>
+              <p className="text-gray-600 mt-2">부적절한 내용을 신고해주세요</p>
+            </div>
+            
+            <form onSubmit={handleReportSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  후기 고유 ID
+                </label>
+                <input
+                  type="text"
+                  value={board?.boardIdx || ''}
+                  disabled
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  신고 사유 <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={reportForm.reportReason}
+                  onChange={(e) => setReportForm({ ...reportForm, reportReason: e.target.value })}
+                  placeholder="신고 사유를 입력해주세요..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  rows={3}
+                  maxLength={200}
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1 text-right">
+                  {reportForm.reportReason.length}/200
+                </p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  신고자 ID <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={reportForm.reporterId}
+                  onChange={(e) => setReportForm({ ...reportForm, reporterId: e.target.value })}
+                  placeholder="신고자 ID를 입력하세요"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  maxLength={20}
+                  required
+                />
+              </div>
+              
+              <div className="flex space-x-3 justify-center pt-4">
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setShowReportModal(false);
+                    setReportForm({ reportReason: '', reporterId: '' });
+                  }}
+                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                >
+                  취소
+                </button>
+                <button 
+                  type="submit"
+                  disabled={isReportLoading}
+                  className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isReportLoading ? '신고 중...' : '신고하기'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
