@@ -217,8 +217,30 @@ export default function CompanyBoardDetailPage() {
           setBoard(data);
           setLikeCount(data.boardLike);
           
-          // 회사 정보는 URL 파라미터에서 받은 companyName을 사용
-          if (companyName) {
+          // 회사 정보 가져오기
+          if (data.compIdx) {
+            // 게시글에서 compIdx가 있으면 회사 정보 API 호출
+            try {
+              const compResponse = await fetch(`${backendURL}/search/comp/${data.compIdx}`);
+              if (compResponse.ok) {
+                const compData = await compResponse.json();
+                if (compData.status === 200 && compData.data) {
+                  const companyInfo = Array.isArray(compData.data) ? compData.data[0] : compData.data;
+                  setCompany(companyInfo);
+                } else if (companyName) {
+                  setCompany({ compName: companyName, compIdx: data.compIdx });
+                }
+              } else if (companyName) {
+                setCompany({ compName: companyName, compIdx: data.compIdx });
+              }
+            } catch (err) {
+              console.error('회사 정보 로딩 실패:', err);
+              if (companyName) {
+                setCompany({ compName: companyName, compIdx: data.compIdx });
+              }
+            }
+          } else if (companyName) {
+            // compIdx가 없으면 companyName만 설정
             setCompany({ compName: companyName });
           }
         } else {
@@ -846,7 +868,11 @@ export default function CompanyBoardDetailPage() {
         <div className="mb-6">
           <button 
             onClick={() => {
-              if (companyName) {
+              if (companyName && company?.compIdx) {
+                router.push(`/company-mentor/${encodeURIComponent(companyName)}?compIdx=${company.compIdx}`);
+              } else if (company?.compName && company?.compIdx) {
+                router.push(`/company-mentor/${encodeURIComponent(company.compName)}?compIdx=${company.compIdx}`);
+              } else if (companyName) {
                 router.push(`/company-mentor/${encodeURIComponent(companyName)}`);
               } else if (company?.compName) {
                 router.push(`/company-mentor/${encodeURIComponent(company.compName)}`);

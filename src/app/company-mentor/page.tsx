@@ -142,13 +142,14 @@ export default function CompanyMentorPage() {
         // 인기 회사 TOP10 데이터를 직접 사용
         const companies = data.data
           .map((company: any) => ({
+            compIdx: company.compIdx,
             compName: company.compName || '회사명 없음',
             compLocation: company.compLocate || company.compLocation || '위치 정보 없음',
             compType: company.compType || '회사',
             compIndustry: company.compIndustry || 'IT',
             viewCount: company.compViewCount || 0
           }))
-          .filter((company: PopularCompany) => company.compName);
+          .filter((company: PopularCompany) => company.compIdx && company.compName);
         
         setPopularCompanies(companies.slice(0, 10));
       }
@@ -318,7 +319,10 @@ export default function CompanyMentorPage() {
 
   // 인기 회사 클릭
   const handlePopularCompanyClick = (company: PopularCompany) => {
-    router.push(`/company-mentor/${encodeURIComponent(company.compName)}`);
+    const url = `/company-mentor/${encodeURIComponent(company.compName)}?compIdx=${company.compIdx}`;
+    console.log('🔗 회사 클릭 - URL:', url);
+    console.log('🔗 회사 정보:', { compName: company.compName, compIdx: company.compIdx });
+    router.push(url);
   };
 
   // 인기 후기 클릭

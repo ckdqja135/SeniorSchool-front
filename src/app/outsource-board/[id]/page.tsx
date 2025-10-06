@@ -844,9 +844,12 @@ export default function OutsourceBoardDetailPage() {
       <nav className="bg-gray-800 text-white shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <div className="text-2xl font-bold text-yellow-400">
+            <button 
+              onClick={() => router.push('/outsource-mentor')}
+              className="text-2xl font-bold text-yellow-400 hover:text-yellow-300 transition-colors cursor-pointer"
+            >
               외주 오빠
-            </div>
+            </button>
             <div className="text-gray-300">
               {outsourceInfo?.outsourceName ? `${outsourceInfo.outsourceName} 후기` : '외주 후기'}
             </div>

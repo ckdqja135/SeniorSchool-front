@@ -1,14 +1,16 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Company, CompanyBoard } from '@/types/Company';
 
 export default function CompanyDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const companyId = params.id as string;
+  const compIdx = searchParams.get('compIdx');
   
   const [company, setCompany] = useState<Company | null>(null);
   const [boards, setBoards] = useState<CompanyBoard[]>([]);
@@ -31,6 +33,10 @@ export default function CompanyDetailPage() {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<any>(null);
   const [isKakaoMapLoaded, setIsKakaoMapLoaded] = useState(false);
+  
+  // 중복 호출 방지를 위한 ref
+  const lastFetchedCompIdx = useRef<number | null>(null);
+  const lastFetchedCompanyKey = useRef<string | null>(null);
   
   // 페이징 관련 상태
   const [currentPage, setCurrentPage] = useState(1);
@@ -154,12 +160,42 @@ export default function CompanyDetailPage() {
   // 회사 정보 가져오기
   useEffect(() => {
     const fetchCompanyInfo = async () => {
+      // 중복 호출 방지를 위한 키 생성
+      const fetchKey = `${compIdx || ''}-${companyId}`;
+      if (!companyId) return;
+      
+      // 이미 같은 키로 호출했다면 중복 호출 방지
+      if (lastFetchedCompanyKey.current === fetchKey) {
+        console.log('⏭️ 중복 호출 방지:', fetchKey);
+        return;
+      }
+      
+      lastFetchedCompanyKey.current = fetchKey;
+      
+      console.log('====== fetchCompanyInfo 시작 ======');
+      console.log('companyId:', companyId);
+      console.log('compIdx:', compIdx);
+      console.log('compIdx type:', typeof compIdx);
+      console.log('fetchKey:', fetchKey);
+      
       try {
         setIsLoading(true);
         setError(null);
 
         const backendURL = 'https://api.reviewhub.life';
-        const response = await fetch(`${backendURL}/search/comp/?compName=${encodeURIComponent(companyId)}`);
+        let response;
+        
+        // compIdx 쿼리 파라미터가 있으면 우선 사용, 없으면 companyId 사용
+        if (compIdx) {
+          // compIdx로 검색 (정확한 회사 정보 조회)
+          response = await fetch(`${backendURL}/search/comp/${compIdx}`);
+        } else if (/^\d+$/.test(companyId)) {
+          // companyId가 숫자인 경우 compIdx로 검색
+          response = await fetch(`${backendURL}/search/comp/${companyId}`);
+        } else {
+          // compName으로 검색 (기존 방식 유지)
+          response = await fetch(`${backendURL}/search/comp/?compName=${encodeURIComponent(companyId)}`);
+        }
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -182,19 +218,25 @@ export default function CompanyDetailPage() {
       }
     };
 
-    if (companyId) {
-      fetchCompanyInfo();
-    }
-  }, [companyId]);
+    fetchCompanyInfo();
+  }, [companyId, compIdx]);
 
   // 회사 게시판 목록 가져오기
   useEffect(() => {
     const fetchCompanyBoards = async () => {
-      if (!company) return;
+      if (!company || !company.compIdx) return;
+      
+      // 이미 같은 compIdx로 호출했다면 중복 호출 방지
+      if (lastFetchedCompIdx.current === company.compIdx) {
+        return;
+      }
       
       try {
         setIsBoardLoading(true);
         setBoardError(null);
+        
+        // 현재 compIdx를 기록
+        lastFetchedCompIdx.current = company.compIdx;
         
         const backendURL = 'https://api.reviewhub.life';
         const response = await fetch(`${backendURL}/comp/board?compIdx=${company.compIdx}`);
@@ -204,9 +246,6 @@ export default function CompanyDetailPage() {
         }
         
         const data = await response.json();
-        
-        // API 응답 구조 확인을 위한 로그
-        console.log('회사 후기 API 응답:', data);
         
         // API 응답이 직접 배열인 경우
         if (Array.isArray(data)) {
