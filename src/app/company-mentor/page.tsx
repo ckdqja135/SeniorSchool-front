@@ -224,8 +224,8 @@ export default function CompanyMentorPage() {
     setShowSuggestions(false);
     setError(null);
     addToRecentSearches(suggestion.compName);
-    // 자동완성 선택 시에는 바로 상세 페이지로 이동
-    router.push(`/company-mentor/${encodeURIComponent(suggestion.compName)}`);
+    // 자동완성 선택 시에는 compIdx와 함께 상세 페이지로 이동
+    router.push(`/company-mentor/${encodeURIComponent(suggestion.compName)}?compIdx=${suggestion.compIdx}`);
   };
 
   // 검색 수행 및 결과에 따른 라우팅
@@ -251,8 +251,8 @@ export default function CompanyMentorPage() {
       // 자동완성 결과가 배열인지 확인
       if (Array.isArray(results)) {
         if (results.length === 1) {
-          // 정확히 1개 결과가 있으면 바로 상세 페이지로 이동
-          router.push(`/company-mentor/${encodeURIComponent(results[0].compName)}`);
+          // 정확히 1개 결과가 있으면 compIdx와 함께 바로 상세 페이지로 이동
+          router.push(`/company-mentor/${encodeURIComponent(results[0].compName)}?compIdx=${results[0].compIdx}`);
         } else {
           // 2개 이상의 결과가 있으면 검색 결과 페이지로 이동
           router.push(`/company-search?name=${encodeURIComponent(searchTerm)}`);
