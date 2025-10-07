@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useRecentOutsourceBoards } from '@/hooks/Outsource/useOutsource';
+import { useRecentMatzalAlBoards } from '@/hooks/MatzalAl/useMatzalAl';
+import { MatzalAlBoard } from '@/types/MatzalAl';
 
 interface University {
   univName: string;
@@ -85,6 +88,9 @@ export default function HomePage() {
   
   // 외주 후기 관련 상태 (훅 사용)
   const { boards: recentOutsourceBoards, loading: isOutsourceLoading, error: outsourceError } = useRecentOutsourceBoards();
+  
+  // 맛잘알 후기 관련 상태 (훅 사용)
+  const { boards: recentMatzalAlBoards, loading: isMatzalAlLoading, error: matzalAlError } = useRecentMatzalAlBoards(5);
 
   // 시간 포맷팅 함수
   const formatTimeAgo = (dateString: string) => {
@@ -602,24 +608,43 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* 맛잘알 선배 섹션 */}
+            {/* 맛잘알 오빠 섹션 */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="p-4 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-gray-900">맛잘알 선배</h2>
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <Link href="/matzal-al-mentor" className="flex items-center justify-between group">
+                  <h2 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors duration-200">맛잘알 오빠</h2>
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors duration-200">
+                    <svg className="w-5 h-5 text-blue-600 group-hover:text-blue-700 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
-                </div>
+                </Link>
               </div>
               
               {/* 맛잘알 내용 */}
               <div className="p-4">
-                <div className="space-y-3">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="p-2 rounded hover:bg-gray-50 transition-colors duration-150">
+              <div className="space-y-3">
+                {isMatzalAlLoading ? (
+                  // 로딩 상태
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="p-2 rounded animate-pulse">
+                      <div className="flex items-start space-x-2">
+                        <div className="w-6 h-6 bg-gray-200 rounded-full"></div>
+                        <div className="flex-1">
+                          <div className="h-3 bg-gray-200 rounded mb-1"></div>
+                          <div className="h-2 bg-gray-200 rounded w-3/4 mb-1"></div>
+                          <div className="h-2 bg-gray-200 rounded w-1/2"></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : matzalAlError ? (
+                  // 에러 상태
+                  <p className="text-sm text-gray-500">맛잘알 데이터를 불러오는 중 오류가 발생했습니다.</p>
+                ) : recentMatzalAlBoards.length > 0 ? (
+                  // 실제 데이터
+                  recentMatzalAlBoards.map((board: MatzalAlBoard, i: number) => (
+                    <div key={board.boardIdx} className="p-2 rounded hover:bg-gray-50 transition-colors duration-150 cursor-pointer">
                       <div className="flex items-start space-x-2">
                         <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
                           <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -628,34 +653,40 @@ export default function HomePage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-2 mb-1">
-                            <span className="text-xs font-medium text-gray-900">질문자{i}</span>
+                            <span className="text-xs font-medium text-gray-900">질문자{i + 1}</span>
                             <span className="text-xs text-gray-500">•</span>
-                            <span className="text-xs text-gray-500">약 {i}시간 전</span>
+                            <span className="text-xs text-gray-500">{formatTimeAgo(board.boardRegDate)}</span>
                           </div>
-                          <p className="text-xs text-gray-900 line-clamp-1">맛잘알 질문 제목 {i}</p>
+                          <p className="text-xs text-gray-900 line-clamp-1">
+                            {board.boardTitle}
+                          </p>
                           <div className="flex items-center space-x-3 mt-1">
                             <div className="flex items-center space-x-1">
                               <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
                               </svg>
-                              <span className="text-xs text-gray-500">{i * 5}</span>
+                              <span className="text-xs text-gray-500">{board.boardLike}</span>
                             </div>
                             <div className="flex items-center space-x-1">
                               <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                               </svg>
-                              <span className="text-xs text-gray-500">{i * 2}</span>
+                              <span className="text-xs text-gray-500">{board.boardHits}</span>
                             </div>
                             <div className="text-xs text-gray-500">
-                              맛잘알 카테고리
+                              {board.restaurantName || '맛잘알 카테고리'}
                             </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  ))
+                ) : (
+                  // 데이터가 없을 때
+                  <p className="text-sm text-gray-500">아직 등록된 맛잘알 후기가 없습니다.</p>
+                )}
+              </div>
               </div>
             </div>
           </div>

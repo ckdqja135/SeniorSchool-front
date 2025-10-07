@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Outsource, OutsourceBoard } from '@/types/Outsource';
-import { useOutsourceList, useTopViewedOutsourceBoards } from '@/hooks/Outsource/useOutsource';
+import { useTopViewedOutsourceBoards } from '@/hooks/Outsource/useOutsource';
 
 export default function OutsourceMentorPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -41,9 +41,32 @@ export default function OutsourceMentorPage() {
   }, []);
 
   // 인기 외주업체 데이터 로드
-  const { outsources: popularOutsources, loading: outsourcesLoading, refetch: refetchOutsources } = useOutsourceList({
-    limit: 10
-  });
+  const [popularOutsources, setPopularOutsources] = useState<any[]>([]);
+  const [outsourcesLoading, setOutsourcesLoading] = useState(false);
+
+  // 인기 외주업체 TOP10 데이터 가져오기
+  const fetchPopularOutsources = async () => {
+    setOutsourcesLoading(true);
+    try {
+      const response = await fetch('https://api.reviewhub.life/outsource/top-viewed');
+      if (response.ok) {
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          setPopularOutsources(data);
+        } else if (data.data && Array.isArray(data.data)) {
+          setPopularOutsources(data.data);
+        }
+      }
+    } catch (error) {
+      console.error('인기 외주업체 조회 오류:', error);
+    } finally {
+      setOutsourcesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPopularOutsources();
+  }, []);
 
   // 인기 후기 데이터 로드
   const { boards: popularBoards, loading: boardsLoading, refetch: refetchBoards } = useTopViewedOutsourceBoards();
@@ -121,7 +144,7 @@ export default function OutsourceMentorPage() {
     if (isRefreshing) return;
     
     setIsRefreshing(true);
-    await refetchOutsources();
+    await fetchPopularOutsources();
     
     setTimeout(() => {
       setIsRefreshing(false);
@@ -598,14 +621,14 @@ export default function OutsourceMentorPage() {
                             {index + 1}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-gray-900 group-hover:text-yellow-600 transition-colors duration-200 text-xs truncate">
+                            <h3 className="font-semibold text-gray-900 group-hover:text-purple-600 transition-colors duration-200 text-xs truncate">
                               {outsource.outsourceName}
                             </h3>
                             <p className="text-xs text-gray-500 truncate">📍 {outsource.outsourceLocation}</p>
-                            <p className="text-xs text-gray-400 truncate">🏢 {outsource.outsourceType}</p>
+                            <p className="text-xs text-gray-400 truncate">🏢 {outsource.outsourceType} • 🏭 {outsource.outsourceType} • 👁️ {outsource.outsourceViewCount || 0}</p>
                           </div>
                           <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
-                            <svg className="w-2.5 h-2.5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-2.5 h-2.5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                             </svg>
                           </div>
