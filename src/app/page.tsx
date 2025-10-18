@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRecentOutsourceBoards } from '@/hooks/Outsource/useOutsource';
 import { useRecentMatzalAlBoards } from '@/hooks/MatzalAl/useMatzalAl';
 import { MatzalAlBoard } from '@/types/MatzalAl';
+import { FreeBoardPost, FreeBoardApiResponse } from '@/types';
 
 interface University {
   univName: string;
@@ -91,6 +92,11 @@ export default function HomePage() {
   
   // 맛잘알 후기 관련 상태 (훅 사용)
   const { boards: recentMatzalAlBoards, loading: isMatzalAlLoading, error: matzalAlError } = useRecentMatzalAlBoards(5);
+  
+  // 자유게시판 관련 상태
+  const [recentFreeBoardPosts, setRecentFreeBoardPosts] = useState<FreeBoardPost[]>([]);
+  const [isFreeBoardLoading, setIsFreeBoardLoading] = useState(true);
+  const [freeBoardError, setFreeBoardError] = useState<string | null>(null);
 
   // 시간 포맷팅 함수
   const formatTimeAgo = (dateString: string) => {
@@ -206,6 +212,87 @@ export default function HomePage() {
     fetchRecentCompanyPosts();
   }, []);
 
+  // 최근 자유게시판 데이터 가져오기 (예시 데이터)
+  useEffect(() => {
+    const fetchRecentFreeBoardPosts = async () => {
+      try {
+        setIsFreeBoardLoading(true);
+        setFreeBoardError(null);
+        
+        // 예시 데이터
+        const mockData: FreeBoardPost[] = [
+          {
+            boardIdx: 1,
+            boardTitle: "대학생활 첫 학기 후기 - 정말 힘들었지만 보람있었어요",
+            boardContent: "대학생활 첫 학기를 마치고 나니 정말 많은 것을 배웠습니다...",
+            boardRegDate: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2시간 전
+            boardLike: 24,
+            boardHits: 156,
+            boardID: "신입생123",
+            category: "후기",
+            tags: ["대학생활", "신입생", "후기"]
+          },
+          {
+            boardIdx: 2,
+            boardTitle: "교수님께 질문드릴 때 주의사항이 있나요?",
+            boardContent: "교수님께 질문을 드릴 때 어떤 점들을 주의해야 할까요?",
+            boardRegDate: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), // 5시간 전
+            boardLike: 12,
+            boardHits: 89,
+            boardID: "궁금이",
+            category: "질문",
+            tags: ["교수", "질문", "에티켓"]
+          },
+          {
+            boardIdx: 3,
+            boardTitle: "동아리 활동하면서 정말 많은 사람들을 만났어요",
+            boardContent: "동아리 활동을 시작한 지 3개월이 되었는데...",
+            boardRegDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1일 전
+            boardLike: 18,
+            boardHits: 203,
+            boardID: "동아리러버",
+            category: "일상",
+            tags: ["동아리", "친구", "활동"]
+          },
+          {
+            boardIdx: 4,
+            boardTitle: "학점 관리 꿀팁 공유합니다",
+            boardContent: "학점 관리를 위한 제 개인적인 팁들을 공유해드릴게요...",
+            boardRegDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2일 전
+            boardLike: 45,
+            boardHits: 312,
+            boardID: "학점왕",
+            category: "정보",
+            tags: ["학점", "공부법", "팁"]
+          },
+          {
+            boardIdx: 5,
+            boardTitle: "오늘은 정말 힘든 하루였어요...",
+            boardContent: "시험 준비하면서 정말 스트레스 받고 있어요...",
+            boardRegDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3일 전
+            boardLike: 8,
+            boardHits: 67,
+            boardID: "스트레스맨",
+            category: "잡담",
+            tags: ["스트레스", "시험", "힘듦"]
+          }
+        ];
+        
+        // 실제 API 호출 시뮬레이션
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        setRecentFreeBoardPosts(mockData);
+      } catch (error) {
+        console.error('최근 자유게시판 로딩 오류:', error);
+        setFreeBoardError(error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.');
+      } finally {
+        setIsFreeBoardLoading(false);
+      }
+    };
+
+    fetchRecentFreeBoardPosts();
+  }, []);
+
   // 게시글 클릭 시 해당 학교의 게시판 상세보기 페이지로 이동
   const handlePostClick = (post: BoardPost) => {
     router.push(`/board/${post.boardIdx}`);
@@ -219,6 +306,11 @@ export default function HomePage() {
   // 회사 후기 클릭 시 해당 회사의 게시판 상세보기 페이지로 이동
   const handleCompanyPostClick = (post: CompanyBoardPost) => {
     router.push(`/company-board/${post.boardIdx}`);
+  };
+
+  // 자유게시판 클릭 시 자유게시판 상세보기 페이지로 이동
+  const handleFreeBoardPostClick = (post: FreeBoardPost) => {
+    router.push(`/freeboard/${post.boardIdx}`);
   };
 
   // 서비스 제목 클릭 시 해당 서비스 페이지로 이동
@@ -258,7 +350,7 @@ export default function HomePage() {
 
       {/* 메인 컨텐츠 */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
           {/* 왼쪽 컬럼 */}
           <div className="space-y-6">
             {/* 대학 선배 섹션 - 제일 앞에 배치 */}
@@ -687,6 +779,109 @@ export default function HomePage() {
                   <p className="text-sm text-gray-500">아직 등록된 맛잘알 후기가 없습니다.</p>
                 )}
               </div>
+              </div>
+            </div>
+
+            {/* 자유게시판 섹션 */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-300">
+              <div className="p-4 border-b border-gray-200">
+                <div 
+                  onClick={() => router.push('/freeboard')}
+                  className="cursor-pointer group"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h2 className="text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition-colors duration-300">자유게시판</h2>
+                        <p className="text-xs text-gray-500">자유롭게 소통하는 공간</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2 text-sm text-gray-500">
+                      <span>더보기</span>
+                      <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* 자유게시판 내용 */}
+              <div className="p-4">
+                {isFreeBoardLoading ? (
+                  <div className="text-center py-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600 mx-auto mb-2"></div>
+                    <p className="text-sm text-gray-500">자유게시판을 불러오는 중...</p>
+                  </div>
+                ) : freeBoardError ? (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-red-500">{freeBoardError}</p>
+                  </div>
+                ) : recentFreeBoardPosts.length === 0 ? (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-gray-500">최근 자유게시판 글이 없습니다.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {recentFreeBoardPosts.slice(0, 5).map((post, index) => (
+                      <div
+                        key={post.boardIdx}
+                        onClick={() => handleFreeBoardPostClick(post)}
+                        className="cursor-pointer hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 transition-all duration-200 p-3 rounded-lg border border-transparent hover:border-indigo-100 group"
+                      >
+                        <div className="flex items-start space-x-3">
+                          <div className="flex-shrink-0">
+                            <div className="w-8 h-8 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                              <span className="text-xs font-semibold text-indigo-600">{index + 1}</span>
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <span className="text-xs font-medium text-gray-900">{post.boardID}</span>
+                              <span className="text-xs text-gray-400">•</span>
+                              <span className="text-xs text-gray-500">{formatTimeAgo(post.boardRegDate)}</span>
+                              <span className="text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full font-medium">
+                                {post.category}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-900 font-medium line-clamp-1 group-hover:text-indigo-700 transition-colors duration-200">
+                              {post.boardTitle}
+                            </p>
+                            {post.tags && post.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {post.tags.slice(0, 2).map((tag, tagIndex) => (
+                                  <span key={tagIndex} className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                                    #{tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            <div className="flex items-center space-x-4 mt-2">
+                              <div className="flex items-center space-x-1 text-gray-400">
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                                </svg>
+                                <span className="text-xs">{post.boardLike}</span>
+                              </div>
+                              <div className="flex items-center space-x-1 text-gray-400">
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                <span className="text-xs">{post.boardHits}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>

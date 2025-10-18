@@ -26,7 +26,28 @@ export interface Comment {
   writerId: string;
   commentPerent: number;
   commentContent: string;
+  commentRegDate?: string;
   replies?: Comment[];
+}
+
+// 자유게시판 타입 정의
+export interface FreeBoardPost {
+  boardIdx: number;
+  boardTitle: string;
+  boardContent: string;
+  boardRegDate: string;
+  boardLike: number;
+  boardHits: number;
+  boardID: string;
+  category: string;
+  tags?: string[];
+}
+
+export interface FreeBoardApiResponse {
+  status: number;
+  data: FreeBoardPost[];
+  totalCount: number;
+  currentCount: number;
 }
 
 // 카카오맵 타입 정의
