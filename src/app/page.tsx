@@ -7,6 +7,7 @@ import { useRecentOutsourceBoards } from '@/hooks/Outsource/useOutsource';
 import { useRecentMatzalAlBoards } from '@/hooks/MatzalAl/useMatzalAl';
 import { MatzalAlBoard } from '@/types/MatzalAl';
 import { FreeBoardPost, FreeBoardApiResponse } from '@/types';
+import ReviewWriteModal from '@/components/common/ReviewWriteModal';
 
 interface University {
   univName: string;
@@ -97,6 +98,7 @@ export default function HomePage() {
   const [recentFreeBoardPosts, setRecentFreeBoardPosts] = useState<FreeBoardPost[]>([]);
   const [isFreeBoardLoading, setIsFreeBoardLoading] = useState(true);
   const [freeBoardError, setFreeBoardError] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // 시간 포맷팅 함수
   const formatTimeAgo = (dateString: string) => {
@@ -219,62 +221,62 @@ export default function HomePage() {
         setIsFreeBoardLoading(true);
         setFreeBoardError(null);
         
-        // 예시 데이터
+        // 예시 데이터 - 후기 중심
         const mockData: FreeBoardPost[] = [
           {
             boardIdx: 1,
-            boardTitle: "대학생활 첫 학기 후기 - 정말 힘들었지만 보람있었어요",
-            boardContent: "대학생활 첫 학기를 마치고 나니 정말 많은 것을 배웠습니다...",
-            boardRegDate: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2시간 전
+            boardTitle: "강남역 근처 카페 '모먼트' 후기 - 분위기 최고!",
+            boardContent: "공부하기 좋은 카페를 찾다가 발견한 모먼트 카페 후기입니다...",
+            boardRegDate: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
             boardLike: 24,
             boardHits: 156,
-            boardID: "신입생123",
-            category: "후기",
-            tags: ["대학생활", "신입생", "후기"]
+            boardID: "카페러버",
+            category: "카페",
+            tags: ["카페", "강남", "공부"]
           },
           {
             boardIdx: 2,
-            boardTitle: "교수님께 질문드릴 때 주의사항이 있나요?",
-            boardContent: "교수님께 질문을 드릴 때 어떤 점들을 주의해야 할까요?",
-            boardRegDate: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), // 5시간 전
-            boardLike: 12,
-            boardHits: 89,
-            boardID: "궁금이",
-            category: "질문",
-            tags: ["교수", "질문", "에티켓"]
+            boardTitle: "홍대 맛집 '파스타하우스' 진짜 맛있어요!",
+            boardContent: "친구들이랑 방문한 홍대 파스타 맛집 후기!",
+            boardRegDate: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+            boardLike: 32,
+            boardHits: 198,
+            boardID: "맛집탐방러",
+            category: "맛집",
+            tags: ["맛집", "홍대", "파스타"]
           },
           {
             boardIdx: 3,
-            boardTitle: "동아리 활동하면서 정말 많은 사람들을 만났어요",
-            boardContent: "동아리 활동을 시작한 지 3개월이 되었는데...",
-            boardRegDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1일 전
+            boardTitle: "코엑스 영화관 IMAX 관람 후기",
+            boardContent: "처음으로 IMAX로 영화를 봤는데 완전 감동...",
+            boardRegDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
             boardLike: 18,
             boardHits: 203,
-            boardID: "동아리러버",
-            category: "일상",
-            tags: ["동아리", "친구", "활동"]
+            boardID: "영화매니아",
+            category: "문화생활",
+            tags: ["영화", "IMAX", "코엑스"]
           },
           {
             boardIdx: 4,
-            boardTitle: "학점 관리 꿀팁 공유합니다",
-            boardContent: "학점 관리를 위한 제 개인적인 팁들을 공유해드릴게요...",
-            boardRegDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2일 전
-            boardLike: 45,
-            boardHits: 312,
-            boardID: "학점왕",
-            category: "정보",
-            tags: ["학점", "공부법", "팁"]
+            boardTitle: "애플 스토어 방문 후기 - 직원분들 친절해요",
+            boardContent: "맥북 구매 상담받으러 갔는데 정말 친절하게...",
+            boardRegDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+            boardLike: 15,
+            boardHits: 142,
+            boardID: "테크러버",
+            category: "쇼핑",
+            tags: ["애플", "맥북", "쇼핑"]
           },
           {
             boardIdx: 5,
-            boardTitle: "오늘은 정말 힘든 하루였어요...",
-            boardContent: "시험 준비하면서 정말 스트레스 받고 있어요...",
-            boardRegDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3일 전
-            boardLike: 8,
-            boardHits: 67,
-            boardID: "스트레스맨",
-            category: "잡담",
-            tags: ["스트레스", "시험", "힘듦"]
+            boardTitle: "서울숲 산책 코스 추천 - 가을에 딱!",
+            boardContent: "날씨 좋아서 서울숲 다녀왔는데 산책하기 정말 좋아요!",
+            boardRegDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+            boardLike: 21,
+            boardHits: 167,
+            boardID: "산책러버",
+            category: "여행",
+            tags: ["서울숲", "산책", "데이트"]
           }
         ];
         
@@ -313,6 +315,31 @@ export default function HomePage() {
     router.push(`/freeboard/${post.boardIdx}`);
   };
 
+  // 리뷰 작성 핸들러
+  const handleReviewSubmit = async (reviewData: Omit<FreeBoardPost, 'boardIdx' | 'boardRegDate' | 'boardLike' | 'boardHits'>) => {
+    try {
+      // 실제 API 호출 시뮬레이션
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // 새 리뷰 데이터 생성
+      const newReview: FreeBoardPost = {
+        ...reviewData,
+        boardIdx: Math.max(...recentFreeBoardPosts.map(p => p.boardIdx)) + 1,
+        boardRegDate: new Date().toISOString(),
+        boardLike: 0,
+        boardHits: 0,
+      };
+      
+      // 게시글 목록에 추가
+      setRecentFreeBoardPosts(prev => [newReview, ...prev.slice(0, 4)]);
+      
+      alert('리뷰가 성공적으로 작성되었습니다!');
+    } catch (error) {
+      console.error('리뷰 작성 오류:', error);
+      alert('리뷰 작성 중 오류가 발생했습니다.');
+    }
+  };
+
   // 서비스 제목 클릭 시 해당 서비스 페이지로 이동
   const handleServiceClick = () => {
     router.push('/univ-mentor'); // 학교 오빠는 /univ-mentor 페이지로
@@ -342,7 +369,16 @@ export default function HomePage() {
               onClick={handleBackClick}
               className="cursor-pointer"
             >
+              <div className="flex items-center space-x-3">
               <h1 className="text-2xl font-bold text-gray-900">Ori</h1>
+              <img 
+                alt="Ori Duck" 
+                src="/images/duck.png" 
+                width="40" 
+                height="40" 
+                className="w-10 h-10"
+              />
+            </div>
             </div>
           </div>
         </div>
@@ -350,6 +386,437 @@ export default function HomePage() {
 
       {/* 메인 컨텐츠 */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* 후기 베스트 섹션 */}
+        <div className="mb-6 max-w-5xl mx-auto">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            {/* 검색바 */}
+            <div className="p-4 border-b border-gray-200">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  placeholder="관심있는 내용을 검색해보세요!"
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                />
+              </div>
+            </div>
+
+            {/* 베스트 후기 헤더 */}
+            <div className="p-4 border-b border-gray-200">
+              <h3 className="text-lg font-bold text-gray-900">후기 베스트</h3>
+            </div>
+
+            {/* 베스트 후기 목록 */}
+            <div className="p-4">
+              <div className="space-y-2">
+                {/* 대학 오빠 후기들 (초록색) */}
+                <div className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">대학 오빠</span>
+                      <p className="text-sm text-gray-900 font-medium line-clamp-1 group-hover:text-indigo-700 transition-colors duration-200">
+                        서울대 컴공과 선배님과의 만남 후기
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3 text-xs text-gray-400">
+                    <div className="flex items-center space-x-1">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                      </svg>
+                      <span>156</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      <span>89</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">대학 오빠</span>
+                      <p className="text-sm text-gray-900 font-medium line-clamp-1 group-hover:text-indigo-700 transition-colors duration-200">
+                        연세대 경영학과 선배님 조언이 정말 도움됐어요
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3 text-xs text-gray-400">
+                    <div className="flex items-center space-x-1">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                      </svg>
+                      <span>234</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      <span>67</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 회사 오빠 후기들 (보라색) */}
+                <div className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <span className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">회사 오빠</span>
+                      <p className="text-sm text-gray-900 font-medium line-clamp-1 group-hover:text-indigo-700 transition-colors duration-200">
+                        삼성전자 개발자 선배님과의 커피챗 후기
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3 text-xs text-gray-400">
+                    <div className="flex items-center space-x-1">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                      </svg>
+                      <span>189</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      <span>45</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <span className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">회사 오빠</span>
+                      <p className="text-sm text-gray-900 font-medium line-clamp-1 group-hover:text-indigo-700 transition-colors duration-200">
+                        네이버 PM 선배님의 취업 조언이 정말 유용했어요
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3 text-xs text-gray-400">
+                    <div className="flex items-center space-x-1">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                      </svg>
+                      <span>312</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      <span>78</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 교회 오빠 후기들 (빨간색) */}
+                <div className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-0.5 rounded-full">교회 오빠</span>
+                      <p className="text-sm text-gray-900 font-medium line-clamp-1 group-hover:text-indigo-700 transition-colors duration-200">
+                        교회 청년부 선배님과의 신앙 나눔 시간
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3 text-xs text-gray-400">
+                    <div className="flex items-center space-x-1">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                      </svg>
+                      <span>98</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      <span>23</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-0.5 rounded-full">교회 오빠</span>
+                      <p className="text-sm text-gray-900 font-medium line-clamp-1 group-hover:text-indigo-700 transition-colors duration-200">
+                        교회 선배님의 진로 상담이 정말 도움됐어요
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3 text-xs text-gray-400">
+                    <div className="flex items-center space-x-1">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                      </svg>
+                      <span>145</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      <span>34</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 맛잘알 오빠 후기들 (파란색) */}
+                <div className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">맛잘알 오빠</span>
+                      <p className="text-sm text-gray-900 font-medium line-clamp-1 group-hover:text-indigo-700 transition-colors duration-200">
+                        강남 맛집 투어 선배님과 함께한 식사 후기
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3 text-xs text-gray-400">
+                    <div className="flex items-center space-x-1">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                      </svg>
+                      <span>267</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      <span>56</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">맛잘알 오빠</span>
+                      <p className="text-sm text-gray-900 font-medium line-clamp-1 group-hover:text-indigo-700 transition-colors duration-200">
+                        홍대 숨은 맛집 선배님 추천이 정말 좋았어요
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3 text-xs text-gray-400">
+                    <div className="flex items-center space-x-1">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                      </svg>
+                      <span>198</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      <span>42</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 외주 오빠 후기들 (주황색) */}
+                <div className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">외주 오빠</span>
+                      <p className="text-sm text-gray-900 font-medium line-clamp-1 group-hover:text-indigo-700 transition-colors duration-200">
+                        프리랜서 개발자 선배님과의 프로젝트 후기
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3 text-xs text-gray-400">
+                    <div className="flex items-center space-x-1">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                      </svg>
+                      <span>123</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      <span>29</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">외주 오빠</span>
+                      <p className="text-sm text-gray-900 font-medium line-clamp-1 group-hover:text-indigo-700 transition-colors duration-200">
+                        디자인 선배님과의 협업 경험담
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3 text-xs text-gray-400">
+                    <div className="flex items-center space-x-1">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                      </svg>
+                      <span>87</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      <span>18</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 자유게시판 섹션 - 상단 독립 영역 (컴팩트 버전) */}
+        <div className="mb-6 max-w-5xl mx-auto">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-300">
+            <div 
+              onClick={() => router.push('/freeboard')}
+              className="p-3 border-b border-gray-200 cursor-pointer group"
+            >
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">자유게시판</h2>
+                  <p className="text-xs text-gray-500">다양한 경험을 공유해보세요</p>
+                </div>
+              </div>
+            </div>
+            
+            {/* 자유게시판 내용 - 간소화 */}
+            <div className="p-3">
+              {isFreeBoardLoading ? (
+                <div className="text-center py-3">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600 mx-auto mb-2"></div>
+                  <p className="text-xs text-gray-500">로딩 중...</p>
+                </div>
+              ) : freeBoardError ? (
+                <div className="text-center py-3">
+                  <p className="text-xs text-red-500">{freeBoardError}</p>
+                </div>
+              ) : recentFreeBoardPosts.length === 0 ? (
+                <div className="text-center py-3">
+                  <p className="text-xs text-gray-500">최근 게시글이 없습니다.</p>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {recentFreeBoardPosts.slice(0, 5).map((post, index) => (
+                    <div
+                      key={post.boardIdx}
+                      onClick={() => handleFreeBoardPostClick(post)}
+                      className="cursor-pointer hover:bg-gray-50 transition-colors duration-200 p-2 rounded group"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
+                          {post.category}
+                        </span>
+                        <p className="text-sm text-gray-900 font-medium line-clamp-1 group-hover:text-indigo-700 transition-colors duration-200 flex-1">
+                          {post.boardTitle}
+                        </p>
+                        <div className="flex items-center space-x-3 text-xs text-gray-400">
+                          <div className="flex items-center space-x-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                            </svg>
+                            <span>{post.boardLike}</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <span>{post.boardHits}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* 기존 3개 섹션 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
           {/* 왼쪽 컬럼 */}
           <div className="space-y-6">
@@ -782,108 +1249,6 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* 자유게시판 섹션 */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-300">
-              <div className="p-4 border-b border-gray-200">
-                <div 
-                  onClick={() => router.push('/freeboard')}
-                  className="cursor-pointer group"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <h2 className="text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition-colors duration-300">자유게시판</h2>
-                        <p className="text-xs text-gray-500">자유롭게 소통하는 공간</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2 text-sm text-gray-500">
-                      <span>더보기</span>
-                      <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* 자유게시판 내용 */}
-              <div className="p-4">
-                {isFreeBoardLoading ? (
-                  <div className="text-center py-4">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600 mx-auto mb-2"></div>
-                    <p className="text-sm text-gray-500">자유게시판을 불러오는 중...</p>
-                  </div>
-                ) : freeBoardError ? (
-                  <div className="text-center py-4">
-                    <p className="text-sm text-red-500">{freeBoardError}</p>
-                  </div>
-                ) : recentFreeBoardPosts.length === 0 ? (
-                  <div className="text-center py-4">
-                    <p className="text-sm text-gray-500">최근 자유게시판 글이 없습니다.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {recentFreeBoardPosts.slice(0, 5).map((post, index) => (
-                      <div
-                        key={post.boardIdx}
-                        onClick={() => handleFreeBoardPostClick(post)}
-                        className="cursor-pointer hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 transition-all duration-200 p-3 rounded-lg border border-transparent hover:border-indigo-100 group"
-                      >
-                        <div className="flex items-start space-x-3">
-                          <div className="flex-shrink-0">
-                            <div className="w-8 h-8 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-                              <span className="text-xs font-semibold text-indigo-600">{index + 1}</span>
-                            </div>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <span className="text-xs font-medium text-gray-900">{post.boardID}</span>
-                              <span className="text-xs text-gray-400">•</span>
-                              <span className="text-xs text-gray-500">{formatTimeAgo(post.boardRegDate)}</span>
-                              <span className="text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full font-medium">
-                                {post.category}
-                              </span>
-                            </div>
-                            <p className="text-sm text-gray-900 font-medium line-clamp-1 group-hover:text-indigo-700 transition-colors duration-200">
-                              {post.boardTitle}
-                            </p>
-                            {post.tags && post.tags.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-2">
-                                {post.tags.slice(0, 2).map((tag, tagIndex) => (
-                                  <span key={tagIndex} className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                                    #{tag}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                            <div className="flex items-center space-x-4 mt-2">
-                              <div className="flex items-center space-x-1 text-gray-400">
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
-                                </svg>
-                                <span className="text-xs">{post.boardLike}</span>
-                              </div>
-                              <div className="flex items-center space-x-1 text-gray-400">
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                </svg>
-                                <span className="text-xs">{post.boardHits}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
           </div>
         </div>
       </main>
