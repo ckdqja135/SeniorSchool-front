@@ -370,7 +370,6 @@ export default function HomePage() {
               className="cursor-pointer"
             >
               <div className="flex items-center space-x-3">
-              <h1 className="text-2xl font-bold text-gray-900">Ori</h1>
               <img 
                 alt="Ori Duck" 
                 src="/images/duck.png" 
@@ -378,6 +377,7 @@ export default function HomePage() {
                 height="40" 
                 className="w-10 h-10"
               />
+              <h1 className="text-2xl font-bold text-gray-900">Ori</h1>
             </div>
             </div>
           </div>
