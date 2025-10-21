@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FreeBoardPost, FreeBoardApiResponse } from '@/types';
 import ReviewWriteModal from '@/components/common/ReviewWriteModal';
+import { createFreeboardPost, fetchFreeboardList } from '@/lib/freeboard/freeboardAPI';
 
 export default function FreeBoardPage() {
   const router = useRouter();
@@ -40,260 +41,21 @@ export default function FreeBoardPage() {
     return `${diffInMonths}개월 전`;
   };
 
-  // 게시글 데이터 가져오기 (예시 데이터)
+  // 게시글 데이터 가져오기 (API 연동)
   useEffect(() => {
     const fetchPosts = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        
-        // 예시 데이터 - 후기 중심 (더 많은 데이터로 페이징 테스트)
-        const mockData: FreeBoardPost[] = [
-          {
-            boardIdx: 1,
-            boardTitle: "강남역 근처 카페 '모먼트' 후기 - 분위기 최고!",
-            boardContent: "공부하기 좋은 카페를 찾다가 발견한 모먼트 카페 후기입니다. 2층 창가 자리가 특히 좋고, 조명도 은은해서 집중하기 좋아요. 아메리카노 가격은 5000원으로 조금 비싸지만 리필이 가능해서 오래 있기에는 괜찮습니다. 직원분들도 친절하시고 와이파이도 빠릅니다!",
-            boardRegDate: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-            boardLike: 24,
-            boardHits: 156,
-            boardID: "카페러버",
-            category: "카페",
-            tags: ["카페", "강남", "공부"]
-          },
-          {
-            boardIdx: 2,
-            boardTitle: "홍대 맛집 '파스타하우스' 진짜 맛있어요!",
-            boardContent: "친구들이랑 방문한 홍대 파스타 맛집 후기! 크림 파스타가 진짜 맛있고 양도 푸짐해요. 가격은 1인당 15000원 정도인데 가성비 좋은 것 같아요. 주말에는 웨이팅이 있으니 평일 방문을 추천드려요!",
-            boardRegDate: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-            boardLike: 32,
-            boardHits: 198,
-            boardID: "맛집탐방러",
-            category: "맛집",
-            tags: ["맛집", "홍대", "파스타"]
-          },
-          {
-            boardIdx: 3,
-            boardTitle: "코엑스 영화관 IMAX 관람 후기",
-            boardContent: "처음으로 IMAX로 영화를 봤는데 완전 감동이에요! 화면도 크고 음향도 정말 좋아서 몰입감이 장난 아니었습니다. 가격은 좀 비싸지만 특별한 날에 보기 좋을 것 같아요. 좌석은 중앙 뒷쪽이 베스트입니다!",
-            boardRegDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-            boardLike: 18,
-            boardHits: 203,
-            boardID: "영화매니아",
-            category: "문화생활",
-            tags: ["영화", "IMAX", "코엑스"]
-          },
-          {
-            boardIdx: 4,
-            boardTitle: "애플 스토어 방문 후기 - 직원분들 친절해요",
-            boardContent: "맥북 구매 상담받으러 갔는데 직원분들이 정말 친절하게 설명해주셨어요. 강매도 전혀 없고 제 상황에 맞는 제품을 추천해주셔서 좋았습니다. 학생 할인도 받을 수 있어서 만족스러운 쇼핑이었어요!",
-            boardRegDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-            boardLike: 15,
-            boardHits: 142,
-            boardID: "테크러버",
-            category: "쇼핑",
-            tags: ["애플", "맥북", "쇼핑"]
-          },
-          {
-            boardIdx: 5,
-            boardTitle: "서울숲 산책 코스 추천 - 가을에 딱!",
-            boardContent: "날씨 좋아서 서울숲 다녀왔는데 산책하기 정말 좋아요! 단풍도 예쁘고 사진 찍기도 좋은 곳이 많아요. 주말에는 사람이 많으니 평일 오후에 가는 걸 추천드려요. 근처에 카페도 많아서 데이트 코스로도 좋습니다!",
-            boardRegDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-            boardLike: 21,
-            boardHits: 167,
-            boardID: "산책러버",
-            category: "여행",
-            tags: ["서울숲", "산책", "데이트"]
-          },
-          {
-            boardIdx: 6,
-            boardTitle: "이태원 브런치 카페 '선데이모닝' 후기",
-            boardContent: "이태원에 있는 브런치 카페에 다녀왔어요. 에그베네딕트가 정말 맛있고 커피도 맛있습니다. 인테리어도 예쁘고 사진 찍기 좋아요. 가격대는 좀 있지만 퀄리티가 좋아서 추천합니다!",
-            boardRegDate: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-            boardLike: 28,
-            boardHits: 189,
-            boardID: "브런치러버",
-            category: "카페",
-            tags: ["이태원", "브런치", "카페"]
-          },
-          {
-            boardIdx: 7,
-            boardTitle: "명동 쇼핑 후기 - 화장품 쇼핑하기 좋아요",
-            boardContent: "명동에서 화장품 쇼핑했는데 가격도 저렴하고 종류도 다양해서 좋았어요. 면세점보다 저렴한 제품도 많고 테스터도 사용할 수 있어서 만족스러웠습니다!",
-            boardRegDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-            boardLike: 19,
-            boardHits: 145,
-            boardID: "화장품덕후",
-            category: "쇼핑",
-            tags: ["명동", "화장품", "쇼핑"]
-          },
-          {
-            boardIdx: 8,
-            boardTitle: "부산 여행 2박3일 코스 추천",
-            boardContent: "부산 여행 다녀온 후기입니다. 해운대, 광안리, 감천문화마을 등 유명한 곳들 다 가봤는데 정말 좋았어요. 회도 맛있고 바다 보면서 산책하기도 좋았습니다!",
-            boardRegDate: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-            boardLike: 35,
-            boardHits: 267,
-            boardID: "여행러버",
-            category: "여행",
-            tags: ["부산", "여행", "추천"]
-          },
-          {
-            boardIdx: 9,
-            boardTitle: "성수동 핫플 카페 투어 후기",
-            boardContent: "요즘 핫한 성수동 카페들 돌아다녔어요. 각자 개성 있고 분위기도 좋았습니다. 주말에는 웨이팅이 길으니 평일에 가는 걸 추천해요!",
-            boardRegDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-            boardLike: 26,
-            boardHits: 178,
-            boardID: "카페투어",
-            category: "카페",
-            tags: ["성수동", "카페", "핫플"]
-          },
-          {
-            boardIdx: 10,
-            boardTitle: "신촌 맛집 '돈까스 명가' 강력 추천!",
-            boardContent: "신촌에서 20년 넘게 장사하신 돈까스 맛집! 가성비 좋고 양도 많아요. 학생들한테 정말 추천하는 맛집입니다. 점심시간에는 웨이팅 있으니 참고하세요!",
-            boardRegDate: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
-            boardLike: 31,
-            boardHits: 234,
-            boardID: "신촌맛집러버",
-            category: "맛집",
-            tags: ["신촌", "돈까스", "가성비"]
-          },
-          {
-            boardIdx: 11,
-            boardTitle: "강남 스타벅스 리저브 후기 - 프리미엄 경험",
-            boardContent: "강남 스타벅스 리저브 매장에 다녀왔어요. 일반 스타벅스와는 다른 프리미엄 경험을 할 수 있어서 좋았습니다. 바리스타가 직접 추출해주는 커피는 정말 맛있었어요!",
-            boardRegDate: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000).toISOString(),
-            boardLike: 22,
-            boardHits: 156,
-            boardID: "커피매니아",
-            category: "카페",
-            tags: ["스타벅스", "강남", "리저브"]
-          },
-          {
-            boardIdx: 12,
-            boardTitle: "롯데월드 어드벤처 후기 - 재미있었어요!",
-            boardContent: "친구들과 롯데월드에 갔는데 정말 재미있었어요! 놀이기구도 다양하고 분위기도 좋았습니다. 주말에는 사람이 많으니 평일에 가는 걸 추천해요!",
-            boardRegDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-            boardLike: 29,
-            boardHits: 198,
-            boardID: "놀이공원러버",
-            category: "문화생활",
-            tags: ["롯데월드", "놀이공원", "데이트"]
-          },
-          {
-            boardIdx: 13,
-            boardTitle: "동대문 DDP 전시회 관람 후기",
-            boardContent: "동대문 DDP에서 열린 디자인 전시회를 봤어요. 정말 감동적이고 영감을 받을 수 있는 전시였습니다. 사진 찍기도 좋고 구경하기도 좋았어요!",
-            boardRegDate: new Date(Date.now() - 11 * 24 * 60 * 60 * 1000).toISOString(),
-            boardLike: 17,
-            boardHits: 134,
-            boardID: "전시회러버",
-            category: "문화생활",
-            tags: ["DDP", "전시회", "디자인"]
-          },
-          {
-            boardIdx: 14,
-            boardTitle: "마포 맛집 '치킨플러스' 후기",
-            boardContent: "마포에 있는 치킨집인데 정말 맛있어요! 양념치킨이 특히 맛있고 가격도 저렴해서 자주 가는 맛집입니다. 배달도 빠르고 직원분들도 친절해요!",
-            boardRegDate: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(),
-            boardLike: 33,
-            boardHits: 245,
-            boardID: "치킨러버",
-            category: "맛집",
-            tags: ["치킨", "마포", "가성비"]
-          },
-          {
-            boardIdx: 15,
-            boardTitle: "제주도 3박4일 여행 후기",
-            boardContent: "제주도 여행 다녀왔는데 정말 좋았어요! 바다도 예쁘고 맛집도 많고 볼거리도 많았습니다. 렌터카로 돌아다니니까 더 편했어요. 다음에도 또 가고 싶어요!",
-            boardRegDate: new Date(Date.now() - 13 * 24 * 60 * 60 * 1000).toISOString(),
-            boardLike: 41,
-            boardHits: 312,
-            boardID: "제주여행러",
-            category: "여행",
-            tags: ["제주도", "여행", "바다"]
-          },
-          {
-            boardIdx: 16,
-            boardTitle: "압구정 쇼핑몰 '갤러리아' 쇼핑 후기",
-            boardContent: "압구정 갤러리아에서 쇼핑했는데 브랜드도 다양하고 할인도 많이 해서 좋았어요. 주차도 편하고 직원분들도 친절했습니다. 다음에도 또 가고 싶어요!",
-            boardRegDate: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
-            boardLike: 25,
-            boardHits: 178,
-            boardID: "쇼핑러버",
-            category: "쇼핑",
-            tags: ["압구정", "갤러리아", "쇼핑"]
-          },
-          {
-            boardIdx: 17,
-            boardTitle: "한강공원 피크닉 후기 - 날씨 좋았어요!",
-            boardContent: "한강공원에서 피크닉했는데 정말 좋았어요! 날씨도 좋고 분위기도 좋았습니다. 치킨과 맥주 먹으면서 즐거운 시간 보냈어요. 다음에도 또 가고 싶어요!",
-            boardRegDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-            boardLike: 38,
-            boardHits: 267,
-            boardID: "피크닉러버",
-            category: "여행",
-            tags: ["한강", "피크닉", "데이트"]
-          },
-          {
-            boardIdx: 18,
-            boardTitle: "건대 맛집 '김치찌개집' 후기",
-            boardContent: "건대에 있는 김치찌개집인데 정말 맛있어요! 김치찌개가 진짜 맛있고 가격도 저렴해서 자주 가는 맛집입니다. 직원분들도 친절하고 분위기도 좋아요!",
-            boardRegDate: new Date(Date.now() - 16 * 24 * 60 * 60 * 1000).toISOString(),
-            boardLike: 27,
-            boardHits: 189,
-            boardID: "김치찌개러버",
-            category: "맛집",
-            tags: ["김치찌개", "건대", "가성비"]
-          },
-          {
-            boardIdx: 19,
-            boardTitle: "코엑스 아쿠아리움 관람 후기",
-            boardContent: "코엑스 아쿠아리움에 다녀왔는데 정말 신기하고 예뻤어요! 물고기들이 정말 다양하고 아름다웠습니다. 아이들과 함께 가기 좋은 곳이에요!",
-            boardRegDate: new Date(Date.now() - 17 * 24 * 60 * 60 * 1000).toISOString(),
-            boardLike: 31,
-            boardHits: 223,
-            boardID: "아쿠아리움러버",
-            category: "문화생활",
-            tags: ["아쿠아리움", "코엑스", "가족"]
-          },
-          {
-            boardIdx: 20,
-            boardTitle: "신세계백화점 쇼핑 후기",
-            boardContent: "신세계백화점에서 쇼핑했는데 정말 좋았어요! 브랜드도 다양하고 할인도 많이 해서 만족스러웠습니다. 직원분들도 친절하고 서비스도 좋았어요!",
-            boardRegDate: new Date(Date.now() - 18 * 24 * 60 * 60 * 1000).toISOString(),
-            boardLike: 23,
-            boardHits: 156,
-            boardID: "백화점러버",
-            category: "쇼핑",
-            tags: ["신세계", "백화점", "쇼핑"]
-          }
-        ];
-        
-        // 검색 필터링 (제목, 내용, 카테고리, 태그 모두 검색)
-        let filteredData = mockData;
-        if (searchQuery) {
-          const query = searchQuery.toLowerCase();
-          filteredData = mockData.filter(post => 
-            post.boardTitle.toLowerCase().includes(query) ||
-            post.boardContent.toLowerCase().includes(query) ||
-            post.category.toLowerCase().includes(query) ||
-            (post.tags && post.tags.some(tag => tag.toLowerCase().includes(query)))
-          );
-        }
-        
-        // 페이지네이션
-        const startIndex = (currentPage - 1) * POSTS_PER_PAGE;
-        const endIndex = startIndex + POSTS_PER_PAGE;
-        const paginatedData = filteredData.slice(startIndex, endIndex);
-        
-        // 실제 API 호출 시뮬레이션
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        setPosts(paginatedData);
-        setTotalCount(filteredData.length);
-        setTotalPages(Math.ceil(filteredData.length / POSTS_PER_PAGE));
+        const res: any = await fetchFreeboardList({
+          page: currentPage,
+          limit: POSTS_PER_PAGE,
+          search: searchQuery || undefined,
+        });
+        setPosts(res.data || []);
+        setTotalCount(res.totalCount || 0);
+        const totalPages = (res?.pagination?.totalPages ?? Math.ceil((res.totalCount || 0) / POSTS_PER_PAGE)) || 1;
+        setTotalPages(totalPages);
       } catch (error) {
         console.error('게시글 로딩 오류:', error);
         setError(error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.');
@@ -325,25 +87,28 @@ export default function FreeBoardPage() {
   // 리뷰 작성 핸들러
   const handleReviewSubmit = async (reviewData: Omit<FreeBoardPost, 'boardIdx' | 'boardRegDate' | 'boardLike' | 'boardHits'>) => {
     try {
-      // 실제 API 호출 시뮬레이션
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // 새 리뷰 데이터 생성
-      const newReview: FreeBoardPost = {
-        ...reviewData,
-        boardIdx: Math.max(...posts.map(p => p.boardIdx)) + 1,
-        boardRegDate: new Date().toISOString(),
-        boardLike: 0,
-        boardHits: 0,
-      };
-      
-      // 게시글 목록에 추가
-      setPosts(prev => [newReview, ...prev]);
-      setTotalCount(prev => prev + 1);
-      
-      // 첫 페이지로 이동
+      await createFreeboardPost({
+        boardTitle: reviewData.boardTitle,
+        boardContent: reviewData.boardContent,
+        category: reviewData.category,
+        boardID: reviewData.boardID,
+        tags: reviewData.tags,
+        boardPassword: (reviewData as any).boardPassword || '',
+      });
+
+      // 첫 페이지로 이동하여 목록 새로고침 트리거
       setCurrentPage(1);
-      
+      // 즉시 재조회 강제 (캐시 무시)
+      setIsLoading(true);
+      try {
+        const res: any = await fetchFreeboardList({ page: 1, limit: POSTS_PER_PAGE, search: searchQuery || undefined });
+        setPosts(res.data || []);
+        setTotalCount(res.totalCount || 0);
+        const totalPagesCalc = (res?.pagination?.totalPages ?? Math.ceil((res.totalCount || 0) / POSTS_PER_PAGE)) || 1;
+        setTotalPages(totalPagesCalc);
+      } finally {
+        setIsLoading(false);
+      }
       alert('리뷰가 성공적으로 작성되었습니다!');
     } catch (error) {
       console.error('리뷰 작성 오류:', error);
@@ -464,14 +229,14 @@ export default function FreeBoardPage() {
             <>
               {/* 게시글 헤더 */}
               <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                <div className="grid grid-cols-12 gap-4 text-sm font-medium text-gray-500">
-                  <div className="col-span-1">번호</div>
-                  <div className="col-span-1 whitespace-nowrap">카테고리</div>
-                  <div className="col-span-5">제목</div>
-                  <div className="col-span-2">작성자</div>
-                  <div className="col-span-1">조회</div>
-                  <div className="col-span-1">좋아요</div>
-                  <div className="col-span-1">날짜</div>
+                <div className="grid grid-cols-12 gap-6 text-sm font-medium text-gray-500" style={{gridTemplateColumns: '35px 1fr 1fr 60px 35px 35px 80px'}}>
+                  <div className="whitespace-nowrap">번호</div>
+                  <div className="whitespace-nowrap">카테고리</div>
+                  <div className="whitespace-nowrap">제목</div>
+                  <div className="whitespace-nowrap">작성자</div>
+                  <div className="whitespace-nowrap">조회</div>
+                  <div className="whitespace-nowrap">좋아요</div>
+                  <div className="whitespace-nowrap">날짜</div>
                 </div>
               </div>
 
@@ -483,22 +248,25 @@ export default function FreeBoardPage() {
                     onClick={() => handlePostClick(post)}
                     className="px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors"
                   >
-                    <div className="grid grid-cols-12 gap-4 items-center text-sm">
-                      <div className="col-span-1 text-gray-500">
+                    <div className="grid grid-cols-12 gap-6 items-center text-sm" style={{gridTemplateColumns: '35px 3fr 60px 35px 35px 80px'}}>
+                      <div className="text-gray-500 truncate">
                         {(currentPage - 1) * 10 + index + 1}
                       </div>
-                      <div className="col-span-1">
-                        <span className="text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">
-                          {post.category}
-                        </span>
-                      </div>
-                      <div className="col-span-5">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-gray-900 font-medium truncate">{post.boardTitle}</span>
+                      <div className="min-w-0">
+                        <div className="flex items-center space-x-2 min-w-0 justify-end">
+                          {/* 카테고리 배지 */}
+                          <span className="text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full whitespace-nowrap flex-shrink-0">
+                            {post.category}
+                          </span>
+                          {/* 제목 - 더 많은 공간 할당 */}
+                          <span className="text-gray-900 font-medium truncate flex-1 min-w-0 text-right" style={{minWidth: '200px'}}>
+                            {post.boardTitle}
+                          </span>
+                          {/* 태그들 - 최대 1개만 표시하고 더 작게 */}
                           {post.tags && post.tags.length > 0 && (
-                            <div className="flex space-x-1">
-                              {post.tags.slice(0, 2).map((tag, tagIndex) => (
-                                <span key={tagIndex} className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                            <div className="flex space-x-1 flex-shrink-0">
+                              {post.tags.slice(0, 1).map((tag, tagIndex) => (
+                                <span key={tagIndex} className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded whitespace-nowrap">
                                   #{tag}
                                 </span>
                               ))}
@@ -506,10 +274,10 @@ export default function FreeBoardPage() {
                           )}
                         </div>
                       </div>
-                      <div className="col-span-2 text-gray-600">{post.boardID}</div>
-                      <div className="col-span-1 text-gray-500">{post.boardHits}</div>
-                      <div className="col-span-1 text-gray-500">{post.boardLike}</div>
-                      <div className="col-span-1 text-gray-500">{formatTimeAgo(post.boardRegDate)}</div>
+                      <div className="text-gray-500 truncate">{post.boardID || '익명'}</div>
+                      <div className="text-gray-500 truncate">{post.boardHits}</div>
+                      <div className="text-gray-500 truncate">{post.boardLike}</div>
+                      <div className="text-gray-500 whitespace-nowrap">{formatTimeAgo(post.boardRegDate)}</div>
                     </div>
                   </div>
                 ))}
@@ -584,7 +352,7 @@ export default function FreeBoardPage() {
           </div>
 
           {/* 오른쪽: Top10 섹션 */}
-          <div className="w-80 space-y-6">
+          <div className="w-80 shrink-0 space-y-6">
             {/* Top10 카테고리 */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
               <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">

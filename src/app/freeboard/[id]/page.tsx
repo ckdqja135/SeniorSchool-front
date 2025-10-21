@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FreeBoardPost, Comment } from '@/types';
+import { fetchFreeboardDetail, likeFreeboardPost, createFreeboardComment, likeFreeboardComment, updateFreeboardComment, deleteFreeboardComment, updateFreeboardPost, deleteFreeboardPost } from '@/lib/freeboard/freeboardAPI';
 
 interface FreeBoardDetailPageProps {
   params: {
@@ -18,7 +19,30 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
   const [error, setError] = useState<string | null>(null);
   const [isCommentLoading, setIsCommentLoading] = useState(false);
   const [newComment, setNewComment] = useState('');
+  const [commentWriter, setCommentWriter] = useState('');
+  const [commentPassword, setCommentPassword] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [commentLikes, setCommentLikes] = useState<Set<number>>(new Set());
+  const [editingComment, setEditingComment] = useState<number | null>(null);
+  const [editCommentContent, setEditCommentContent] = useState('');
+  const [editCommentPassword, setEditCommentPassword] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState<number | null>(null);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [openMenuComment, setOpenMenuComment] = useState<number | null>(null);
+  const [showBoardDeleteModal, setShowBoardDeleteModal] = useState(false);
+  const [boardDeletePassword, setBoardDeletePassword] = useState('');
+  const [boardDeleteId, setBoardDeleteId] = useState('');
+  const [openBoardMenu, setOpenBoardMenu] = useState(false);
+  const [showBoardEditModal, setShowBoardEditModal] = useState(false);
+  const [editBoardTitle, setEditBoardTitle] = useState('');
+  const [editBoardContent, setEditBoardContent] = useState('');
+  const [editBoardCategory, setEditBoardCategory] = useState('');
+  const [editBoardTags, setEditBoardTags] = useState<string[]>([]);
+  const [editBoardPassword, setEditBoardPassword] = useState('');
+  const [editBoardId, setEditBoardId] = useState('');
+  const [newTag, setNewTag] = useState('');
 
   // 시간 포맷팅 함수
   const formatTimeAgo = (dateString: string) => {
@@ -39,70 +63,19 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
     return `${diffInMonths}개월 전`;
   };
 
-  // 게시글 데이터 가져오기 (예시 데이터)
+  // 게시글 데이터 가져오기 (실제 API 호출)
   useEffect(() => {
     const fetchPost = async () => {
       try {
         setIsLoading(true);
         setError(null);
         
-        // 예시 데이터
-        const mockPosts: { [key: string]: FreeBoardPost } = {
-          '1': {
-            boardIdx: 1,
-            boardTitle: "대학생활 첫 학기 후기 - 정말 힘들었지만 보람있었어요",
-            boardContent: `대학생활 첫 학기를 마치고 나니 정말 많은 것을 배웠습니다. 고등학교와는 완전히 다른 환경에서 적응하는 것이 쉽지 않았지만, 새로운 친구들과 선배들을 만나면서 점점 익숙해져가고 있어요.
-
-특히 동아리 활동을 통해 다양한 사람들을 만날 수 있어서 정말 좋았습니다. 처음에는 낯설고 어려웠지만, 선배들이 정말 친절하게 도와주셔서 금방 적응할 수 있었어요.
-
-수업도 고등학교와는 완전히 달라서 처음에는 당황스러웠지만, 교수님들께서 열정적으로 가르쳐주시는 모습을 보면서 저도 더 열심히 공부하게 되었습니다.
-
-다음 학기에는 더 많은 활동에 참여하고, 더 많은 사람들과 만나서 소중한 추억을 만들어가고 싶어요!`,
-            boardRegDate: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-            boardLike: 24,
-            boardHits: 156,
-            boardID: "신입생123",
-            category: "후기",
-            tags: ["대학생활", "신입생", "후기"]
-          },
-          '2': {
-            boardIdx: 2,
-            boardTitle: "교수님께 질문드릴 때 주의사항이 있나요?",
-            boardContent: `교수님께 질문을 드릴 때 어떤 점들을 주의해야 할까요? 이메일로 보내는 것과 직접 찾아가서 말씀드리는 것 중에 어떤 게 더 좋을까요?
-
-저는 지금 과제를 하다가 막히는 부분이 있어서 교수님께 도움을 요청하고 싶은데, 어떻게 접근하는 게 좋을지 모르겠어요.
-
-혹시 경험 있으신 분들 조언 부탁드려요!`,
-            boardRegDate: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-            boardLike: 12,
-            boardHits: 89,
-            boardID: "궁금이",
-            category: "질문",
-            tags: ["교수", "질문", "에티켓"]
-          },
-          '3': {
-            boardIdx: 3,
-            boardTitle: "동아리 활동하면서 정말 많은 사람들을 만났어요",
-            boardContent: `동아리 활동을 시작한 지 3개월이 되었는데, 정말 많은 사람들을 만나고 다양한 경험을 할 수 있어서 좋아요. 특히 프로젝트를 함께 진행하면서 팀워크의 중요성을 깨달았습니다.
-
-처음에는 낯선 사람들과 함께 일하는 것이 부담스러웠지만, 시간이 지나면서 정말 좋은 친구들이 되었어요. 서로 다른 전공을 하는 친구들과 함께 프로젝트를 하면서 다양한 관점을 배울 수 있었습니다.
-
-앞으로도 더 많은 활동에 참여해서 더 많은 사람들과 만나고 싶어요!`,
-            boardRegDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-            boardLike: 18,
-            boardHits: 203,
-            boardID: "동아리러버",
-            category: "일상",
-            tags: ["동아리", "친구", "활동"]
-          }
-        };
+        console.log('게시글 상세 조회 시작:', params.id);
+        const response = await fetchFreeboardDetail(params.id);
+        console.log('API 응답:', response);
         
-        // 실제 API 호출 시뮬레이션
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const postData = mockPosts[params.id];
-        if (postData) {
-          setPost(postData);
+        if (response && response.data && response.data.post) {
+          setPost(response.data.post);
         } else {
           throw new Error('게시글을 찾을 수 없습니다.');
         }
@@ -119,62 +92,23 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
     }
   }, [params.id]);
 
-  // 댓글 데이터 가져오기 (예시 데이터)
+  // 댓글 데이터 가져오기 (게시글과 함께 가져옴)
   useEffect(() => {
     const fetchComments = async () => {
       try {
         setIsCommentLoading(true);
         
-        // 예시 댓글 데이터
-        const mockComments: Comment[] = [
-          {
-            commentIdx: 1,
-            boardIdx: parseInt(params.id),
-            commentLike: 5,
-            commentDepth: 0,
-            writerId: "응원러",
-            commentPerent: 0,
-            commentContent: "정말 공감되는 글이에요! 저도 신입생 때 비슷한 경험을 했어요. 화이팅!",
-            commentRegDate: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString()
-          },
-          {
-            commentIdx: 2,
-            boardIdx: parseInt(params.id),
-            commentLike: 3,
-            commentDepth: 0,
-            writerId: "선배123",
-            commentPerent: 0,
-            commentContent: "동아리 활동 정말 추천해요! 저도 2학년 때부터 시작했는데 정말 많은 도움이 되었어요.",
-            commentRegDate: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-          },
-          {
-            commentIdx: 3,
-            boardIdx: parseInt(params.id),
-            commentLike: 1,
-            commentDepth: 1,
-            writerId: "신입생456",
-            commentPerent: 2,
-            commentContent: "어떤 동아리 추천하시나요?",
-            commentRegDate: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString()
-          },
-          {
-            commentIdx: 4,
-            boardIdx: parseInt(params.id),
-            commentLike: 2,
-            commentDepth: 0,
-            writerId: "동기789",
-            commentPerent: 0,
-            commentContent: "저도 비슷한 느낌이에요. 시간이 지나면서 점점 익숙해지더라고요!",
-            commentRegDate: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()
-          }
-        ];
+        const response = await fetchFreeboardDetail(params.id);
+        console.log('댓글 API 응답:', response);
         
-        // 실제 API 호출 시뮬레이션
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        setComments(mockComments);
+        if (response && response.data && response.data.comments) {
+          setComments(response.data.comments);
+        } else {
+          setComments([]);
+        }
       } catch (error) {
         console.error('댓글 로딩 오류:', error);
+        setComments([]);
       } finally {
         setIsCommentLoading(false);
       }
@@ -185,37 +119,412 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
     }
   }, [params.id]);
 
-  // 댓글 작성 (예시 데이터)
+  // 댓글 작성
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!newComment.trim() || !post) return;
+    if (!newComment.trim() || !commentWriter.trim() || !commentPassword.trim() || !post) {
+      alert('댓글 내용, 작성자명, 비밀번호를 모두 입력해주세요.');
+      return;
+    }
 
     try {
       setIsSubmittingComment(true);
       
-      // 실제 API 호출 시뮬레이션
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // 새 댓글 추가
-      const newCommentData: Comment = {
-        commentIdx: comments.length + 1,
-        boardIdx: parseInt(params.id),
-        commentLike: 0,
-        commentDepth: 0,
-        writerId: '익명',
-        commentPerent: 0,
+      // 실제 API 호출
+      const response = await createFreeboardComment(params.id, {
         commentContent: newComment,
-        commentRegDate: new Date().toISOString()
-      };
+        commentPassword: commentPassword,
+        commentWriter: commentWriter
+      });
       
-      setComments(prev => [newCommentData, ...prev]);
-      setNewComment('');
+      if (response && response.data) {
+        // 댓글 작성 성공 후 댓글 목록 새로고침
+        try {
+          const commentsResponse = await fetchFreeboardDetail(params.id);
+          if (commentsResponse && commentsResponse.data && commentsResponse.data.comments) {
+            setComments(commentsResponse.data.comments);
+          }
+        } catch (refreshError) {
+          console.error('댓글 목록 새로고침 오류:', refreshError);
+          // 새로고침 실패 시 로컬에 추가
+          const newCommentData: Comment = {
+            commentIdx: Date.now(), // 임시 ID
+            boardIdx: parseInt(params.id),
+            commentLike: 0,
+            commentDepth: 0,
+            writerId: commentWriter,
+            commentPerent: 0,
+            commentContent: newComment,
+            commentRegDate: new Date().toISOString()
+          };
+          setComments(prev => [...prev, newCommentData]);
+        }
+        
+        setNewComment('');
+        setCommentWriter('');
+        setCommentPassword('');
+        alert('댓글이 성공적으로 작성되었습니다!');
+      }
     } catch (error) {
       console.error('댓글 작성 오류:', error);
+      alert('댓글 작성 중 오류가 발생했습니다.');
     } finally {
       setIsSubmittingComment(false);
     }
+  };
+
+  // 좋아요 처리
+  const handleLike = async () => {
+    if (!post || isLiking) return;
+
+    try {
+      setIsLiking(true);
+      await likeFreeboardPost(params.id, isLiked);
+      
+      // 로컬 상태 업데이트
+      if (post) {
+        const newLikeCount = isLiked ? post.boardLike - 1 : post.boardLike + 1;
+        setPost({
+          ...post,
+          boardLike: newLikeCount
+        });
+        setIsLiked(!isLiked);
+      }
+    } catch (error) {
+      console.error('좋아요 처리 오류:', error);
+      alert('좋아요 처리 중 오류가 발생했습니다.');
+    } finally {
+      setIsLiking(false);
+    }
+  };
+
+  // 댓글 좋아요 처리 (토글)
+  const handleCommentLike = async (commentIdx: number) => {
+    try {
+      const comment = comments.find(c => c.commentIdx === commentIdx);
+      if (!comment) {
+        alert('댓글을 찾을 수 없습니다. 페이지를 새로고침해주세요.');
+        return;
+      }
+
+      const isCurrentlyLiked = commentLikes.has(commentIdx);
+      
+      // API 호출 (좋아요/취소)
+      await likeFreeboardComment(commentIdx);
+      
+      // 좋아요 성공 후 댓글 목록 새로고침
+      try {
+        const commentsResponse = await fetchFreeboardDetail(params.id);
+        if (commentsResponse && commentsResponse.data && commentsResponse.data.comments) {
+          setComments(commentsResponse.data.comments);
+        }
+      } catch (refreshError) {
+        console.error('댓글 목록 새로고침 오류:', refreshError);
+        // 새로고침 실패 시 로컬 상태만 업데이트
+        setCommentLikes(prev => {
+          const newSet = new Set(prev);
+          if (isCurrentlyLiked) {
+            newSet.delete(commentIdx);
+          } else {
+            newSet.add(commentIdx);
+          }
+          return newSet;
+        });
+        
+        setComments(prev => prev.map(comment => 
+          comment.commentIdx === commentIdx 
+            ? { 
+                ...comment, 
+                commentLike: isCurrentlyLiked 
+                  ? Math.max(0, (comment.commentLike || 0) - 1)
+                  : (comment.commentLike || 0) + 1 
+              }
+            : comment
+        ));
+      }
+    } catch (error) {
+      console.error('댓글 좋아요 처리 오류:', error);
+      alert('댓글 좋아요 처리 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 댓글 수정 시작
+  const handleEditComment = (commentIdx: number) => {
+    const comment = comments.find(c => c.commentIdx === commentIdx);
+    if (comment) {
+      setEditingComment(commentIdx);
+      setEditCommentContent(comment.commentContent);
+      setEditCommentPassword('');
+    }
+  };
+
+  // 댓글 수정 취소
+  const handleCancelEdit = () => {
+    setEditingComment(null);
+    setEditCommentContent('');
+    setEditCommentPassword('');
+  };
+
+  // 댓글 수정 저장
+  const handleSaveEdit = async (commentIdx: number) => {
+    if (!editCommentContent.trim() || !editCommentPassword.trim()) {
+      alert('댓글 내용과 비밀번호를 입력해주세요.');
+      return;
+    }
+
+    try {
+      const comment = comments.find(c => c.commentIdx === commentIdx);
+      if (!comment) {
+        alert('댓글을 찾을 수 없습니다. 페이지를 새로고침해주세요.');
+        return;
+      }
+
+      await updateFreeboardComment(commentIdx, {
+        commentContent: editCommentContent,
+        writerId: comment.writerId,
+        writerPw: editCommentPassword
+      });
+
+      // 수정 성공 후 댓글 목록 새로고침
+      try {
+        const commentsResponse = await fetchFreeboardDetail(params.id);
+        if (commentsResponse && commentsResponse.data && commentsResponse.data.comments) {
+          setComments(commentsResponse.data.comments);
+        }
+      } catch (refreshError) {
+        console.error('댓글 목록 새로고침 오류:', refreshError);
+        // 새로고침 실패 시 로컬 상태만 업데이트
+        setComments(prev => prev.map(comment => 
+          comment.commentIdx === commentIdx 
+            ? { ...comment, commentContent: editCommentContent }
+            : comment
+        ));
+      }
+
+      setEditingComment(null);
+      setEditCommentContent('');
+      setEditCommentPassword('');
+      alert('댓글이 수정되었습니다.');
+    } catch (error) {
+      console.error('댓글 수정 오류:', error);
+      alert('댓글 수정 중 오류가 발생했습니다. 비밀번호를 확인해주세요.');
+    }
+  };
+
+  // 댓글 삭제 모달 열기
+  const handleDeleteComment = (commentIdx: number) => {
+    setShowDeleteModal(commentIdx);
+    setDeletePassword('');
+  };
+
+  // 댓글 삭제 확인
+  const handleConfirmDelete = async (commentIdx: number) => {
+    if (!deletePassword.trim()) {
+      alert('비밀번호를 입력해주세요.');
+      return;
+    }
+
+    try {
+      const comment = comments.find(c => c.commentIdx === commentIdx);
+      if (!comment) {
+        alert('댓글을 찾을 수 없습니다. 페이지를 새로고침해주세요.');
+        return;
+      }
+
+      await deleteFreeboardComment(commentIdx, {
+        writerId: comment.writerId,
+        writerPw: deletePassword
+      });
+      
+      // 삭제 성공 후 댓글 목록 새로고침
+      try {
+        const commentsResponse = await fetchFreeboardDetail(params.id);
+        if (commentsResponse && commentsResponse.data && commentsResponse.data.comments) {
+          setComments(commentsResponse.data.comments);
+        }
+      } catch (refreshError) {
+        console.error('댓글 목록 새로고침 오류:', refreshError);
+        // 새로고침 실패 시 로컬에서 제거
+        setComments(prev => prev.filter(comment => comment.commentIdx !== commentIdx));
+      }
+      
+      setShowDeleteModal(null);
+      setDeletePassword('');
+      alert('댓글이 삭제되었습니다.');
+    } catch (error) {
+      console.error('댓글 삭제 오류:', error);
+      alert('댓글 삭제 중 오류가 발생했습니다. 비밀번호를 확인해주세요.');
+    }
+  };
+
+  // 댓글 삭제 취소
+  const handleCancelDelete = () => {
+    setShowDeleteModal(null);
+    setDeletePassword('');
+  };
+
+  // 햄버거 메뉴 토글
+  const toggleCommentMenu = (commentIdx: number) => {
+    setOpenMenuComment(openMenuComment === commentIdx ? null : commentIdx);
+  };
+
+  // 메뉴 외부 클릭 시 닫기
+  const handleMenuClose = () => {
+    setOpenMenuComment(null);
+  };
+
+  // 메뉴 외부 클릭 감지
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.comment-menu')) {
+        setOpenMenuComment(null);
+      }
+      if (!target.closest('.board-menu')) {
+        setOpenBoardMenu(false);
+      }
+    };
+
+    if (openMenuComment || openBoardMenu) {
+      document.addEventListener('click', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [openMenuComment, openBoardMenu]);
+
+  // 답글 처리
+  const handleReply = (parentCommentIdx: number) => {
+    // 답글 작성 모드로 전환 (간단한 구현)
+    const parentComment = comments.find(c => c.commentIdx === parentCommentIdx);
+    if (parentComment) {
+      setNewComment(`@${parentComment.writerId} `);
+      // 댓글 입력창으로 스크롤
+      const commentForm = document.querySelector('textarea');
+      if (commentForm) {
+        commentForm.focus();
+        commentForm.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
+  // 게시글 햄버거 메뉴 토글
+  const toggleBoardMenu = () => {
+    setOpenBoardMenu(!openBoardMenu);
+  };
+
+  // 게시글 수정 모달 열기
+  const handleBoardEdit = () => {
+    if (!post) return;
+    
+    setEditBoardTitle(post.boardTitle);
+    setEditBoardContent(post.boardContent);
+    setEditBoardCategory(post.category);
+    setEditBoardTags(post.tags || []);
+    setEditBoardPassword('');
+    setEditBoardId('');
+    setShowBoardEditModal(true);
+    setOpenBoardMenu(false);
+  };
+
+  // 게시글 수정 저장
+  const handleSaveBoardEdit = async () => {
+    if (!editBoardTitle.trim() || !editBoardContent.trim() || !editBoardCategory.trim() || !editBoardId.trim() || !editBoardPassword.trim()) {
+      alert('모든 필드를 입력해주세요.');
+      return;
+    }
+
+    try {
+      await updateFreeboardPost(params.id, {
+        boardTitle: editBoardTitle,
+        boardContent: editBoardContent,
+        category: editBoardCategory,
+        tags: editBoardTags,
+        boardID: editBoardId,
+        boardPassword: editBoardPassword
+      });
+
+      // 수정 성공 후 게시글 새로고침
+      const postResponse = await fetchFreeboardDetail(params.id);
+      if (postResponse && postResponse.data && postResponse.data.post) {
+        setPost(postResponse.data.post);
+      }
+
+      setShowBoardEditModal(false);
+      setEditBoardTitle('');
+      setEditBoardContent('');
+      setEditBoardCategory('');
+      setEditBoardTags([]);
+      setEditBoardPassword('');
+      setEditBoardId('');
+      alert('게시글이 수정되었습니다.');
+    } catch (error) {
+      console.error('게시글 수정 오류:', error);
+      alert('게시글 수정 중 오류가 발생했습니다. 작성자 ID와 비밀번호를 확인해주세요.');
+    }
+  };
+
+  // 태그 추가
+  const handleAddTag = () => {
+    if (newTag.trim() && !editBoardTags.includes(newTag.trim())) {
+      setEditBoardTags(prev => [...prev, newTag.trim()]);
+      setNewTag('');
+    }
+  };
+
+  // 태그 삭제
+  const handleRemoveTag = (tagToRemove: string) => {
+    setEditBoardTags(prev => prev.filter(tag => tag !== tagToRemove));
+  };
+
+  // 게시글 수정 취소
+  const handleCancelBoardEdit = () => {
+    setShowBoardEditModal(false);
+    setEditBoardTitle('');
+    setEditBoardContent('');
+    setEditBoardCategory('');
+    setEditBoardTags([]);
+    setEditBoardPassword('');
+    setEditBoardId('');
+    setNewTag('');
+  };
+
+  // 게시글 삭제 모달 열기
+  const handleBoardDelete = () => {
+    setShowBoardDeleteModal(true);
+    setBoardDeletePassword('');
+    setBoardDeleteId('');
+    setOpenBoardMenu(false);
+  };
+
+  // 게시글 삭제 확인
+  const handleConfirmBoardDelete = async () => {
+    if (!boardDeleteId.trim() || !boardDeletePassword.trim()) {
+      alert('작성자 ID와 비밀번호를 입력해주세요.');
+      return;
+    }
+
+    try {
+      await deleteFreeboardPost(params.id, {
+        boardID: boardDeleteId,
+        boardPassword: boardDeletePassword
+      });
+      
+      alert('게시글이 삭제되었습니다.');
+      router.push('/freeboard');
+    } catch (error) {
+      console.error('게시글 삭제 오류:', error);
+      alert('게시글 삭제 중 오류가 발생했습니다. 작성자 ID와 비밀번호를 확인해주세요.');
+    }
+  };
+
+  // 게시글 삭제 취소
+  const handleCancelBoardDelete = () => {
+    setShowBoardDeleteModal(false);
+    setBoardDeletePassword('');
+    setBoardDeleteId('');
   };
 
   // 뒤로가기 처리
@@ -306,12 +615,17 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                 )}
               </div>
               <div className="flex items-center space-x-4 text-sm text-gray-500">
-                <div className="flex items-center space-x-1">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                <button
+                  onClick={handleLike}
+                  disabled={isLiking}
+                  className={`flex items-center space-x-1 ${isLiking ? 'opacity-50 cursor-not-allowed' : 'hover:text-red-600'}`}
+                  aria-label="좋아요"
+                >
+                  <svg className={`w-4 h-4 ${isLiked ? 'text-red-600' : ''}`} fill={isLiked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                   </svg>
                   <span>{post.boardLike}</span>
-                </div>
+                </button>
                 <div className="flex items-center space-x-1">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -319,10 +633,45 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                   </svg>
                   <span>{post.boardHits}</span>
                 </div>
+                {/* 게시글 햄버거 메뉴 */}
+                <div className="relative board-menu">
+                  <button
+                    onClick={toggleBoardMenu}
+                    className="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                    </svg>
+                  </button>
+                  
+                  {/* 드롭다운 메뉴 */}
+                  {openBoardMenu && (
+                    <div className="absolute right-0 top-8 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                      <button
+                        onClick={handleBoardEdit}
+                        className="w-full px-4 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center space-x-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        <span>수정</span>
+                      </button>
+                      <button
+                        onClick={handleBoardDelete}
+                        className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        <span>삭제</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-
+          
           {/* 게시글 내용 */}
           <div className="p-6">
             <div className="prose max-w-none">
@@ -339,31 +688,6 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
             <h2 className="text-lg font-semibold text-gray-900">댓글 {comments.length}개</h2>
           </div>
 
-          {/* 댓글 작성 폼 */}
-          <div className="p-6 border-b border-gray-200">
-            <form onSubmit={handleSubmitComment} className="space-y-4">
-              <div>
-                <textarea
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="댓글을 작성해주세요..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
-                  rows={3}
-                  disabled={isSubmittingComment}
-                />
-              </div>
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  disabled={!newComment.trim() || isSubmittingComment}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                >
-                  {isSubmittingComment ? '작성 중...' : '댓글 작성'}
-                </button>
-              </div>
-            </form>
-          </div>
-
           {/* 댓글 목록 */}
           <div className="p-6">
             {isCommentLoading ? (
@@ -377,7 +701,9 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
               </div>
             ) : (
               <div className="space-y-4">
-                {comments.map((comment) => (
+                {comments
+                  .sort((a, b) => new Date(a.commentRegDate || 0).getTime() - new Date(b.commentRegDate || 0).getTime())
+                  .map((comment) => (
                   <div key={comment.commentIdx} className="border-b border-gray-100 pb-4 last:border-b-0">
                     <div className="flex items-start space-x-3">
                       <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -386,21 +712,117 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                         </svg>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <span className="text-sm font-medium text-gray-900">{comment.writerId}</span>
-                          <span className="text-xs text-gray-500">•</span>
-                          <span className="text-xs text-gray-500">{formatTimeAgo(comment.commentRegDate || new Date().toISOString())}</span>
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm font-medium text-gray-900">{comment.writerId}</span>
+                            <span className="text-xs text-gray-500">•</span>
+                            <span className="text-xs text-gray-500">{formatTimeAgo(comment.commentRegDate || new Date().toISOString())}</span>
+                          </div>
+                          {/* 햄버거 메뉴 */}
+                          <div className="relative comment-menu">
+                            <button
+                              onClick={() => toggleCommentMenu(comment.commentIdx)}
+                              className="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
+                            >
+                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                              </svg>
+                            </button>
+                            
+                            {/* 드롭다운 메뉴 */}
+                            {openMenuComment === comment.commentIdx && (
+                              <div className="absolute right-0 top-8 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                                <button
+                                  onClick={() => {
+                                    handleEditComment(comment.commentIdx);
+                                    setOpenMenuComment(null);
+                                  }}
+                                  className="w-full px-4 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center space-x-2"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                  <span>수정</span>
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    handleDeleteComment(comment.commentIdx);
+                                    setOpenMenuComment(null);
+                                  }}
+                                  className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                  <span>삭제</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <p className="text-sm text-gray-900 whitespace-pre-wrap">{comment.commentContent}</p>
-                        <div className="flex items-center space-x-4 mt-2">
-                          <button className="text-xs text-gray-500 hover:text-gray-700 flex items-center space-x-1">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
-                            </svg>
-                            <span>{comment.commentLike || 0}</span>
-                          </button>
-                          <button className="text-xs text-gray-500 hover:text-gray-700">답글</button>
-                        </div>
+                        {editingComment === comment.commentIdx ? (
+                          // 수정 모드
+                          <div className="space-y-3">
+                            <textarea
+                              value={editCommentContent}
+                              onChange={(e) => setEditCommentContent(e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+                              rows={3}
+                            />
+                            <div className="flex items-center space-x-2">
+                              <input
+                                type="password"
+                                value={editCommentPassword}
+                                onChange={(e) => setEditCommentPassword(e.target.value)}
+                                placeholder="비밀번호"
+                                className="px-3 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                              />
+                              <button
+                                onClick={() => handleSaveEdit(comment.commentIdx)}
+                                className="px-3 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                              >
+                                저장
+                              </button>
+                              <button
+                                onClick={handleCancelEdit}
+                                className="px-3 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600"
+                              >
+                                취소
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          // 일반 모드
+                          <>
+                            <p className="text-sm text-gray-900 whitespace-pre-wrap">{comment.commentContent}</p>
+                            <div className="flex items-center space-x-4 mt-2">
+                              <button 
+                                onClick={() => handleCommentLike(comment.commentIdx)}
+                                className={`text-xs flex items-center space-x-1 transition-colors ${
+                                  commentLikes.has(comment.commentIdx) 
+                                    ? 'text-red-600 hover:text-red-700' 
+                                    : 'text-gray-500 hover:text-gray-700'
+                                }`}
+                              >
+                                <svg 
+                                  className="w-3 h-3" 
+                                  fill={commentLikes.has(comment.commentIdx) ? 'currentColor' : 'none'} 
+                                  stroke="currentColor" 
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                                </svg>
+                                <span>{comment.commentLike || 0}</span>
+                              </button>
+                              <button 
+                                onClick={() => handleReply(comment.commentIdx)}
+                                className="text-xs text-gray-500 hover:text-gray-700"
+                              >
+                                답글
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -408,8 +830,345 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
               </div>
             )}
           </div>
+
+          {/* 댓글 작성 폼 */}
+          <div className="p-6 border-t border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
+                <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                </div>
+                댓글 작성
+              </h3>
+              <p className="text-sm text-gray-600">의견을 공유해주세요</p>
+            </div>
+            
+            <form onSubmit={handleSubmitComment} className="space-y-6">
+              {/* 댓글 내용 */}
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  댓글 내용 *
+                </label>
+                <div className="relative">
+                  <textarea
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="댓글을 작성해주세요..."
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none transition-all duration-200 shadow-sm hover:shadow-md"
+                    rows={4}
+                    disabled={isSubmittingComment}
+                  />
+                  <div className="absolute bottom-3 right-3 text-xs text-gray-400">
+                    {newComment.length}/500
+                  </div>
+                </div>
+              </div>
+
+              {/* 작성자 정보 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    작성자명 *
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </div>
+                    <input
+                      type="text"
+                      value={commentWriter}
+                      onChange={(e) => setCommentWriter(e.target.value)}
+                      placeholder="닉네임을 입력해주세요"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                      maxLength={20}
+                      disabled={isSubmittingComment}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 flex items-center">
+                    <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                    댓글에 표시될 이름입니다
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    비밀번호 *
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                    </div>
+                    <input
+                      type="password"
+                      value={commentPassword}
+                      onChange={(e) => setCommentPassword(e.target.value)}
+                      placeholder="4~20자 비밀번호"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                      minLength={4}
+                      maxLength={20}
+                      disabled={isSubmittingComment}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 flex items-center">
+                    <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                    댓글 수정/삭제 시 필요합니다
+                  </p>
+                </div>
+              </div>
+
+              {/* 제출 버튼 */}
+              <div className="flex justify-end pt-4">
+                <button
+                  type="submit"
+                  disabled={!newComment.trim() || !commentWriter.trim() || !commentPassword.trim() || isSubmittingComment}
+                  className="group relative px-8 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-medium rounded-xl hover:from-indigo-600 hover:to-purple-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:transform-none"
+                >
+                  <div className="flex items-center space-x-2">
+                    {isSubmittingComment ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                        <span>작성 중...</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        <span>댓글 작성</span>
+                      </>
+                    )}
+                  </div>
+                </button>
+              </div>
+            </form>
+          </div>
+
         </div>
       </main>
+
+      {/* 댓글 삭제 확인 모달 */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">댓글 삭제</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              댓글을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+            </p>
+            <div className="space-y-3">
+              <input
+                type="password"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                placeholder="비밀번호를 입력하세요"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              />
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => handleConfirmDelete(showDeleteModal)}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  삭제
+                </button>
+                <button
+                  onClick={handleCancelDelete}
+                  className="flex-1 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                >
+                  취소
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 게시글 수정 모달 */}
+      {showBoardEditModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            {/* 모달 헤더 */}
+            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4 rounded-t-2xl">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-white">게시글 수정</h3>
+              </div>
+            </div>
+
+            {/* 모달 내용 */}
+            <div className="p-6 space-y-6">
+              {/* 제목 */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">제목</label>
+                <input
+                  type="text"
+                  value={editBoardTitle}
+                  onChange={(e) => setEditBoardTitle(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                  placeholder="제목을 입력하세요"
+                />
+              </div>
+              
+              {/* 카테고리 */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">카테고리</label>
+                <input
+                  type="text"
+                  value={editBoardCategory}
+                  onChange={(e) => setEditBoardCategory(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                  placeholder="카테고리를 입력하세요 (예: 일반, 질문, 정보, 후기)"
+                />
+              </div>
+              
+              {/* 태그 */}
+              <div className="space-y-3">
+                <label className="block text-sm font-semibold text-gray-700">태그</label>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {editBoardTags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-indigo-100 text-indigo-800"
+                    >
+                      #{tag}
+                      <button
+                        onClick={() => handleRemoveTag(tag)}
+                        className="ml-2 text-indigo-600 hover:text-indigo-800"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    value={newTag}
+                    onChange={(e) => setNewTag(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleAddTag()}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                    placeholder="태그를 입력하고 Enter를 누르세요"
+                  />
+                  <button
+                    onClick={handleAddTag}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                  >
+                    추가
+                  </button>
+                </div>
+              </div>
+              
+              {/* 내용 */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">내용</label>
+                <textarea
+                  value={editBoardContent}
+                  onChange={(e) => setEditBoardContent(e.target.value)}
+                  rows={8}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none transition-all duration-200 shadow-sm hover:shadow-md"
+                  placeholder="내용을 입력하세요"
+                />
+              </div>
+              
+              {/* 작성자 정보 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-700">작성자 ID</label>
+                  <input
+                    type="text"
+                    value={editBoardId}
+                    onChange={(e) => setEditBoardId(e.target.value)}
+                    placeholder="작성자 ID를 입력하세요"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-700">비밀번호</label>
+                  <input
+                    type="password"
+                    value={editBoardPassword}
+                    onChange={(e) => setEditBoardPassword(e.target.value)}
+                    placeholder="비밀번호를 입력하세요"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                  />
+                </div>
+              </div>
+              
+              {/* 버튼 */}
+              <div className="flex space-x-3 pt-4">
+                <button
+                  onClick={handleSaveBoardEdit}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                >
+                  수정 완료
+                </button>
+                <button
+                  onClick={handleCancelBoardEdit}
+                  className="flex-1 px-6 py-3 bg-gray-500 text-white font-semibold rounded-xl hover:bg-gray-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                >
+                  취소
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 게시글 삭제 확인 모달 */}
+      {showBoardDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">게시글 삭제</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              게시글을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+            </p>
+            <div className="space-y-3">
+              <input
+                type="text"
+                value={boardDeleteId}
+                onChange={(e) => setBoardDeleteId(e.target.value)}
+                placeholder="작성자 ID를 입력하세요"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              />
+              <input
+                type="password"
+                value={boardDeletePassword}
+                onChange={(e) => setBoardDeletePassword(e.target.value)}
+                placeholder="비밀번호를 입력하세요"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              />
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleConfirmBoardDelete}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  삭제
+                </button>
+                <button
+                  onClick={handleCancelBoardDelete}
+                  className="flex-1 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                >
+                  취소
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

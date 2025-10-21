@@ -16,6 +16,7 @@ export default function ReviewWriteModal({ isOpen, onClose, onSubmit }: ReviewWr
     boardID: '',
     category: '',
     tags: [] as string[],
+    boardPassword: '',
   });
   const [tagInput, setTagInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -23,8 +24,8 @@ export default function ReviewWriteModal({ isOpen, onClose, onSubmit }: ReviewWr
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.boardTitle.trim() || !formData.boardContent.trim() || !formData.boardID.trim() || !formData.category.trim()) {
-      alert('제목, 내용, 작성자, 카테고리를 모두 입력해주세요.');
+    if (!formData.boardTitle.trim() || !formData.boardContent.trim() || !formData.category.trim() || !formData.boardPassword.trim()) {
+      alert('제목, 내용, 카테고리, 비밀번호를 모두 입력해주세요.');
       return;
     }
 
@@ -43,6 +44,7 @@ export default function ReviewWriteModal({ isOpen, onClose, onSubmit }: ReviewWr
         boardID: '',
         category: '',
         tags: [],
+        boardPassword: '',
       });
       setTagInput('');
       onClose();
@@ -180,6 +182,23 @@ export default function ReviewWriteModal({ isOpen, onClose, onSubmit }: ReviewWr
                 maxLength={20}
               />
             </div>
+
+          {/* 비밀번호 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              비밀번호 * <span className="text-xs text-gray-500">(게시글 수정/삭제용, 4~20자)</span>
+            </label>
+            <input
+              type="password"
+              value={formData.boardPassword}
+              onChange={(e) => setFormData(prev => ({ ...prev, boardPassword: e.target.value }))}
+              placeholder="수정/삭제 시 사용할 비밀번호를 입력해주세요"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              minLength={4}
+              maxLength={20}
+              required
+            />
+          </div>
 
             {/* 태그 */}
             <div>
