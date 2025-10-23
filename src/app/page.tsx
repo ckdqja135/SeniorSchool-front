@@ -6,9 +6,9 @@ import Link from 'next/link';
 import { useRecentOutsourceBoards } from '@/hooks/Outsource/useOutsource';
 import { useRecentMatzalAlBoards } from '@/hooks/MatzalAl/useMatzalAl';
 import { MatzalAlBoard } from '@/types/MatzalAl';
-import { FreeBoardPost, FreeBoardApiResponse } from '@/types';
+import { FreeBoardPost, FreeBoardApiResponse, BestPost, BestPostApiResponse } from '@/types';
 import ReviewWriteModal from '@/components/common/ReviewWriteModal';
-import { fetchRecentFreeboardPosts } from '@/lib/freeboard/freeboardAPI';
+import { fetchRecentFreeboardPosts, fetchBestPosts } from '@/lib/freeboard/freeboardAPI';
 
 interface University {
   univName: string;
@@ -100,6 +100,14 @@ export default function HomePage() {
   const [isFreeBoardLoading, setIsFreeBoardLoading] = useState(true);
   const [freeBoardError, setFreeBoardError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // 베스트 포스트 관련 상태
+  const [bestPosts, setBestPosts] = useState<BestPost[]>([]);
+  const [isBestPostsLoading, setIsBestPostsLoading] = useState(true);
+  const [bestPostsError, setBestPostsError] = useState<string | null>(null);
+
+  // 검색 관련 상태
+  const [searchQuery, setSearchQuery] = useState('');
 
   // 시간 포맷팅 함수
   const formatTimeAgo = (dateString: string) => {
@@ -241,9 +249,35 @@ export default function HomePage() {
     fetchRecentFreeBoardPosts();
   }, []);
 
+  // 베스트 포스트 데이터 가져오기
+  useEffect(() => {
+    const fetchBestPostsData = async () => {
+      try {
+        setIsBestPostsLoading(true);
+        setBestPostsError(null);
+        
+        const response = await fetchBestPosts();
+        
+        if (response && response.data) {
+          setBestPosts(response.data);
+        } else {
+          setBestPosts([]);
+        }
+      } catch (error) {
+        console.error('베스트 포스트 로딩 오류:', error);
+        setBestPostsError(error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.');
+        setBestPosts([]);
+      } finally {
+        setIsBestPostsLoading(false);
+      }
+    };
+
+    fetchBestPostsData();
+  }, []);
+
   // 게시글 클릭 시 해당 학교의 게시판 상세보기 페이지로 이동
   const handlePostClick = (post: BoardPost) => {
-    router.push(`/board/${post.boardIdx}`);
+    router.push(`/univ-board/${post.boardIdx}`);
   };
 
   // 교회 후기 클릭 시 해당 교회의 게시판 상세보기 페이지로 이동
@@ -259,6 +293,114 @@ export default function HomePage() {
   // 자유게시판 클릭 시 자유게시판 상세보기 페이지로 이동
   const handleFreeBoardPostClick = (post: FreeBoardPost) => {
     router.push(`/freeboard/${post.boardIdx}`);
+  };
+
+  // 검색어 입력 핸들러
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  // 베스트 포스트 클릭 시 해당 게시판 상세보기 페이지로 이동
+  const handleBestPostClick = (post: BestPost) => {
+    // 게시판 타입에 따라 다른 경로로 이동
+    switch (post.boardType) {
+      case 'freeboard':
+        router.push(`/freeboard/${post.boardIdx}`);
+        break;
+      case 'church':
+        router.push(`/church-board/${post.boardIdx}`);
+        break;
+      case 'company':
+        router.push(`/company-board/${post.boardIdx}`);
+        break;
+      case 'outsource':
+        router.push(`/outsource-board/${post.boardIdx}`);
+        break;
+      case 'restaurant':
+        router.push(`/restaurant-board/${post.boardIdx}`);
+        break;
+      case 'university':
+        router.push(`/univ-board/${post.boardIdx}`);
+        break;
+      default:
+        router.push(`/freeboard/${post.boardIdx}`);
+    }
+  };
+
+  // 게시판 타입별 스타일 정보 반환
+  const getBoardTypeStyle = (boardType: string) => {
+    switch (boardType) {
+      case 'university':
+        return {
+          label: '대학 오빠',
+          color: 'green',
+          icon: (
+            <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+          )
+        };
+      case 'company':
+        return {
+          label: '회사 오빠',
+          color: 'purple',
+          icon: (
+            <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          )
+        };
+      case 'church':
+        return {
+          label: '교회 오빠',
+          color: 'red',
+          icon: (
+            <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+          )
+        };
+      case 'restaurant':
+        return {
+          label: '맛잘알 오빠',
+          color: 'blue',
+          icon: (
+            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          )
+        };
+      case 'outsource':
+        return {
+          label: '외주 오빠',
+          color: 'orange',
+          icon: (
+            <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+          )
+        };
+      case 'freeboard':
+        return {
+          label: '자유게시판',
+          color: 'indigo',
+          icon: (
+            <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+          )
+        };
+      default:
+        return {
+          label: '기타',
+          color: 'gray',
+          icon: (
+            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+          )
+        };
+    }
   };
 
   // 리뷰 작성 핸들러
@@ -346,6 +488,8 @@ export default function HomePage() {
                 <input
                   type="text"
                   placeholder="관심있는 내용을 검색해보세요!"
+                  value={searchQuery}
+                  onChange={handleSearchChange}
                   className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                 />
               </div>
@@ -358,332 +502,90 @@ export default function HomePage() {
 
             {/* 베스트 후기 목록 */}
             <div className="p-4">
-              <div className="space-y-2">
-                {/* 대학 오빠 후기들 (초록색) */}
-                <div className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">대학 오빠</span>
-                      <p className="text-sm text-gray-900 font-medium line-clamp-1 group-hover:text-indigo-700 transition-colors duration-200">
-                        서울대 컴공과 선배님과의 만남 후기
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3 text-xs text-gray-400">
-                    <div className="flex items-center space-x-1">
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                      </svg>
-                      <span>156</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                      </svg>
-                      <span>89</span>
-                    </div>
-                  </div>
+              {isBestPostsLoading ? (
+                <div className="text-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600 mx-auto mb-2"></div>
+                  <p className="text-sm text-gray-500">베스트 후기를 불러오는 중...</p>
                 </div>
+              ) : bestPostsError ? (
+                <div className="text-center py-4">
+                  <p className="text-sm text-red-500">{bestPostsError}</p>
+                </div>
+              ) : bestPosts.length === 0 ? (
+                <div className="text-center py-4">
+                  <p className="text-sm text-gray-500">베스트 후기가 없습니다.</p>
+                </div>
+              ) : (() => {
+                const filteredPosts = bestPosts.filter(post => {
+                  if (!searchQuery.trim()) return true;
+                  const query = searchQuery.toLowerCase();
+                  return post.boardTitle.toLowerCase().includes(query) || 
+                         post.boardContent.toLowerCase().includes(query);
+                });
 
-                <div className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                      </svg>
+                if (filteredPosts.length === 0) {
+                  return (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-gray-500">'{searchQuery}' 검색 결과가 없습니다.</p>
                     </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">대학 오빠</span>
-                      <p className="text-sm text-gray-900 font-medium line-clamp-1 group-hover:text-indigo-700 transition-colors duration-200">
-                        연세대 경영학과 선배님 조언이 정말 도움됐어요
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3 text-xs text-gray-400">
-                    <div className="flex items-center space-x-1">
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                      </svg>
-                      <span>234</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                      </svg>
-                      <span>67</span>
-                    </div>
-                  </div>
-                </div>
+                  );
+                }
 
-                {/* 회사 오빠 후기들 (보라색) */}
-                <div className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                      <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                      </svg>
-                    </div>
+                return (
+                  <div className="space-y-2">
+                    {filteredPosts.map((post, index) => {
+                      const style = getBoardTypeStyle(post.boardType);
+                      const colorClasses = {
+                        green: 'bg-green-100 text-green-600',
+                        purple: 'bg-purple-100 text-purple-600',
+                        red: 'bg-red-100 text-red-600',
+                        blue: 'bg-blue-100 text-blue-600',
+                        orange: 'bg-orange-100 text-orange-600',
+                        indigo: 'bg-indigo-100 text-indigo-600',
+                        gray: 'bg-gray-100 text-gray-600'
+                      };
+                      
+                      return (
+                        <div
+                          key={post.boardIdx}
+                          onClick={() => handleBestPostClick(post)}
+                          className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group"
+                        >
+                          <div className="flex-shrink-0">
+                            <div className={`w-8 h-8 ${colorClasses[style.color as keyof typeof colorClasses].split(' ')[0]} rounded-full flex items-center justify-center`}>
+                              {style.icon}
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center space-x-2 mb-1">
+                              <span className={`text-xs font-medium ${colorClasses[style.color as keyof typeof colorClasses]} px-2 py-0.5 rounded-full`}>
+                                {style.label}
+                              </span>
+                              <p className="text-sm text-gray-900 font-medium line-clamp-1 group-hover:text-indigo-700 transition-colors duration-200">
+                                {post.boardTitle}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-3 text-xs text-gray-400">
+                            <div className="flex items-center space-x-1">
+                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                              </svg>
+                              <span>{post.boardLike}</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                              </svg>
+                              <span>{post.boardHits}</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">회사 오빠</span>
-                      <p className="text-sm text-gray-900 font-medium line-clamp-1 group-hover:text-indigo-700 transition-colors duration-200">
-                        삼성전자 개발자 선배님과의 커피챗 후기
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3 text-xs text-gray-400">
-                    <div className="flex items-center space-x-1">
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                      </svg>
-                      <span>189</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                      </svg>
-                      <span>45</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                      <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">회사 오빠</span>
-                      <p className="text-sm text-gray-900 font-medium line-clamp-1 group-hover:text-indigo-700 transition-colors duration-200">
-                        네이버 PM 선배님의 취업 조언이 정말 유용했어요
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3 text-xs text-gray-400">
-                    <div className="flex items-center space-x-1">
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                      </svg>
-                      <span>312</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                      </svg>
-                      <span>78</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 교회 오빠 후기들 (빨간색) */}
-                <div className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                      <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-0.5 rounded-full">교회 오빠</span>
-                      <p className="text-sm text-gray-900 font-medium line-clamp-1 group-hover:text-indigo-700 transition-colors duration-200">
-                        교회 청년부 선배님과의 신앙 나눔 시간
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3 text-xs text-gray-400">
-                    <div className="flex items-center space-x-1">
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                      </svg>
-                      <span>98</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                      </svg>
-                      <span>23</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                      <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-0.5 rounded-full">교회 오빠</span>
-                      <p className="text-sm text-gray-900 font-medium line-clamp-1 group-hover:text-indigo-700 transition-colors duration-200">
-                        교회 선배님의 진로 상담이 정말 도움됐어요
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3 text-xs text-gray-400">
-                    <div className="flex items-center space-x-1">
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                      </svg>
-                      <span>145</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                      </svg>
-                      <span>34</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 맛잘알 오빠 후기들 (파란색) */}
-                <div className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">맛잘알 오빠</span>
-                      <p className="text-sm text-gray-900 font-medium line-clamp-1 group-hover:text-indigo-700 transition-colors duration-200">
-                        강남 맛집 투어 선배님과 함께한 식사 후기
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3 text-xs text-gray-400">
-                    <div className="flex items-center space-x-1">
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                      </svg>
-                      <span>267</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                      </svg>
-                      <span>56</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">맛잘알 오빠</span>
-                      <p className="text-sm text-gray-900 font-medium line-clamp-1 group-hover:text-indigo-700 transition-colors duration-200">
-                        홍대 숨은 맛집 선배님 추천이 정말 좋았어요
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3 text-xs text-gray-400">
-                    <div className="flex items-center space-x-1">
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                      </svg>
-                      <span>198</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                      </svg>
-                      <span>42</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 외주 오빠 후기들 (주황색) */}
-                <div className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                      <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">외주 오빠</span>
-                      <p className="text-sm text-gray-900 font-medium line-clamp-1 group-hover:text-indigo-700 transition-colors duration-200">
-                        프리랜서 개발자 선배님과의 프로젝트 후기
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3 text-xs text-gray-400">
-                    <div className="flex items-center space-x-1">
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                      </svg>
-                      <span>123</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                      </svg>
-                      <span>29</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                      <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">외주 오빠</span>
-                      <p className="text-sm text-gray-900 font-medium line-clamp-1 group-hover:text-indigo-700 transition-colors duration-200">
-                        디자인 선배님과의 협업 경험담
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3 text-xs text-gray-400">
-                    <div className="flex items-center space-x-1">
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                      </svg>
-                      <span>87</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                      </svg>
-                      <span>18</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                );
+              })()}
             </div>
           </div>
         </div>

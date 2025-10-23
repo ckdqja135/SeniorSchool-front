@@ -190,4 +190,19 @@ export async function fetchRecentFreeboardPosts() {
   return fetchJson(api('/freeboard/recent'));
 }
 
+export async function fetchBestPosts() {
+  const response = await fetchJson(api('/best-posts'));
+  
+  // API 응답의 board_type을 boardType으로 변환
+  if (response && response.data) {
+    response.data = response.data.map((post: any) => ({
+      ...post,
+      boardType: post.board_type,
+      weightedScore: post.weighted_score
+    }));
+  }
+  
+  return response;
+}
+
 

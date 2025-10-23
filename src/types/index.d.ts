@@ -50,6 +50,25 @@ export interface FreeBoardApiResponse {
   currentCount: number;
 }
 
+// 베스트 포스트 타입 정의
+export interface BestPost {
+  boardIdx: number;
+  boardTitle: string;
+  boardContent: string;
+  boardRegDate: string;
+  boardLike: number;
+  boardHits: number;
+  boardID: string;
+  boardType: string;
+  weightedScore: number;
+}
+
+export interface BestPostApiResponse {
+  status: number;
+  data: BestPost[];
+  message: string;
+}
+
 // 카카오맵 타입 정의
 declare global {
   interface Window {
