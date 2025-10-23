@@ -180,7 +180,8 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
 
     try {
       setIsLiking(true);
-      await likeFreeboardPost(params.id, isLiked);
+      // 현재 상태의 반대를 서버에 전달 (토글)
+      await likeFreeboardPost(params.id, !isLiked);
       
       // 로컬 상태 업데이트
       if (post) {
@@ -424,15 +425,15 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
     setEditBoardCategory(post.category);
     setEditBoardTags(post.tags || []);
     setEditBoardPassword('');
-    setEditBoardId('');
+    setEditBoardId(post.boardID); // 조회된 작성자 ID 사용
     setShowBoardEditModal(true);
     setOpenBoardMenu(false);
   };
 
   // 게시글 수정 저장
   const handleSaveBoardEdit = async () => {
-    if (!editBoardTitle.trim() || !editBoardContent.trim() || !editBoardCategory.trim() || !editBoardId.trim() || !editBoardPassword.trim()) {
-      alert('모든 필드를 입력해주세요.');
+    if (!editBoardTitle.trim() || !editBoardContent.trim() || !editBoardCategory.trim() || !editBoardPassword.trim()) {
+      alert('제목, 내용, 카테고리, 비밀번호를 입력해주세요.');
       return;
     }
 
@@ -493,16 +494,17 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
 
   // 게시글 삭제 모달 열기
   const handleBoardDelete = () => {
+    if (!post) return;
     setShowBoardDeleteModal(true);
     setBoardDeletePassword('');
-    setBoardDeleteId('');
+    setBoardDeleteId(post.boardID); // 조회된 작성자 ID 사용
     setOpenBoardMenu(false);
   };
 
   // 게시글 삭제 확인
   const handleConfirmBoardDelete = async () => {
-    if (!boardDeleteId.trim() || !boardDeletePassword.trim()) {
-      alert('작성자 ID와 비밀번호를 입력해주세요.');
+    if (!boardDeletePassword.trim()) {
+      alert('비밀번호를 입력해주세요.');
       return;
     }
 
@@ -529,7 +531,7 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
 
   // 뒤로가기 처리
   const handleBackClick = () => {
-    router.back();
+    router.push('/freeboard');
   };
 
   if (isLoading) {
@@ -1084,28 +1086,16 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                 />
               </div>
               
-              {/* 작성자 정보 */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700">작성자 ID</label>
-                  <input
-                    type="text"
-                    value={editBoardId}
-                    onChange={(e) => setEditBoardId(e.target.value)}
-                    placeholder="작성자 ID를 입력하세요"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700">비밀번호</label>
-                  <input
-                    type="password"
-                    value={editBoardPassword}
-                    onChange={(e) => setEditBoardPassword(e.target.value)}
-                    placeholder="비밀번호를 입력하세요"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md"
-                  />
-                </div>
+              {/* 비밀번호 */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">비밀번호</label>
+                <input
+                  type="password"
+                  value={editBoardPassword}
+                  onChange={(e) => setEditBoardPassword(e.target.value)}
+                  placeholder="비밀번호를 입력하세요"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                />
               </div>
               
               {/* 버튼 */}
@@ -1137,13 +1127,6 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
               게시글을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
             </p>
             <div className="space-y-3">
-              <input
-                type="text"
-                value={boardDeleteId}
-                onChange={(e) => setBoardDeleteId(e.target.value)}
-                placeholder="작성자 ID를 입력하세요"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-              />
               <input
                 type="password"
                 value={boardDeletePassword}

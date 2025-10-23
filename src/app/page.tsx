@@ -8,6 +8,7 @@ import { useRecentMatzalAlBoards } from '@/hooks/MatzalAl/useMatzalAl';
 import { MatzalAlBoard } from '@/types/MatzalAl';
 import { FreeBoardPost, FreeBoardApiResponse } from '@/types';
 import ReviewWriteModal from '@/components/common/ReviewWriteModal';
+import { fetchRecentFreeboardPosts } from '@/lib/freeboard/freeboardAPI';
 
 interface University {
   univName: string;
@@ -214,79 +215,24 @@ export default function HomePage() {
     fetchRecentCompanyPosts();
   }, []);
 
-  // 최근 자유게시판 데이터 가져오기 (예시 데이터)
+  // 최근 자유게시판 데이터 가져오기 (실제 API 호출)
   useEffect(() => {
     const fetchRecentFreeBoardPosts = async () => {
       try {
         setIsFreeBoardLoading(true);
         setFreeBoardError(null);
         
-        // 예시 데이터 - 후기 중심
-        const mockData: FreeBoardPost[] = [
-          {
-            boardIdx: 1,
-            boardTitle: "강남역 근처 카페 '모먼트' 후기 - 분위기 최고!",
-            boardContent: "공부하기 좋은 카페를 찾다가 발견한 모먼트 카페 후기입니다...",
-            boardRegDate: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-            boardLike: 24,
-            boardHits: 156,
-            boardID: "카페러버",
-            category: "카페",
-            tags: ["카페", "강남", "공부"]
-          },
-          {
-            boardIdx: 2,
-            boardTitle: "홍대 맛집 '파스타하우스' 진짜 맛있어요!",
-            boardContent: "친구들이랑 방문한 홍대 파스타 맛집 후기!",
-            boardRegDate: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-            boardLike: 32,
-            boardHits: 198,
-            boardID: "맛집탐방러",
-            category: "맛집",
-            tags: ["맛집", "홍대", "파스타"]
-          },
-          {
-            boardIdx: 3,
-            boardTitle: "코엑스 영화관 IMAX 관람 후기",
-            boardContent: "처음으로 IMAX로 영화를 봤는데 완전 감동...",
-            boardRegDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-            boardLike: 18,
-            boardHits: 203,
-            boardID: "영화매니아",
-            category: "문화생활",
-            tags: ["영화", "IMAX", "코엑스"]
-          },
-          {
-            boardIdx: 4,
-            boardTitle: "애플 스토어 방문 후기 - 직원분들 친절해요",
-            boardContent: "맥북 구매 상담받으러 갔는데 정말 친절하게...",
-            boardRegDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-            boardLike: 15,
-            boardHits: 142,
-            boardID: "테크러버",
-            category: "쇼핑",
-            tags: ["애플", "맥북", "쇼핑"]
-          },
-          {
-            boardIdx: 5,
-            boardTitle: "서울숲 산책 코스 추천 - 가을에 딱!",
-            boardContent: "날씨 좋아서 서울숲 다녀왔는데 산책하기 정말 좋아요!",
-            boardRegDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-            boardLike: 21,
-            boardHits: 167,
-            boardID: "산책러버",
-            category: "여행",
-            tags: ["서울숲", "산책", "데이트"]
-          }
-        ];
+        const response = await fetchRecentFreeboardPosts();
         
-        // 실제 API 호출 시뮬레이션
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        setRecentFreeBoardPosts(mockData);
+        if (response && response.data) {
+          setRecentFreeBoardPosts(response.data);
+        } else {
+          setRecentFreeBoardPosts([]);
+        }
       } catch (error) {
         console.error('최근 자유게시판 로딩 오류:', error);
         setFreeBoardError(error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.');
+        setRecentFreeBoardPosts([]);
       } finally {
         setIsFreeBoardLoading(false);
       }

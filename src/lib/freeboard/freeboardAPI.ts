@@ -79,10 +79,11 @@ export async function createFreeboardPost(body: CreatePostBody) {
 
 
 export async function likeFreeboardPost(id: number | string, isLiked: boolean) {
+  const payload = { isLiked: !!isLiked };
   return fetchJson(api(`/freeboard/${id}/like`), { 
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ isLiked })
+    body: JSON.stringify(payload)
   });
 }
 
@@ -173,6 +174,20 @@ export async function deleteFreeboardPost(id: number | string, body: DeleteBoard
 
 export async function fetchFreeboardStats() {
   return fetchJson(api('/freeboard/stats'));
+}
+
+export async function fetchFreeboardCategories() {
+  const response = await fetchFreeboardStats();
+  return response.data?.topCategories || [];
+}
+
+export async function fetchFreeboardTags() {
+  const response = await fetchFreeboardStats();
+  return response.data?.topTags || [];
+}
+
+export async function fetchRecentFreeboardPosts() {
+  return fetchJson(api('/freeboard/recent'));
 }
 
 

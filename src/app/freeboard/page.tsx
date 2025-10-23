@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FreeBoardPost, FreeBoardApiResponse } from '@/types';
 import ReviewWriteModal from '@/components/common/ReviewWriteModal';
-import { createFreeboardPost, fetchFreeboardList } from '@/lib/freeboard/freeboardAPI';
+import { createFreeboardPost, fetchFreeboardList, likeFreeboardPost, fetchFreeboardCategories, fetchFreeboardTags } from '@/lib/freeboard/freeboardAPI';
 
 export default function FreeBoardPage() {
   const router = useRouter();
@@ -19,6 +19,10 @@ export default function FreeBoardPage() {
   const [showTopCategories, setShowTopCategories] = useState(false);
   const [showTopTags, setShowTopTags] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [postLikes, setPostLikes] = useState<Set<number>>(new Set());
+  const [categories, setCategories] = useState<Array<{category: string, count: number}>>([]);
+  const [tags, setTags] = useState<Array<{tag: string, count: number}>>([]);
+  const [isStatsLoading, setIsStatsLoading] = useState(false);
 
   const POSTS_PER_PAGE = 10;
 
@@ -56,6 +60,15 @@ export default function FreeBoardPage() {
         setTotalCount(res.totalCount || 0);
         const totalPages = (res?.pagination?.totalPages ?? Math.ceil((res.totalCount || 0) / POSTS_PER_PAGE)) || 1;
         setTotalPages(totalPages);
+        
+        // 사용자가 좋아요한 게시글들의 ID를 Set에 추가 (API 응답에 isLiked 필드가 있다면)
+        if (res.data && Array.isArray(res.data)) {
+          const likedPostIds = res.data
+            .filter((post: any) => post.isLiked || post.userLiked) // API 응답 필드명에 따라 조정
+            .map((post: any) => post.boardIdx);
+          setPostLikes(new Set(likedPostIds));
+          console.log('초기화된 postLikes:', likedPostIds);
+        }
       } catch (error) {
         console.error('게시글 로딩 오류:', error);
         setError(error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.');
@@ -66,6 +79,32 @@ export default function FreeBoardPage() {
 
     fetchPosts();
   }, [currentPage, searchQuery]);
+
+  // 통계 데이터 가져오기 (카테고리, 태그)
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setIsStatsLoading(true);
+        const [categoriesData, tagsData] = await Promise.all([
+          fetchFreeboardCategories(),
+          fetchFreeboardTags()
+        ]);
+        
+        setCategories(categoriesData);
+        setTags(tagsData);
+      } catch (error) {
+        console.error('통계 데이터 로딩 오류:', error);
+        // 에러 시 기본값 설정
+        setCategories([]);
+        setTags([]);
+      } finally {
+        setIsStatsLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
 
   // 게시글 클릭 핸들러
   const handlePostClick = (post: FreeBoardPost) => {
@@ -82,6 +121,49 @@ export default function FreeBoardPage() {
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // 좋아요 핸들러
+  const handleLike = async (postIdx: number, e: React.MouseEvent) => {
+    e.stopPropagation(); // 게시글 클릭 이벤트 방지
+    
+    try {
+      const isCurrentlyLiked = postLikes.has(postIdx);
+      const targetState = !isCurrentlyLiked;
+      console.log('[handleLike]', { postIdx, isCurrentlyLiked, targetState, tType: typeof targetState });
+      
+      // API 호출 - 변경 후 상태(목표 상태)를 전달
+      await likeFreeboardPost(
+        postIdx,
+        (() => { console.log('[call arg] targetState=', targetState); return !!targetState; })()
+      );
+      
+      // 로컬 상태 업데이트
+      setPostLikes(prev => {
+        const newSet = new Set(prev);
+        if (isCurrentlyLiked) {
+          newSet.delete(postIdx);
+        } else {
+          newSet.add(postIdx);
+        }
+        return newSet;
+      });
+      
+      // 게시글 목록의 좋아요 수 업데이트
+      setPosts(prev => prev.map(post => 
+        post.boardIdx === postIdx 
+          ? { 
+              ...post, 
+              boardLike: isCurrentlyLiked 
+                ? Math.max(0, post.boardLike - 1)
+                : post.boardLike + 1 
+            }
+          : post
+      ));
+    } catch (error) {
+      console.error('좋아요 처리 오류:', error);
+      alert('좋아요 처리 중 오류가 발생했습니다.');
+    }
   };
 
   // 리뷰 작성 핸들러
@@ -123,17 +205,15 @@ export default function FreeBoardPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
-            <button
-              onClick={() => router.back()}
-              className="group flex items-center px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all duration-200 -ml-2"
+            <a
+              href="/"
+              className="flex items-center space-x-2 px-4 py-3 bg-white/90 backdrop-blur-sm hover:bg-white/95 rounded-xl transition-all duration-300 group border border-gray-200"
             >
-              <div className="flex items-center justify-center w-8 h-8 mr-3 bg-gray-100 group-hover:bg-gray-200 rounded-full transition-colors duration-200">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </div>
-              <span className="font-medium">뒤로가기</span>
-            </button>
+              <svg className="w-5 h-5 text-gray-600 group-hover:text-gray-800 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              <span className="text-sm font-semibold text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Ori</span>
+            </a>
               <h1 className="ml-4 text-xl font-semibold text-gray-900">자유게시판</h1>
             </div>
             <button
@@ -245,7 +325,12 @@ export default function FreeBoardPage() {
                 {posts.map((post, index) => (
                   <div
                     key={post.boardIdx}
-                    onClick={() => handlePostClick(post)}
+                    onClick={(e) => {
+                      // 버튼 클릭이 아닌 경우에만 게시글 클릭 처리
+                      if (!(e.target as HTMLElement).closest('button')) {
+                        handlePostClick(post);
+                      }
+                    }}
                     className="px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors"
                   >
                     <div className="grid grid-cols-12 gap-6 items-center text-sm" style={{gridTemplateColumns: '35px 3fr 60px 35px 35px 80px'}}>
@@ -259,7 +344,7 @@ export default function FreeBoardPage() {
                             {post.category}
                           </span>
                           {/* 제목 - 더 많은 공간 할당 */}
-                          <span className="text-gray-900 font-medium truncate flex-1 min-w-0 text-right" style={{minWidth: '200px'}}>
+                          <span className="text-gray-900 font-medium truncate flex-1 min-w-0 text-left" style={{minWidth: '200px'}}>
                             {post.boardTitle}
                           </span>
                           {/* 태그들 - 최대 1개만 표시하고 더 작게 */}
@@ -276,7 +361,36 @@ export default function FreeBoardPage() {
                       </div>
                       <div className="text-gray-500 truncate">{post.boardID || '익명'}</div>
                       <div className="text-gray-500 truncate">{post.boardHits}</div>
-                      <div className="text-gray-500 truncate">{post.boardLike}</div>
+                      <div className="flex items-center space-x-1">
+                        <button
+                          onClick={(e) => {
+                            console.log('Button clicked for postIdx:', post.boardIdx);
+                            console.log('postLikes Set:', Array.from(postLikes));
+                            handleLike(post.boardIdx, e);
+                          }}
+                          className={`flex items-center space-x-1 text-sm transition-all duration-200 p-1 rounded hover:bg-gray-100 ${
+                            postLikes.has(post.boardIdx) 
+                              ? 'text-red-600 hover:text-red-700' 
+                              : 'text-gray-500 hover:text-red-600'
+                          }`}
+                          style={{ zIndex: 10, position: 'relative' }}
+                        >
+                          <svg 
+                            className={`w-4 h-4 transition-all duration-200 ${
+                              postLikes.has(post.boardIdx) 
+                                ? 'scale-110' 
+                                : 'scale-100'
+                            }`}
+                            fill={postLikes.has(post.boardIdx) ? 'currentColor' : 'none'} 
+                            stroke="currentColor" 
+                            strokeWidth={postLikes.has(post.boardIdx) ? 0 : 2}
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                          </svg>
+                          <span className="font-medium">{post.boardLike}</span>
+                        </button>
+                      </div>
                       <div className="text-gray-500 whitespace-nowrap">{formatTimeAgo(post.boardRegDate)}</div>
                     </div>
                   </div>
@@ -362,33 +476,33 @@ export default function FreeBoardPage() {
                 Top10 카테고리
               </h3>
               <div className="space-y-2">
-                {[
-                  { name: '맛집', count: 145 },
-                  { name: '카페', count: 123 },
-                  { name: '여행', count: 98 },
-                  { name: '쇼핑', count: 87 },
-                  { name: '문화생활', count: 76 },
-                  { name: '숙소', count: 54 },
-                  { name: '액티비티', count: 43 },
-                  { name: '뷰티', count: 32 },
-                  { name: '헬스', count: 28 },
-                  { name: '기타', count: 21 }
-                ].slice(0, showTopCategories ? 10 : 5).map((category, index) => (
+                {isStatsLoading ? (
+                  <div className="text-center py-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600 mx-auto mb-2"></div>
+                    <p className="text-sm text-gray-500">카테고리를 불러오는 중...</p>
+                  </div>
+                ) : categories.length === 0 ? (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-gray-500">카테고리 데이터가 없습니다.</p>
+                  </div>
+                ) : (
+                  categories.slice(0, showTopCategories ? 10 : 5).map((category, index) => (
                   <button
-                    key={category.name}
+                    key={category.category}
                     onClick={() => {
-                      setSearchQuery(category.name);
+                      setSearchQuery(category.category);
                       setCurrentPage(1);
                     }}
                     className="w-full flex items-center justify-between p-2 rounded hover:bg-indigo-50 transition-colors group"
                   >
                     <div className="flex items-center space-x-2">
                       <span className="text-sm font-medium text-indigo-600">#{index + 1}</span>
-                      <span className="text-sm text-gray-900 group-hover:text-indigo-600">{category.name}</span>
+                      <span className="text-sm text-gray-900 group-hover:text-indigo-600">{category.category}</span>
                     </div>
                     <span className="text-xs text-gray-500">{category.count}</span>
                   </button>
-                ))}
+                  ))
+                )}
               </div>
               <button
                 onClick={() => setShowTopCategories(!showTopCategories)}
@@ -406,6 +520,7 @@ export default function FreeBoardPage() {
               </button>
             </div>
 
+
             {/* Top10 태그 */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
               <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
@@ -415,30 +530,30 @@ export default function FreeBoardPage() {
                 Top10 태그
               </h3>
               <div className="flex flex-wrap gap-2">
-                {[
-                  { name: '가성비', count: 234 },
-                  { name: '데이트', count: 198 },
-                  { name: '혼밥', count: 176 },
-                  { name: '분위기', count: 154 },
-                  { name: '추천', count: 143 },
-                  { name: '맛있어요', count: 132 },
-                  { name: '친절', count: 121 },
-                  { name: '청결', count: 98 },
-                  { name: '재방문', count: 87 },
-                  { name: '주차', count: 76 }
-                ].slice(0, showTopTags ? 10 : 5).map((tag, index) => (
+                {isStatsLoading ? (
+                  <div className="text-center py-4 w-full">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600 mx-auto mb-2"></div>
+                    <p className="text-sm text-gray-500">태그를 불러오는 중...</p>
+                  </div>
+                ) : tags.length === 0 ? (
+                  <div className="text-center py-4 w-full">
+                    <p className="text-sm text-gray-500">태그 데이터가 없습니다.</p>
+                  </div>
+                ) : (
+                  tags.slice(0, showTopTags ? 10 : 5).map((tag, index) => (
                   <button
-                    key={tag.name}
+                    key={tag.tag}
                     onClick={() => {
-                      setSearchQuery(tag.name);
+                      setSearchQuery(tag.tag);
                       setCurrentPage(1);
                     }}
                     className="px-3 py-1.5 bg-purple-50 text-purple-600 text-sm rounded-full hover:bg-purple-100 transition-colors flex items-center space-x-1"
                   >
-                    <span>#{tag.name}</span>
+                    <span>#{tag.tag}</span>
                     <span className="text-xs text-purple-400">({tag.count})</span>
                   </button>
-                ))}
+                  ))
+                )}
               </div>
               <button
                 onClick={() => setShowTopTags(!showTopTags)}
