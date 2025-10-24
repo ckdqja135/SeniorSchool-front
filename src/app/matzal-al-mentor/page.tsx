@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useRestaurantCommentsTop } from '@/hooks/MatzalAl/useMatzalAl';
 
 export default function MatzalAlMentorPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -31,6 +32,9 @@ export default function MatzalAlMentorPage() {
   const hasFetchedPopularMatzalAl = useRef(false);
   const hasFetchedPopularBoards = useRef(false);
 
+  // 새로운 식당 후기 API 훅
+  const { topComments, loading: topCommentsLoading, error: topCommentsError, refetch: refetchTopComments } = useRestaurantCommentsTop(10);
+
   // 최근 검색 기록 로드
   useEffect(() => {
     const saved = localStorage.getItem('recentMatzalAlSearches');
@@ -44,14 +48,12 @@ export default function MatzalAlMentorPage() {
     fetchPopularMatzalAl();
   }, []);
 
-  // 인기 후기 데이터 로드
+  // 인기 후기 데이터 로드 (새로운 API 사용)
   useEffect(() => {
-    // 중복 호출 방지
-    if (hasFetchedPopularBoards.current) return;
-    hasFetchedPopularBoards.current = true;
-    
-    fetchPopularBoards();
-  }, []);
+    if (topComments && topComments.length > 0) {
+      setPopularBoards(topComments);
+    }
+  }, [topComments]);
 
   // 자동완성 검색어 가져오기
   const fetchSuggestions = async (keyword: string) => {
@@ -167,23 +169,14 @@ export default function MatzalAlMentorPage() {
     }
   };
 
-  // 인기 후기 데이터 가져오기 (최근 후기에서 가져오기)
+  // 인기 후기 데이터 가져오기 (새로운 식당 후기 TOP10 API 사용)
   const fetchPopularBoards = async () => {
     try {
-      // TODO: 맛잘알 API 엔드포인트로 변경
-      const backendURL = 'https://api.reviewhub.life';
-      const response = await fetch(`${backendURL}/matzal-al/board/recent`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (data.status === 200 && data.data) {
-        // 최근 후기 데이터를 그대로 사용 (조회수 기준으로 정렬)
-        const sortedBoards = data.data.sort((a: any, b: any) => b.boardHits - a.boardHits);
-        setPopularBoards(sortedBoards.slice(0, 10));
+      // 새로운 API를 사용하여 TOP10 후기 가져오기
+      if (topComments && topComments.length > 0) {
+        setPopularBoards(topComments);
+      } else {
+        setPopularBoards([]);
       }
     } catch (error) {
       console.error('인기 후기 로딩 오류:', error);
@@ -207,7 +200,7 @@ export default function MatzalAlMentorPage() {
     if (isBoardRefreshing) return; // 이미 새로고침 중이면 중복 실행 방지
     
     setIsBoardRefreshing(true);
-    await fetchPopularBoards();
+    await refetchTopComments();
     
     setTimeout(() => {
       setIsBoardRefreshing(false);

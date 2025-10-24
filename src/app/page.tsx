@@ -93,7 +93,8 @@ export default function HomePage() {
   const { boards: recentOutsourceBoards, loading: isOutsourceLoading, error: outsourceError } = useRecentOutsourceBoards();
   
   // 맛잘알 후기 관련 상태 (훅 사용)
-  const { boards: recentMatzalAlBoards, loading: isMatzalAlLoading, error: matzalAlError } = useRecentMatzalAlBoards(5);
+  const MATZAL_AL_LIMIT = 5;
+  const { boards: recentMatzalAlBoards, loading: isMatzalAlLoading, error: matzalAlError } = useRecentMatzalAlBoards(MATZAL_AL_LIMIT);
   
   // 자유게시판 관련 상태
   const [recentFreeBoardPosts, setRecentFreeBoardPosts] = useState<FreeBoardPost[]>([]);
@@ -109,24 +110,6 @@ export default function HomePage() {
   // 검색 관련 상태
   const [searchQuery, setSearchQuery] = useState('');
 
-  // 시간 포맷팅 함수
-  const formatTimeAgo = (dateString: string) => {
-    const now = new Date();
-    const createdDate = new Date(dateString);
-    const diffInHours = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60));
-    
-    if (diffInHours < 1) return '방금 전';
-    if (diffInHours < 24) return `약 ${diffInHours}시간 전`;
-    
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) return `${diffInDays}일 전`;
-    
-    const diffInWeeks = Math.floor(diffInDays / 7);
-    if (diffInWeeks < 4) return `${diffInWeeks}주 전`;
-    
-    const diffInMonths = Math.floor(diffInDays / 30);
-    return `${diffInMonths}개월 전`;
-  };
 
   // 최근 게시글 데이터 가져오기
   useEffect(() => {
@@ -325,6 +308,11 @@ export default function HomePage() {
       default:
         router.push(`/freeboard/${post.boardIdx}`);
     }
+  };
+
+  // 맛잘알 후기 클릭 핸들러
+  const handleMatzalAlBoardClick = (board: any) => {
+    router.push(`/matzal-al-board/${board.boardIdx}`);
   };
 
   // 게시판 타입별 스타일 정보 반환
@@ -532,58 +520,58 @@ export default function HomePage() {
                 }
 
                 return (
-                  <div className="space-y-2">
+                <div className="space-y-2">
                     {filteredPosts.map((post, index) => {
-                      const style = getBoardTypeStyle(post.boardType);
-                      const colorClasses = {
-                        green: 'bg-green-100 text-green-600',
-                        purple: 'bg-purple-100 text-purple-600',
-                        red: 'bg-red-100 text-red-600',
-                        blue: 'bg-blue-100 text-blue-600',
-                        orange: 'bg-orange-100 text-orange-600',
-                        indigo: 'bg-indigo-100 text-indigo-600',
-                        gray: 'bg-gray-100 text-gray-600'
-                      };
-                      
-                      return (
-                        <div
-                          key={post.boardIdx}
-                          onClick={() => handleBestPostClick(post)}
-                          className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group"
-                        >
-                          <div className="flex-shrink-0">
-                            <div className={`w-8 h-8 ${colorClasses[style.color as keyof typeof colorClasses].split(' ')[0]} rounded-full flex items-center justify-center`}>
-                              {style.icon}
-                            </div>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center space-x-2 mb-1">
-                              <span className={`text-xs font-medium ${colorClasses[style.color as keyof typeof colorClasses]} px-2 py-0.5 rounded-full`}>
-                                {style.label}
-                              </span>
-                              <p className="text-sm text-gray-900 font-medium line-clamp-1 group-hover:text-indigo-700 transition-colors duration-200">
-                                {post.boardTitle}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-3 text-xs text-gray-400">
-                            <div className="flex items-center space-x-1">
-                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                              </svg>
-                              <span>{post.boardLike}</span>
-                            </div>
-                            <div className="flex items-center space-x-1">
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                              </svg>
-                              <span>{post.boardHits}</span>
-                            </div>
+                    const style = getBoardTypeStyle(post.boardType);
+                    const colorClasses = {
+                      green: 'bg-green-100 text-green-600',
+                      purple: 'bg-purple-100 text-purple-600',
+                      red: 'bg-red-100 text-red-600',
+                      blue: 'bg-blue-100 text-blue-600',
+                      orange: 'bg-orange-100 text-orange-600',
+                      indigo: 'bg-indigo-100 text-indigo-600',
+                      gray: 'bg-gray-100 text-gray-600'
+                    };
+                    
+                    return (
+                      <div
+                        key={post.boardIdx}
+                        onClick={() => handleBestPostClick(post)}
+                        className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group"
+                      >
+                        <div className="flex-shrink-0">
+                          <div className={`w-8 h-8 ${colorClasses[style.color as keyof typeof colorClasses].split(' ')[0]} rounded-full flex items-center justify-center`}>
+                            {style.icon}
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <span className={`text-xs font-medium ${colorClasses[style.color as keyof typeof colorClasses]} px-2 py-0.5 rounded-full`}>
+                              {style.label}
+                            </span>
+                            <p className="text-sm text-gray-900 font-medium line-clamp-1 group-hover:text-indigo-700 transition-colors duration-200">
+                              {post.boardTitle}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-3 text-xs text-gray-400">
+                          <div className="flex items-center space-x-1">
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                            </svg>
+                            <span>{post.boardLike}</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                            <span>{post.boardHits}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
                 );
               })()}
             </div>
@@ -982,7 +970,7 @@ export default function HomePage() {
                             <div className="flex items-center space-x-2 mb-1">
                               <span className="text-xs font-medium text-gray-900">{board.boardID}</span>
                               <span className="text-xs text-gray-500">•</span>
-                              <span className="text-xs text-gray-500">{formatTimeAgo(board.boardRegDate)}</span>
+                              <span className="text-xs text-gray-500">{board.boardRegDate ? board.boardRegDate.split(' ')[0] : ''}</span>
                             </div>
                             <p className="text-xs text-gray-900 line-clamp-1">{board.boardTitle}</p>
                             {board.outsourceName && (
@@ -1050,8 +1038,18 @@ export default function HomePage() {
                   <p className="text-sm text-gray-500">맛잘알 데이터를 불러오는 중 오류가 발생했습니다.</p>
                 ) : recentMatzalAlBoards.length > 0 ? (
                   // 실제 데이터
-                  recentMatzalAlBoards.map((board: MatzalAlBoard, i: number) => (
-                    <div key={board.boardIdx} className="p-2 rounded hover:bg-gray-50 transition-colors duration-150 cursor-pointer">
+                  (() => {
+                    console.log('맛잘알 후기 데이터:', recentMatzalAlBoards);
+                    return recentMatzalAlBoards.map((board: MatzalAlBoard, i: number) => (
+                    <div 
+                      key={board.boardIdx} 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        console.log('클릭 이벤트 발생:', board);
+                        handleMatzalAlBoardClick(board);
+                      }} 
+                      className="p-2 rounded hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
+                    >
                       <div className="flex items-start space-x-2">
                         <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
                           <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1060,9 +1058,9 @@ export default function HomePage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-2 mb-1">
-                            <span className="text-xs font-medium text-gray-900">질문자{i + 1}</span>
+                            <span className="text-xs font-medium text-gray-900">{board.boardID || '익명'}</span>
                             <span className="text-xs text-gray-500">•</span>
-                            <span className="text-xs text-gray-500">{formatTimeAgo(board.boardRegDate)}</span>
+                            <span className="text-xs text-gray-500">{board.boardRegDate ? board.boardRegDate.split(' ')[0] : ''}</span>
                           </div>
                           <p className="text-xs text-gray-900 line-clamp-1">
                             {board.boardTitle}
@@ -1082,13 +1080,14 @@ export default function HomePage() {
                               <span className="text-xs text-gray-500">{board.boardHits}</span>
                             </div>
                             <div className="text-xs text-gray-500">
-                              {board.restaurantName || '맛잘알 카테고리'}
+                              {(board as any).restaurantName || (board as any).restaurant?.restaurantName || '맛잘알 카테고리'}
                             </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  ))
+                  ));
+                  })()
                 ) : (
                   // 데이터가 없을 때
                   <p className="text-sm text-gray-500">아직 등록된 맛잘알 후기가 없습니다.</p>

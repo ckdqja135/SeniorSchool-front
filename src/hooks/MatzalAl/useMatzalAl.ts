@@ -14,7 +14,9 @@ import {
   getMatzalAlBoards,
   getPopularMatzalAlBoards,
   getRecentMatzalAlBoards,
-  getMatzalAlBoardDetail
+  getMatzalAlBoardDetail,
+  getRestaurantCommentsTop,
+  getRestaurantRecentComments
 } from '@/lib/matzalAl/matzalAlAPI';
 
 // 맛잘알 목록 훅
@@ -268,7 +270,7 @@ export const useRecentMatzalAlBoards = (limit: number = 10) => {
 
   useEffect(() => {
     fetchRecentBoards();
-  }, [fetchRecentBoards]);
+  }, [limit]); // fetchRecentBoards 대신 limit을 직접 의존성으로 사용
 
   const refetch = useCallback(() => {
     fetchRecentBoards();
@@ -311,4 +313,66 @@ export const useMatzalAlBoardDetail = (boardIdx: number) => {
   }, [fetchBoardDetail]);
 
   return { board, loading, error, refetch };
+};
+
+// 식당 후기 TOP10 훅
+export const useRestaurantCommentsTop = (limit: number = 10) => {
+  const [topComments, setTopComments] = useState<MatzalAlBoard[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchTopComments = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getRestaurantCommentsTop(limit);
+      setTopComments(data);
+    } catch (err) {
+      setError('식당 후기 TOP10을 불러오는데 실패했습니다.');
+      console.error('식당 후기 TOP10 조회 오류:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [limit]);
+
+  useEffect(() => {
+    fetchTopComments();
+  }, [fetchTopComments]);
+
+  const refetch = useCallback(() => {
+    fetchTopComments();
+  }, [fetchTopComments]);
+
+  return { topComments, loading, error, refetch };
+};
+
+// 식당 최근 후기 훅
+export const useRestaurantRecentComments = (limit: number = 5) => {
+  const [recentComments, setRecentComments] = useState<MatzalAlBoard[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchRecentComments = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getRestaurantRecentComments(limit);
+      setRecentComments(data);
+    } catch (err) {
+      setError('식당 최근 후기를 불러오는데 실패했습니다.');
+      console.error('식당 최근 후기 조회 오류:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [limit]);
+
+  useEffect(() => {
+    fetchRecentComments();
+  }, [fetchRecentComments]);
+
+  const refetch = useCallback(() => {
+    fetchRecentComments();
+  }, [fetchRecentComments]);
+
+  return { recentComments, loading, error, refetch };
 };

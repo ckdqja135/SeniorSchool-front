@@ -294,9 +294,23 @@ export const getRecentMatzalAlBoards = async (limit: number = 10): Promise<Matza
     
     // API 응답 구조에 따라 데이터 처리
     if (Array.isArray(data)) {
-      return data.slice(0, limit);
+      // restaurant 객체가 포함된 데이터 구조 처리
+      const processedData = data.map((item: any) => ({
+        ...item,
+        restaurantName: item.restaurant?.restaurantName || item.restaurantName || '맛집명 없음',
+        restaurantLocation: item.restaurant?.restaurantLocation || item.restaurantLocation || '위치 정보 없음',
+        restaurantType: item.restaurant?.restaurantType || item.restaurantType || '맛집'
+      }));
+      return processedData.slice(0, limit);
     } else if (data.data && Array.isArray(data.data)) {
-      return data.data.slice(0, limit);
+      // restaurant 객체가 포함된 데이터 구조 처리
+      const processedData = data.data.map((item: any) => ({
+        ...item,
+        restaurantName: item.restaurant?.restaurantName || item.restaurantName || '맛집명 없음',
+        restaurantLocation: item.restaurant?.restaurantLocation || item.restaurantLocation || '위치 정보 없음',
+        restaurantType: item.restaurant?.restaurantType || item.restaurantType || '맛집'
+      }));
+      return processedData.slice(0, limit);
     }
     
     return [];
@@ -385,5 +399,55 @@ export const requestMatzalAl = async (request: MatzalAlRequest): Promise<boolean
   } catch (error) {
     console.error('식당 추가 요청 오류:', error);
     return false;
+  }
+};
+
+// 식당 후기 TOP10 조회 (조회수 기준)
+export const getRestaurantCommentsTop = async (limit: number = 10): Promise<MatzalAlBoard[]> => {
+  try {
+    const response = await fetch(`${BACKEND_URL}/restaurant/board/top-viewed`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    // API 응답 구조에 따라 데이터 처리
+    if (Array.isArray(data)) {
+      return data.slice(0, limit);
+    } else if (data.data && Array.isArray(data.data)) {
+      return data.data.slice(0, limit);
+    }
+    
+    return [];
+  } catch (error) {
+    console.error('식당 후기 TOP10 조회 오류:', error);
+    return [];
+  }
+};
+
+// 식당 최근 후기 5개 조회
+export const getRestaurantRecentComments = async (limit: number = 5): Promise<MatzalAlBoard[]> => {
+  try {
+    const response = await fetch(`${BACKEND_URL}/restaurant/recent`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    // API 응답 구조에 따라 데이터 처리
+    if (Array.isArray(data)) {
+      return data.slice(0, limit);
+    } else if (data.data && Array.isArray(data.data)) {
+      return data.data.slice(0, limit);
+    }
+    
+    return [];
+  } catch (error) {
+    console.error('식당 최근 후기 조회 오류:', error);
+    return [];
   }
 };
