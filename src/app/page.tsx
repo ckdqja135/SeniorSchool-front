@@ -527,7 +527,7 @@ export default function HomePage() {
 
                 return (
                 <div className="space-y-2">
-                    {filteredPosts.map((post, index) => {
+                    {filteredPosts.slice(0, 10).map((post, index) => {
                     const style = getBoardTypeStyle(post.boardType);
                     const colorClasses = {
                       green: 'bg-green-100 text-green-600',
