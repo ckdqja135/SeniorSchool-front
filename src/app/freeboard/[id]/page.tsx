@@ -575,67 +575,36 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
           <div className="flex items-center h-16">
             <button
               onClick={handleBackClick}
-              className="group flex items-center px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all duration-200 -ml-2"
+              className="group flex items-center px-2 sm:px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all duration-200 -ml-2"
             >
-              <div className="flex items-center justify-center w-8 h-8 mr-3 bg-gray-100 group-hover:bg-gray-200 rounded-full transition-colors duration-200">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 mr-2 sm:mr-3 bg-gray-100 group-hover:bg-gray-200 rounded-full transition-colors duration-200">
+                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </div>
-              <span className="font-medium">뒤로가기</span>
+              <span className="text-sm sm:text-base font-medium">뒤로가기</span>
             </button>
-            <h1 className="ml-4 text-xl font-semibold text-gray-900">자유게시판</h1>
+            <h1 className="ml-2 sm:ml-4 text-base sm:text-xl font-semibold text-gray-900">자유게시판</h1>
           </div>
         </div>
       </header>
 
       {/* 메인 컨텐츠 */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* 게시글 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-4 sm:mb-6">
           {/* 게시글 헤더 */}
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex-1">
-                <div className="flex items-center space-x-3 mb-2">
-                  <span className="text-sm font-medium text-gray-900">{post.boardID}</span>
-                  <span className="text-sm text-gray-500">•</span>
-                  <span className="text-sm text-gray-500">{formatTimeAgo(post.boardRegDate)}</span>
-                  <span className="text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">
-                    {post.category}
-                  </span>
+          <div className="p-4 sm:p-6 border-b border-gray-200">
+            <div className="flex flex-col space-y-3 sm:space-y-4">
+              {/* 상단: 작성자 정보와 메뉴 */}
+              <div className="flex items-start justify-between">
+                <div className="flex items-center space-x-2 sm:space-x-3">
+                  <span className="text-xs sm:text-sm font-medium text-gray-900">{post.boardID}</span>
+                  <span className="text-xs sm:text-sm text-gray-500">•</span>
+                  <span className="text-xs sm:text-sm text-gray-500">{formatTimeAgo(post.boardRegDate)}</span>
                 </div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-3">{post.boardTitle}</h1>
-                {post.tags && post.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {post.tags.map((tag, index) => (
-                      <span key={index} className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center space-x-4 text-sm text-gray-500">
-                <button
-                  onClick={handleLike}
-                  disabled={isLiking}
-                  className={`flex items-center space-x-1 ${isLiking ? 'opacity-50 cursor-not-allowed' : 'hover:text-red-600'}`}
-                  aria-label="좋아요"
-                >
-                  <svg className={`w-4 h-4 ${isLiked ? 'text-red-600' : ''}`} fill={isLiked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                  </svg>
-                  <span>{post.boardLike}</span>
-                </button>
-                <div className="flex items-center space-x-1">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                  <span>{post.boardHits}</span>
-                </div>
-                {/* 게시글 햄버거 메뉴 */}
+                
+                {/* 햄버거 메뉴 */}
                 <div className="relative board-menu">
                   <button
                     onClick={toggleBoardMenu}
@@ -651,7 +620,7 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                     <div className="absolute right-0 top-8 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
                       <button
                         onClick={handleBoardEdit}
-                        className="w-full px-4 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center space-x-2"
+                        className="w-full px-4 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center space-x-2 rounded-t-lg"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -660,7 +629,7 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                       </button>
                       <button
                         onClick={handleBoardDelete}
-                        className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                        className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2 rounded-b-lg"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -671,13 +640,60 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                   )}
                 </div>
               </div>
+
+              {/* 카테고리 */}
+              <div>
+                <span className="inline-block text-xs sm:text-sm text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full font-medium">
+                  {post.category}
+                </span>
+              </div>
+
+              {/* 제목 */}
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight">{post.boardTitle}</h1>
+
+              {/* 태그 */}
+              {post.tags && post.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                  {post.tags.map((tag, index) => (
+                    <span key={index} className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* 조회수와 좋아요 */}
+              <div className="flex items-center space-x-4 text-xs sm:text-sm text-gray-500 pt-2 border-t border-gray-100">
+                <button
+                  onClick={handleLike}
+                  disabled={isLiking}
+                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full transition-all ${
+                    isLiked 
+                      ? 'bg-red-50 text-red-600' 
+                      : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600'
+                  } ${isLiking ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  aria-label="좋아요"
+                >
+                  <svg className="w-4 h-4" fill={isLiked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={isLiked ? 0 : 2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                  <span className="font-medium">{post.boardLike}</span>
+                </button>
+                <div className="flex items-center space-x-1.5">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  <span>{post.boardHits}</span>
+                </div>
+              </div>
             </div>
           </div>
           
           {/* 게시글 내용 */}
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <div className="prose max-w-none">
-              <div className="whitespace-pre-wrap text-gray-900 leading-relaxed">
+              <div className="whitespace-pre-wrap text-sm sm:text-base text-gray-900 leading-relaxed break-words">
                 {post.boardContent}
               </div>
             </div>
@@ -686,12 +702,12 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
 
         {/* 댓글 섹션 */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">댓글 {comments.length}개</h2>
+          <div className="p-4 sm:p-6 border-b border-gray-200">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900">댓글 {comments.length}개</h2>
           </div>
 
           {/* 댓글 목록 */}
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {isCommentLoading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600 mx-auto mb-2"></div>
@@ -834,23 +850,23 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
           </div>
 
           {/* 댓글 작성 폼 */}
-          <div className="p-6 border-t border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
+          <div className="p-4 sm:p-6 border-t border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
             <div className="mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
-                <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 flex items-center">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
+                  <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
                 </div>
                 댓글 작성
               </h3>
-              <p className="text-sm text-gray-600">의견을 공유해주세요</p>
+              <p className="text-xs sm:text-sm text-gray-600">의견을 공유해주세요</p>
             </div>
             
-            <form onSubmit={handleSubmitComment} className="space-y-6">
+            <form onSubmit={handleSubmitComment} className="space-y-4 sm:space-y-6">
               {/* 댓글 내용 */}
               <div className="relative">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                   댓글 내용 *
                 </label>
                 <div className="relative">
@@ -858,25 +874,25 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                     placeholder="댓글을 작성해주세요..."
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none transition-all duration-200 shadow-sm hover:shadow-md"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none transition-all duration-200 shadow-sm hover:shadow-md"
                     rows={4}
                     disabled={isSubmittingComment}
                   />
-                  <div className="absolute bottom-3 right-3 text-xs text-gray-400">
+                  <div className="absolute bottom-2 sm:bottom-3 right-2 sm:right-3 text-xs text-gray-400">
                     {newComment.length}/500
                   </div>
                 </div>
               </div>
 
               {/* 작성자 정보 */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700">
                     작성자명 *
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                     </div>
@@ -885,13 +901,13 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                       value={commentWriter}
                       onChange={(e) => setCommentWriter(e.target.value)}
                       placeholder="닉네임을 입력해주세요"
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                      className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md"
                       maxLength={20}
                       disabled={isSubmittingComment}
                     />
                   </div>
                   <p className="text-xs text-gray-500 flex items-center">
-                    <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-3 h-3 mr-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                     </svg>
                     댓글에 표시될 이름입니다
@@ -899,12 +915,12 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700">
                     비밀번호 *
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                       </svg>
                     </div>
@@ -913,14 +929,14 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                       value={commentPassword}
                       onChange={(e) => setCommentPassword(e.target.value)}
                       placeholder="4~20자 비밀번호"
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                      className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md"
                       minLength={4}
                       maxLength={20}
                       disabled={isSubmittingComment}
                     />
                   </div>
                   <p className="text-xs text-gray-500 flex items-center">
-                    <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-3 h-3 mr-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                     </svg>
                     댓글 수정/삭제 시 필요합니다
@@ -929,11 +945,11 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
               </div>
 
               {/* 제출 버튼 */}
-              <div className="flex justify-end pt-4">
+              <div className="flex justify-end pt-2 sm:pt-4">
                 <button
                   type="submit"
                   disabled={!newComment.trim() || !commentWriter.trim() || !commentPassword.trim() || isSubmittingComment}
-                  className="group relative px-8 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-medium rounded-xl hover:from-indigo-600 hover:to-purple-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:transform-none"
+                  className="group relative px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-medium rounded-xl hover:from-indigo-600 hover:to-purple-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:transform-none"
                 >
                   <div className="flex items-center space-x-2">
                     {isSubmittingComment ? (
@@ -960,10 +976,10 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
 
       {/* 댓글 삭제 확인 모달 */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">댓글 삭제</h3>
-            <p className="text-sm text-gray-600 mb-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 max-w-md w-full">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">댓글 삭제</h3>
+            <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
               댓글을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
             </p>
             <div className="space-y-3">
@@ -972,18 +988,18 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                 value={deletePassword}
                 onChange={(e) => setDeletePassword(e.target.value)}
                 placeholder="비밀번호를 입력하세요"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
               />
-              <div className="flex space-x-3">
+              <div className="flex space-x-2 sm:space-x-3">
                 <button
                   onClick={() => handleConfirmDelete(showDeleteModal)}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                  className="flex-1 px-3 sm:px-4 py-2 text-sm sm:text-base bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
                 >
                   삭제
                 </button>
                 <button
                   onClick={handleCancelDelete}
-                  className="flex-1 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                  className="flex-1 px-3 sm:px-4 py-2 text-sm sm:text-base bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
                 >
                   취소
                 </button>
@@ -998,56 +1014,56 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             {/* 모달 헤더 */}
-            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4 rounded-t-2xl">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-4 sm:px-6 py-3 sm:py-4 rounded-t-2xl">
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold text-white">게시글 수정</h3>
+                <h3 className="text-lg sm:text-xl font-semibold text-white">게시글 수정</h3>
               </div>
             </div>
 
             {/* 모달 내용 */}
-            <div className="p-6 space-y-6">
+            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
               {/* 제목 */}
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">제목</label>
+                <label className="block text-xs sm:text-sm font-semibold text-gray-700">제목</label>
                 <input
                   type="text"
                   value={editBoardTitle}
                   onChange={(e) => setEditBoardTitle(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md"
                   placeholder="제목을 입력하세요"
                 />
               </div>
               
               {/* 카테고리 */}
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">카테고리</label>
+                <label className="block text-xs sm:text-sm font-semibold text-gray-700">카테고리</label>
                 <input
                   type="text"
                   value={editBoardCategory}
                   onChange={(e) => setEditBoardCategory(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md"
                   placeholder="카테고리를 입력하세요 (예: 일반, 질문, 정보, 후기)"
                 />
               </div>
               
               {/* 태그 */}
-              <div className="space-y-3">
-                <label className="block text-sm font-semibold text-gray-700">태그</label>
-                <div className="flex flex-wrap gap-2 mb-3">
+              <div className="space-y-2 sm:space-y-3">
+                <label className="block text-xs sm:text-sm font-semibold text-gray-700">태그</label>
+                <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-2 sm:mb-3">
                   {editBoardTags.map((tag, index) => (
                     <span
                       key={index}
-                      className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-indigo-100 text-indigo-800"
+                      className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm bg-indigo-100 text-indigo-800"
                     >
                       #{tag}
                       <button
                         onClick={() => handleRemoveTag(tag)}
-                        className="ml-2 text-indigo-600 hover:text-indigo-800"
+                        className="ml-1.5 sm:ml-2 text-indigo-600 hover:text-indigo-800"
                       >
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1062,12 +1078,12 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                     value={newTag}
                     onChange={(e) => setNewTag(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleAddTag()}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                    className="flex-1 px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
                     placeholder="태그를 입력하고 Enter를 누르세요"
                   />
                   <button
                     onClick={handleAddTag}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                    className="px-3 sm:px-4 py-2 text-sm sm:text-base bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium whitespace-nowrap"
                   >
                     추가
                   </button>
@@ -1076,39 +1092,39 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
               
               {/* 내용 */}
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">내용</label>
+                <label className="block text-xs sm:text-sm font-semibold text-gray-700">내용</label>
                 <textarea
                   value={editBoardContent}
                   onChange={(e) => setEditBoardContent(e.target.value)}
                   rows={8}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none transition-all duration-200 shadow-sm hover:shadow-md"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none transition-all duration-200 shadow-sm hover:shadow-md"
                   placeholder="내용을 입력하세요"
                 />
               </div>
               
               {/* 비밀번호 */}
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">비밀번호</label>
+                <label className="block text-xs sm:text-sm font-semibold text-gray-700">비밀번호</label>
                 <input
                   type="password"
                   value={editBoardPassword}
                   onChange={(e) => setEditBoardPassword(e.target.value)}
                   placeholder="비밀번호를 입력하세요"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md"
                 />
               </div>
               
               {/* 버튼 */}
-              <div className="flex space-x-3 pt-4">
+              <div className="flex space-x-2 sm:space-x-3 pt-2 sm:pt-4">
                 <button
                   onClick={handleSaveBoardEdit}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                 >
                   수정 완료
                 </button>
                 <button
                   onClick={handleCancelBoardEdit}
-                  className="flex-1 px-6 py-3 bg-gray-500 text-white font-semibold rounded-xl hover:bg-gray-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base bg-gray-500 text-white font-semibold rounded-xl hover:bg-gray-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                 >
                   취소
                 </button>
@@ -1120,10 +1136,10 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
 
       {/* 게시글 삭제 확인 모달 */}
       {showBoardDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">게시글 삭제</h3>
-            <p className="text-sm text-gray-600 mb-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 max-w-md w-full">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">게시글 삭제</h3>
+            <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
               게시글을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
             </p>
             <div className="space-y-3">
@@ -1132,18 +1148,18 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                 value={boardDeletePassword}
                 onChange={(e) => setBoardDeletePassword(e.target.value)}
                 placeholder="비밀번호를 입력하세요"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
               />
-              <div className="flex space-x-3">
+              <div className="flex space-x-2 sm:space-x-3">
                 <button
                   onClick={handleConfirmBoardDelete}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                  className="flex-1 px-3 sm:px-4 py-2 text-sm sm:text-base bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
                 >
                   삭제
                 </button>
                 <button
                   onClick={handleCancelBoardDelete}
-                  className="flex-1 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                  className="flex-1 px-3 sm:px-4 py-2 text-sm sm:text-base bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
                 >
                   취소
                 </button>

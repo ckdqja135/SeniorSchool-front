@@ -242,7 +242,13 @@ export default function HomePage() {
         const response = await fetchBestPosts();
         
         if (response && response.data) {
-          setBestPosts(response.data);
+          // 중복 제거: boardType과 boardIdx로 유니크하게 필터링
+          const uniquePosts = response.data.filter((post: BestPost, index: number, self: BestPost[]) => 
+            index === self.findIndex((p: BestPost) => 
+              p.boardType === post.boardType && p.boardIdx === post.boardIdx
+            )
+          );
+          setBestPosts(uniquePosts);
         } else {
           setBestPosts([]);
         }
@@ -466,10 +472,10 @@ export default function HomePage() {
         <div className="mb-6 max-w-5xl mx-auto">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
             {/* 검색바 */}
-            <div className="p-4 border-b border-gray-200">
+            <div className="p-3 sm:p-4 border-b border-gray-200">
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
@@ -478,18 +484,18 @@ export default function HomePage() {
                   placeholder="관심있는 내용을 검색해보세요!"
                   value={searchQuery}
                   onChange={handleSearchChange}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                  className="block w-full pl-9 sm:pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-xs sm:text-sm"
                 />
               </div>
             </div>
 
             {/* 베스트 후기 헤더 */}
-            <div className="p-4 border-b border-gray-200">
-              <h3 className="text-lg font-bold text-gray-900">후기 베스트</h3>
+            <div className="p-3 sm:p-4 border-b border-gray-200">
+              <h3 className="text-base sm:text-lg font-bold text-gray-900">후기 베스트</h3>
             </div>
 
             {/* 베스트 후기 목록 */}
-            <div className="p-4">
+            <div className="p-3 sm:p-4">
               {isBestPostsLoading ? (
                 <div className="text-center py-4">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600 mx-auto mb-2"></div>
@@ -535,37 +541,45 @@ export default function HomePage() {
                     
                     return (
                       <div
-                        key={post.boardIdx}
+                        key={`${post.boardType}-${post.boardIdx}`}
                         onClick={() => handleBestPostClick(post)}
-                        className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group"
+                        className="p-2 sm:p-3 hover:bg-gray-50 rounded-lg cursor-pointer group"
                       >
-                        <div className="flex-shrink-0">
-                          <div className={`w-8 h-8 ${colorClasses[style.color as keyof typeof colorClasses].split(' ')[0]} rounded-full flex items-center justify-center`}>
-                            {style.icon}
+                        <div className="flex items-start sm:items-center space-x-2 sm:space-x-3">
+                          {/* 아이콘 */}
+                          <div className="flex-shrink-0">
+                            <div className={`w-7 h-7 sm:w-8 sm:h-8 ${colorClasses[style.color as keyof typeof colorClasses].split(' ')[0]} rounded-full flex items-center justify-center`}>
+                              {style.icon}
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <span className={`text-xs font-medium ${colorClasses[style.color as keyof typeof colorClasses]} px-2 py-0.5 rounded-full`}>
-                              {style.label}
-                            </span>
-                            <p className="text-sm text-gray-900 font-medium line-clamp-1 group-hover:text-indigo-700 transition-colors duration-200">
-                              {post.boardTitle}
-                            </p>
+                          
+                          {/* 콘텐츠 영역 */}
+                          <div className="flex-1 min-w-0">
+                            {/* 배지와 제목 - 모바일에서 세로 정렬 */}
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
+                              <span className={`text-xs font-medium ${colorClasses[style.color as keyof typeof colorClasses]} px-2 py-0.5 rounded-full whitespace-nowrap w-fit`}>
+                                {style.label}
+                              </span>
+                              <p className="text-sm sm:text-base text-gray-900 font-medium line-clamp-2 sm:line-clamp-1 group-hover:text-indigo-700 transition-colors duration-200">
+                                {post.boardTitle}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-center space-x-3 text-xs text-gray-400">
-                          <div className="flex items-center space-x-1">
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                            </svg>
-                            <span>{post.boardLike}</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                            </svg>
-                            <span>{post.boardHits}</span>
+                          
+                          {/* 통계 정보 */}
+                          <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-3 text-xs text-gray-400 flex-shrink-0">
+                            <div className="flex items-center space-x-1">
+                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                              </svg>
+                              <span>{post.boardLike}</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                              </svg>
+                              <span>{post.boardHits}</span>
+                            </div>
                           </div>
                         </div>
                       </div>
