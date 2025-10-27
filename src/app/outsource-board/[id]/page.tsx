@@ -851,7 +851,11 @@ export default function OutsourceBoardDetailPage() {
               외주 오빠
             </button>
             <div className="text-gray-300">
-              {outsourceInfo?.outsourceName ? `${outsourceInfo.outsourceName} 후기` : '외주 후기'}
+              {(board as any)?.outsource?.outsourceName 
+                ? `${(board as any).outsource.outsourceName} 외주 후기` 
+                : outsourceInfo?.outsourceName 
+                  ? `${outsourceInfo.outsourceName} 외주 후기` 
+                  : '외주 후기'}
             </div>
           </div>
         </div>

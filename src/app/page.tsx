@@ -318,6 +318,13 @@ export default function HomePage() {
 
   // 맛잘알 후기 클릭 핸들러
   const handleMatzalAlBoardClick = (board: any) => {
+    // 식당 정보를 sessionStorage에 저장 (뒤로가기 시 사용)
+    if ((board as any).restaurantName) {
+      sessionStorage.setItem('previousMatzalAlName', (board as any).restaurantName);
+    }
+    if ((board as any).restaurant?.matzalAlName) {
+      sessionStorage.setItem('previousMatzalAlName', (board as any).restaurant.matzalAlName);
+    }
     router.push(`/matzal-al-board/${board.boardIdx}`);
   };
 

@@ -826,7 +826,11 @@ export default function MatzalAlBoardDetailPage() {
               맛잘알 오빠
             </Link>
             <div className="text-gray-300">
-              {boardPost?.restaurantName ? `${boardPost.restaurantName} 맛집 후기` : '맛집 후기'}
+              {(boardPost as any)?.restaurant?.restaurantName 
+                ? `${(boardPost as any).restaurant.restaurantName} 맛집 후기` 
+                : boardPost?.restaurantName 
+                  ? `${boardPost.restaurantName} 맛집 후기` 
+                  : '맛집 후기'}
             </div>
           </div>
         </div>
@@ -836,7 +840,38 @@ export default function MatzalAlBoardDetailPage() {
         {/* 뒤로가기 버튼 */}
         <div className="mb-6">
           <button 
-            onClick={() => router.back()}
+            onClick={() => {
+              // sessionStorage에서 식당 이름 가져오기
+              const previousMatzalAlName = sessionStorage.getItem('previousMatzalAlName');
+              
+              // boardPost에 restaurant 정보가 있으면 해당 페이지로 이동
+              let targetName = null;
+              
+              // restaurant 객체에서 matzalAlName 확인 (타입에 정의되지 않은 필드일 수 있음)
+              if (boardPost && 'restaurant' in boardPost) {
+                const restaurant = boardPost.restaurant as any;
+                if (restaurant?.matzalAlName) {
+                  targetName = restaurant.matzalAlName;
+                }
+              }
+              
+              if (!targetName && boardPost?.restaurantName) {
+                targetName = boardPost.restaurantName;
+              }
+              
+              if (!targetName && previousMatzalAlName) {
+                targetName = previousMatzalAlName;
+              }
+              
+              if (targetName) {
+                router.push(`/matzal-al-mentor/${encodeURIComponent(targetName)}`);
+              } else {
+                router.push('/matzal-al-mentor');
+              }
+              
+              // sessionStorage 정리
+              sessionStorage.removeItem('previousMatzalAlName');
+            }}
             className="flex items-center text-gray-600 hover:text-gray-800 transition-colors"
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
