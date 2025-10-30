@@ -280,13 +280,14 @@ const ChurchManagementPage = () => {
         }
       });
 
-      const response = await fetch("https://api.reviewhub.life/admin/church/putChurchData", {
+      const response = await fetch(`https://api.reviewhub.life/admin/church/${editingChurch.churchIdx}`, {
         method: "PUT",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(changedData),
+        // 경로 파라미터로 churchIdx 전달, 바디에서는 변경 필드만 전송
+        body: JSON.stringify(Object.fromEntries(Object.entries(changedData).filter(([k]) => k !== 'churchIdx'))),
       });
 
       if (response.ok) {

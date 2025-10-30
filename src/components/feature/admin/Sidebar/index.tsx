@@ -39,7 +39,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
       href: "/myoriadmin/school",
       subItems: [
         { label: "학교 관리", href: "/myoriadmin/school/management" },
-        { label: "대학교 추가 요청", href: "/myoriadmin/school/requests" },
+        { label: "대학교 추가 요청 관리", href: "/myoriadmin/school/requests" },
       ],
     },
     {
@@ -48,7 +48,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
       href: "/myoriadmin/church",
       subItems: [
         { label: "교회 관리", href: "/myoriadmin/church" },
-        { label: "교회 추가 요청", href: "/myoriadmin/church/requests" },
+        { label: "교회 추가 요청 관리", href: "/myoriadmin/church/requests" },
       ],
     },
     {
@@ -57,7 +57,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
       href: "/myoriadmin/company",
       subItems: [
         { label: "회사 관리", href: "/myoriadmin/company" },
-        { label: "회사 추가 요청", href: "/myoriadmin/company/requests" },
+        { label: "회사 추가 요청 관리", href: "/myoriadmin/company/requests" },
       ],
     },
     {
@@ -66,7 +66,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
       href: "/myoriadmin/outsource",
       subItems: [
         { label: "외주업체 관리", href: "/myoriadmin/outsource" },
-        { label: "외주업체 추가 요청", href: "/myoriadmin/outsource/requests" },
+        { label: "외주업체 추가 요청 관리", href: "/myoriadmin/outsource/requests" },
+      ],
+    },
+    {
+      icon: "🍽️",
+      label: "맛잘알 오빠",
+      href: "/myoriadmin/restaurant",
+      subItems: [
+        { label: "식당 관리", href: "/myoriadmin/restaurant" },
+        { label: "식당 추가 요청 관리", href: "/myoriadmin/restaurant/requests" },
       ],
     },
     {

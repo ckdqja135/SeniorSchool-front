@@ -29,6 +29,30 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     };
 
     checkAuth();
+    
+    // 전역 fetch 가드: 401/403이면 토큰 제거 후 로그인 페이지로 이동
+    const originalFetch = window.fetch;
+    window.fetch = async (...args) => {
+      try {
+        const response = await originalFetch(...args);
+        if (response && (response.status === 401 || response.status === 403)) {
+          localStorage.removeItem("user");
+          localStorage.removeItem("accessToken");
+          if (pathname !== "/myoriadmin/sign-in") {
+            router.push("/myoriadmin/sign-in");
+          }
+        }
+        return response;
+      } catch (e) {
+        // 네트워크 오류 시에는 기존 동작 유지
+        throw e;
+      }
+    };
+    
+    // cleanup: 원래 fetch 복원
+    return () => {
+      window.fetch = originalFetch;
+    };
   }, [pathname, router]);
 
   // 로딩 중

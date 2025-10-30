@@ -102,7 +102,11 @@ const CompanyManagementPage = () => {
           console.log("compAddr:", data.data[0].compAddr);
           console.log("compLotAddr:", data.data[0].compLotAddr);
         }
-        setCompanies(data.data || []);
+        const normalized = (data.data || []).map((item: any) => ({
+          ...item,
+          compLocation: item.compLocation ?? item.compLocate ?? "",
+        }));
+        setCompanies(normalized);
         // pagination 객체에서 페이징 정보 가져오기
         if (data.pagination) {
           const totalPagesFromAPI = data.pagination.totalPages || 1;
