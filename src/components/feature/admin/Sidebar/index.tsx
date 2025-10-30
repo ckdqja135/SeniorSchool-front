@@ -34,6 +34,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
       subItems: [],
     },
     {
+      icon: "🗂️",
+      label: "자유게시판",
+      href: "/myoriadmin/freeboard",
+      subItems: [
+        { label: "자유게시판 관리", href: "/myoriadmin/freeboard" }
+      ],
+    },
+    {
       icon: "🎓",
       label: "학교 오빠",
       href: "/myoriadmin/school",

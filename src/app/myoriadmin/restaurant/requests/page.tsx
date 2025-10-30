@@ -20,7 +20,8 @@ interface RestaurantRequest {
 
 interface ApiResponse {
   status: number;
-  data: RestaurantRequest[];
+  data?: RestaurantRequest[]; // 일부 응답은 data 사용
+  requests?: RestaurantRequest[]; // 일부 응답은 requests 사용
   totalCount: number;
   currentPage: number | string;
   rowsPerPage: number;
@@ -60,7 +61,9 @@ const RestaurantRequestsPage: React.FC = () => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data: ApiResponse = await res.json();
       if (data.status === 200) {
-        setRequests(data.data || []);
+        // data 또는 requests 키를 모두 지원
+        const list = (data.data ?? data.requests) || [];
+        setRequests(list);
         setTotalCount(data.totalCount || 0);
         setTotalPages(data.totalPages || 1);
         setCurrentPage(Number(data.currentPage) || page);

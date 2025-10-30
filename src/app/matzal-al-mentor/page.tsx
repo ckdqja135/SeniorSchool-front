@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useRestaurantCommentsTop } from '@/hooks/MatzalAl/useMatzalAl';
+import { requestMatzalAl } from '@/lib/matzalAl/matzalAlAPI';
 
 export default function MatzalAlMentorPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -343,16 +344,8 @@ export default function MatzalAlMentorPage() {
     setIsSubmitting(true);
     
     try {
-      const backendURL = 'https://api.reviewhub.life';
-      const response = await fetch(`${backendURL}/matzal-al/requests`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestForm),
-      });
-
-      if (response.ok) {
+      const ok = await requestMatzalAl(requestForm);
+      if (ok) {
         alert('맛잘알 추가 요청이 성공적으로 전송되었습니다.');
         setShowRequestModal(false);
         setRequestForm({
@@ -362,7 +355,7 @@ export default function MatzalAlMentorPage() {
           requesterId: ''
         });
       } else {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error('요청 실패');
       }
     } catch (error) {
       console.error('맛잘알 추가 요청 오류:', error);
@@ -796,20 +789,15 @@ export default function MatzalAlMentorPage() {
                 <label htmlFor="matzalAlType" className="block text-sm font-medium text-gray-700 mb-2">
                   맛집 종류 *
                 </label>
-                <select
+                <input
+                  type="text"
                   id="matzalAlType"
                   value={requestForm.matzalAlType}
-                  onChange={(e) => setRequestForm({...requestForm, matzalAlType: e.target.value})}
+                  onChange={(e) => setRequestForm({ ...requestForm, matzalAlType: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="예: 한식, 중식, 일식, 디저트, 카페 등"
                   required
-                >
-                  <option value="맛집">맛집</option>
-                  <option value="카페">카페</option>
-                  <option value="술집">술집</option>
-                  <option value="디저트">디저트</option>
-                  <option value="야식">야식</option>
-                  <option value="기타">기타</option>
-                </select>
+                />
               </div>
 
               {/* 제출 버튼 */}
