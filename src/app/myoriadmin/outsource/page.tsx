@@ -17,6 +17,8 @@ interface OutsourceData {
   outsourceMapIMG: string;
   outsourceStatus: number;
   outsourceViewCount: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface ApiResponse {
@@ -289,8 +291,9 @@ const OutsourceManagementPage = () => {
       const changedData: Partial<OutsourceData> = { outsourceIdx: editingOutsource.outsourceIdx };
       Object.keys(editingOutsource).forEach(key => {
         const typedKey = key as keyof OutsourceData;
-        if (editingOutsource[typedKey] !== selectedOutsource[typedKey]) {
-          (changedData as Record<string, string | number>)[key] = editingOutsource[typedKey];
+        const value = editingOutsource[typedKey];
+        if (value !== selectedOutsource[typedKey] && key !== 'createdAt' && key !== 'updatedAt' && value !== undefined) {
+          (changedData as Record<string, string | number>)[key] = value as string | number;
         }
       });
 
@@ -881,6 +884,34 @@ const OutsourceManagementPage = () => {
                       isEditMode ? "bg-white" : "bg-gray-50"
                     }`}
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">등록일</label>
+                  <div className="w-full px-3 py-2 text-gray-700 bg-gray-50 rounded-md">
+                    {selectedOutsource.createdAt 
+                      ? new Date(selectedOutsource.createdAt).toLocaleString('ko-KR', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })
+                      : '-'}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">수정일</label>
+                  <div className="w-full px-3 py-2 text-gray-700 bg-gray-50 rounded-md">
+                    {selectedOutsource.updatedAt 
+                      ? new Date(selectedOutsource.updatedAt).toLocaleString('ko-KR', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })
+                      : '-'}
+                  </div>
                 </div>
               </div>
             </div>

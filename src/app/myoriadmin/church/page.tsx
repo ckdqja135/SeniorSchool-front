@@ -17,6 +17,8 @@ interface ChurchData {
   churchMapIMG: string;
   churchStatus: number;
   churchViewCount: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface ApiResponse {
@@ -275,8 +277,9 @@ const ChurchManagementPage = () => {
       const changedData: Partial<ChurchData> = { churchIdx: editingChurch.churchIdx };
       Object.keys(editingChurch).forEach(key => {
         const typedKey = key as keyof ChurchData;
-        if (editingChurch[typedKey] !== selectedChurch[typedKey]) {
-          (changedData as Record<string, string | number>)[key] = editingChurch[typedKey];
+        const value = editingChurch[typedKey];
+        if (value !== selectedChurch[typedKey] && key !== 'createdAt' && key !== 'updatedAt' && value !== undefined) {
+          (changedData as Record<string, string | number>)[key] = value as string | number;
         }
       });
 
@@ -858,6 +861,34 @@ const ChurchManagementPage = () => {
                       isEditMode ? "bg-white" : "bg-gray-50"
                     }`}
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">등록일</label>
+                  <div className="w-full px-3 py-2 text-gray-700 bg-gray-50 rounded-md">
+                    {selectedChurch.createdAt 
+                      ? new Date(selectedChurch.createdAt).toLocaleString('ko-KR', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })
+                      : '-'}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">수정일</label>
+                  <div className="w-full px-3 py-2 text-gray-700 bg-gray-50 rounded-md">
+                    {selectedChurch.updatedAt 
+                      ? new Date(selectedChurch.updatedAt).toLocaleString('ko-KR', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })
+                      : '-'}
+                  </div>
                 </div>
               </div>
             </div>

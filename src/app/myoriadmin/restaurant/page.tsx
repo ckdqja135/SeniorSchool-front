@@ -15,6 +15,8 @@ interface RestaurantData {
   restaurantLotAddr: string;
   restaurantAddr: string;
   restaurantMapIMG: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface ApiResponseV1 { // 기존 다른 엔드포인트 유사 포맷 대비
@@ -251,8 +253,9 @@ const RestaurantManagementPage: React.FC = () => {
       const accessToken = localStorage.getItem("accessToken");
       const changedData: Partial<RestaurantData> = { restaurantIdx: editingRestaurant.restaurantIdx } as any;
       (Object.keys(editingRestaurant) as (keyof RestaurantData)[]).forEach((k) => {
-        if (editingRestaurant[k] !== selectedRestaurant[k]) {
-          (changedData as any)[k] = editingRestaurant[k];
+        const value = editingRestaurant[k];
+        if (value !== selectedRestaurant[k] && k !== 'createdAt' && k !== 'updatedAt' && value !== undefined) {
+          (changedData as any)[k] = value;
         }
       });
 
@@ -646,6 +649,34 @@ const RestaurantManagementPage: React.FC = () => {
                 <div className="col-span-2">
                   <label className="block text-sm font-medium mb-1">지도 이미지 URL</label>
                   <input type="url" value={isEditMode ? editingRestaurant?.restaurantMapIMG || "" : selectedRestaurant.restaurantMapIMG} onChange={(e) => handleEditChange("restaurantMapIMG", e.target.value)} readOnly={!isEditMode} className={`w-full px-3 py-2 border border-gray-300 rounded-md ${isEditMode ? "bg-white" : "bg-gray-50"}`} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">등록일</label>
+                  <div className="w-full px-3 py-2 text-gray-700 bg-gray-50 rounded-md">
+                    {selectedRestaurant.createdAt 
+                      ? new Date(selectedRestaurant.createdAt).toLocaleString('ko-KR', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })
+                      : '-'}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">수정일</label>
+                  <div className="w-full px-3 py-2 text-gray-700 bg-gray-50 rounded-md">
+                    {selectedRestaurant.updatedAt 
+                      ? new Date(selectedRestaurant.updatedAt).toLocaleString('ko-KR', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })
+                      : '-'}
+                  </div>
                 </div>
               </div>
             </div>

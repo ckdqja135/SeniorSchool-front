@@ -18,6 +18,8 @@ interface UnivData {
   univMapIMG: string;
   univStatus: number;
   univViewCount: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface ApiResponse {
@@ -283,8 +285,9 @@ const SchoolManagementPage = () => {
       const changedData: Partial<UnivData> = { univIdx: editingSchool.univIdx };
       Object.keys(editingSchool).forEach(key => {
         const typedKey = key as keyof UnivData;
-        if (editingSchool[typedKey] !== selectedSchool[typedKey]) {
-          (changedData as Record<string, string | number>)[key] = editingSchool[typedKey];
+        const value = editingSchool[typedKey];
+        if (value !== selectedSchool[typedKey] && key !== 'createdAt' && key !== 'updatedAt' && value !== undefined) {
+          (changedData as Record<string, string | number>)[key] = value as string | number;
         }
       });
 
@@ -880,6 +883,34 @@ const SchoolManagementPage = () => {
                       isEditMode ? "bg-white" : "bg-gray-50"
                     }`}
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">등록일</label>
+                  <div className="w-full px-3 py-2 text-gray-700 bg-gray-50 rounded-md">
+                    {selectedSchool.createdAt 
+                      ? new Date(selectedSchool.createdAt).toLocaleString('ko-KR', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })
+                      : '-'}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">수정일</label>
+                  <div className="w-full px-3 py-2 text-gray-700 bg-gray-50 rounded-md">
+                    {selectedSchool.updatedAt 
+                      ? new Date(selectedSchool.updatedAt).toLocaleString('ko-KR', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })
+                      : '-'}
+                  </div>
                 </div>
               </div>
             </div>

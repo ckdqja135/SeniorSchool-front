@@ -18,6 +18,8 @@ interface CompanyData {
   compMapIMG: string;
   compStatus: number;
   compViewCount: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface ApiResponse {
@@ -317,8 +319,9 @@ const CompanyManagementPage = () => {
       const changedData: Partial<CompanyData> = { compIdx: editingCompany.compIdx };
       Object.keys(editingCompany).forEach(key => {
         const typedKey = key as keyof CompanyData;
-        if (editingCompany[typedKey] !== selectedCompany[typedKey]) {
-          (changedData as Record<string, string | number>)[key] = editingCompany[typedKey];
+        const value = editingCompany[typedKey];
+        if (value !== selectedCompany[typedKey] && key !== 'createdAt' && key !== 'updatedAt' && value !== undefined) {
+          (changedData as Record<string, string | number>)[key] = value as string | number;
         }
       });
 
@@ -1053,6 +1056,34 @@ const CompanyManagementPage = () => {
                       isEditMode ? "bg-white" : "bg-gray-50"
                     }`}
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">등록일</label>
+                  <div className="w-full px-3 py-2 text-gray-700 bg-gray-50 rounded-md">
+                    {selectedCompany.createdAt 
+                      ? new Date(selectedCompany.createdAt).toLocaleString('ko-KR', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })
+                      : '-'}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">수정일</label>
+                  <div className="w-full px-3 py-2 text-gray-700 bg-gray-50 rounded-md">
+                    {selectedCompany.updatedAt 
+                      ? new Date(selectedCompany.updatedAt).toLocaleString('ko-KR', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })
+                      : '-'}
+                  </div>
                 </div>
               </div>
             </div>
