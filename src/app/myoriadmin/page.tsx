@@ -1,19 +1,132 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
+
+interface DashboardOverview {
+  totalPosts: number;
+  totalCompanies: number;
+  reportedPosts: number;
+  thisWeekActivity: number;
+}
+
+interface OverviewResponse {
+  success: boolean;
+  data: DashboardOverview;
+}
+
+interface MonthlyStats {
+  month: string;
+  postCount: number;
+  companyCount: number;
+}
+
+interface MonthlyStatsResponse {
+  success: boolean;
+  data: MonthlyStats[];
+}
+
+interface RecentActivity {
+  id: number;
+  type: string;
+  action: string;
+  name: string;
+  timestamp: string;
+}
+
+interface RecentActivityResponse {
+  success: boolean;
+  data: RecentActivity[];
+}
 
 const AdminMainPage = () => {
-  // 월별 통계 데이터 (게시글과 학교만)
-  const monthlyData = [
-    { month: "1월", posts: 45, schools: 8 },
-    { month: "2월", posts: 67, schools: 12 },
-    { month: "3월", posts: 89, schools: 15 },
-    { month: "4월", posts: 112, schools: 18 },
-    { month: "5월", posts: 145, schools: 22 },
-    { month: "6월", posts: 178, schools: 25 },
-    { month: "7월", posts: 201, schools: 28 },
-    { month: "8월", posts: 234, schools: 31 }
-  ];
+  const [overviewData, setOverviewData] = useState<DashboardOverview>({
+    totalPosts: 0,
+    totalCompanies: 0,
+    reportedPosts: 0,
+    thisWeekActivity: 0
+  });
+  const [monthlyData, setMonthlyData] = useState<MonthlyStats[]>([]);
+  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [monthlyLoading, setMonthlyLoading] = useState(true);
+  const [activityLoading, setActivityLoading] = useState(true);
+
+  // 개요 통계 조회
+  const fetchOverview = async () => {
+    setLoading(true);
+    try {
+      const accessToken = localStorage.getItem("accessToken");
+      const response = await fetch("https://api.reviewhub.life/admin/dashboard/overview", {
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const data: OverviewResponse = await response.json();
+      
+      if (data.success && data.data) {
+        setOverviewData(data.data);
+      }
+    } catch (error) {
+      console.error("개요 통계 조회 실패:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 월별 통계 조회
+  const fetchMonthlyStats = async () => {
+    setMonthlyLoading(true);
+    try {
+      const accessToken = localStorage.getItem("accessToken");
+      const response = await fetch("https://api.reviewhub.life/admin/dashboard/monthly-stats", {
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const data: MonthlyStatsResponse = await response.json();
+      
+      if (data.success && data.data) {
+        // 데이터를 날짜순으로 정렬하고 최근 8개월만 표시
+        const sortedData = [...data.data].sort((a, b) => b.month.localeCompare(a.month)).slice(0, 8);
+        setMonthlyData(sortedData);
+      }
+    } catch (error) {
+      console.error("월별 통계 조회 실패:", error);
+    } finally {
+      setMonthlyLoading(false);
+    }
+  };
+
+  // 최근 활동 조회
+  const fetchRecentActivities = async () => {
+    setActivityLoading(true);
+    try {
+      const accessToken = localStorage.getItem("accessToken");
+      const response = await fetch("https://api.reviewhub.life/admin/dashboard/recent-activities", {
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const data: RecentActivityResponse = await response.json();
+      
+      if (data.success && data.data) {
+        setRecentActivities(data.data.slice(0, 6)); // 최대 6개만 표시
+      }
+    } catch (error) {
+      console.error("최근 활동 조회 실패:", error);
+    } finally {
+      setActivityLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOverview();
+    fetchMonthlyStats();
+    fetchRecentActivities();
+  }, []);
 
   // 최근 사용자 데이터 (testAdmin, Ori 계정 반복)
   const recentUsers = [
@@ -25,19 +138,9 @@ const AdminMainPage = () => {
     { name: "Ori", email: "ori@seniorschool.com", role: "마스터", lastLogin: "15분 전", status: "online" }
   ];
 
-  // 최근 활동 데이터 (학교 관련 활동)
-  const recentActivities = [
-    { type: "school_update", school: "서울대학교", action: "학교 정보 업데이트", time: "방금 전", icon: "🏫" },
-    { type: "post_create", school: "연세대학교", action: "게시글 작성", time: "3분 전", icon: "📝" },
-    { type: "school_update", school: "고려대학교", action: "학교 정보 업데이트", time: "7분 전", icon: "🏫" },
-    { type: "post_create", school: "성균관대학교", action: "게시글 작성", time: "12분 전", icon: "📝" },
-    { type: "school_update", school: "한양대학교", action: "학교 정보 업데이트", time: "18분 전", icon: "🏫" },
-    { type: "post_create", school: "중앙대학교", action: "게시글 작성", time: "25분 전", icon: "📝" }
-  ];
-
   // 최대값 계산 (차트 높이 조정용)
-  const maxPosts = Math.max(...monthlyData.map(d => d.posts));
-  const maxSchools = Math.max(...monthlyData.map(d => d.schools));
+  const maxPosts = monthlyData.length > 0 ? Math.max(...monthlyData.map(d => d.postCount)) : 1;
+  const maxCompanies = monthlyData.length > 0 ? Math.max(...monthlyData.map(d => d.companyCount)) : 1;
 
   return (
     <div className="space-y-6">
@@ -50,8 +153,8 @@ const AdminMainPage = () => {
             </div>
             <div className="ml-4">
               <h3 className="text-lg font-semibold text-gray-800">총 게시글</h3>
-              <p className="text-2xl font-bold text-green-600">366</p>
-              <p className="text-sm text-green-600">+8% 이번 달</p>
+              <p className="text-2xl font-bold text-green-600">{loading ? "..." : overviewData.totalPosts.toLocaleString()}</p>
+              <p className="text-sm text-green-600">게시글 수</p>
             </div>
           </div>
         </div>
@@ -62,9 +165,9 @@ const AdminMainPage = () => {
               <span className="text-xl">🎓</span>
             </div>
             <div className="ml-4">
-              <h3 className="text-lg font-semibold text-gray-800">등록된 학교</h3>
-              <p className="text-2xl font-bold text-yellow-600">43</p>
-              <p className="text-sm text-green-600">+3 이번 달</p>
+              <h3 className="text-lg font-semibold text-gray-800">등록된 업체</h3>
+              <p className="text-2xl font-bold text-yellow-600">{loading ? "..." : overviewData.totalCompanies.toLocaleString()}</p>
+              <p className="text-sm text-green-600">학교+교회+회사, 등</p>
             </div>
           </div>
         </div>
@@ -76,7 +179,7 @@ const AdminMainPage = () => {
             </div>
             <div className="ml-4">
               <h3 className="text-lg font-semibold text-gray-800">신고된 게시글</h3>
-              <p className="text-2xl font-bold text-red-600">12</p>
+              <p className="text-2xl font-bold text-red-600">{loading ? "..." : overviewData.reportedPosts.toLocaleString()}</p>
               <p className="text-sm text-red-600">처리 대기 중</p>
             </div>
           </div>
@@ -89,8 +192,8 @@ const AdminMainPage = () => {
             </div>
             <div className="ml-4">
               <h3 className="text-lg font-semibold text-gray-800">이번 주 활동</h3>
-              <p className="text-2xl font-bold text-blue-600">89</p>
-              <p className="text-sm text-blue-600">게시글 + 학교 업데이트</p>
+              <p className="text-2xl font-bold text-blue-600">{loading ? "..." : overviewData.thisWeekActivity.toLocaleString()}</p>
+              <p className="text-sm text-blue-600">게시글+업체 등록</p>
             </div>
           </div>
         </div>
@@ -101,18 +204,18 @@ const AdminMainPage = () => {
         {/* 월별 통계 차트 */}
         <div className="bg-white rounded-lg shadow p-6 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
           <h3 className="text-lg font-semibold text-gray-800 mb-4 gradient-text">월별 통계</h3>
-          <div className="h-64 flex items-end justify-between gap-2 relative">
+          <div className="h-64 flex items-end justify-center gap-3 px-8 relative">
             {/* Y축 라벨 */}
-            <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-gray-400 pr-2">
-              <span>{Math.ceil(maxSchools / 4 * 4)}</span>
-              <span>{Math.ceil(maxSchools / 4 * 3)}</span>
-              <span>{Math.ceil(maxSchools / 4 * 2)}</span>
-              <span>{Math.ceil(maxSchools / 4 * 1)}</span>
+            <div className="absolute left-4 top-0 h-full flex flex-col justify-between text-xs text-gray-400 pr-2">
+              <span>{Math.ceil(maxCompanies / 4 * 4)}</span>
+              <span>{Math.ceil(maxCompanies / 4 * 3)}</span>
+              <span>{Math.ceil(maxCompanies / 4 * 2)}</span>
+              <span>{Math.ceil(maxCompanies / 4 * 1)}</span>
               <span>0</span>
             </div>
             
             {/* 그리드 라인 */}
-            <div className="absolute left-8 right-0 top-0 h-full flex flex-col justify-between">
+            <div className="absolute left-12 right-8 top-0 h-full flex flex-col justify-between">
               {[0, 1, 2, 3, 4].map((i) => (
                 <div 
                   key={i} 
@@ -123,64 +226,52 @@ const AdminMainPage = () => {
             </div>
             
             {monthlyData.map((data, index) => (
-              <div key={index} className="flex-1 flex flex-col items-center relative group">
-                {/* 게시글 수 차트 - 그라데이션과 그림자 */}
-                <div className="w-full bg-gradient-to-b from-green-50 to-green-100 rounded-t-lg relative group/post">
+              <div key={index} className="w-16 flex flex-col items-center relative group">
+                {/* 게시글 수 차트 - 더 얇게 */}
+                <div className="w-full bg-gradient-to-b from-green-50 to-green-100 rounded-t-md relative group/post">
                   <div 
-                    className="bg-gradient-to-t from-green-600 to-green-500 rounded-t-lg transition-all duration-700 ease-out hover:from-green-700 hover:to-green-600 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                    className="bg-gradient-to-t from-green-600 to-green-500 rounded-t-md transition-all duration-500 ease-out hover:from-green-700 hover:to-green-600 hover:shadow-lg"
                     style={{ 
-                      height: `${Math.max((data.posts / maxPosts) * 120, 4)}px`,
+                      height: `${Math.max((data.postCount / maxPosts) * 120, 4)}px`,
                       animationDelay: `${index * 100}ms`
                     }}
-                  >
-                    {/* 차트 내부 패턴 */}
-                    <div className="w-full h-full bg-gradient-to-b from-transparent via-green-400/20 to-transparent rounded-t-lg"></div>
-                  </div>
+                  ></div>
                   
                   {/* 호버 툴팁 */}
-                  <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs px-3 py-2 rounded-lg opacity-0 group-hover/post:opacity-100 transition-all duration-300 pointer-events-none z-10 shadow-lg">
-                    <div className="text-center">
-                      <div className="font-semibold">{data.posts}개</div>
-                      <div className="text-green-300">게시글</div>
-                    </div>
+                  <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover/post:opacity-100 transition-all duration-300 pointer-events-none z-10 shadow-lg">
+                    <span className="font-semibold">{data.postCount}개</span> 게시글
                     {/* 툴팁 화살표 */}
                     <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
                   </div>
                 </div>
                 
-                {/* 학교 수 차트 - 그라데이션과 그림자 */}
-                <div className="w-full bg-gradient-to-b from-yellow-50 to-yellow-100 rounded-t-lg relative group/school mt-1">
+                {/* 업체 수 차트 - 더 얇게 */}
+                <div className="w-full bg-gradient-to-b from-yellow-50 to-yellow-100 rounded-t-md relative group/school mt-1">
                   <div 
-                    className="bg-gradient-to-t from-yellow-600 to-yellow-500 rounded-t-lg transition-all duration-700 ease-out hover:from-yellow-700 hover:to-yellow-600 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                    className="bg-gradient-to-t from-yellow-600 to-yellow-500 rounded-t-md transition-all duration-500 ease-out hover:from-yellow-700 hover:to-yellow-600 hover:shadow-lg"
                     style={{ 
-                      height: `${Math.max((data.schools / maxSchools) * 80, 4)}px`,
+                      height: `${Math.max((data.companyCount / maxCompanies) * 80, 4)}px`,
                       animationDelay: `${index * 100 + 50}ms`
                     }}
-                  >
-                    {/* 차트 내부 패턴 */}
-                    <div className="w-full h-full bg-gradient-to-b from-transparent via-yellow-400/20 to-transparent rounded-t-lg"></div>
-                  </div>
+                  ></div>
                   
                   {/* 호버 툴팁 */}
-                  <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs px-3 py-2 rounded-lg opacity-0 group-hover/school:opacity-100 transition-all duration-300 pointer-events-none z-10 shadow-lg">
-                    <div className="text-center">
-                      <div className="font-semibold">{data.schools}건</div>
-                      <div className="text-yellow-300">학교</div>
-                    </div>
+                  <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover/school:opacity-100 transition-all duration-300 pointer-events-none z-10 shadow-lg">
+                    <span className="font-semibold">{data.companyCount}건</span> 업체
                     {/* 툴팁 화살표 */}
                     <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
                   </div>
                 </div>
                 
                 {/* 월 라벨 */}
-                <span className="text-xs text-gray-600 mt-3 text-center font-medium group-hover:text-gray-800 transition-colors">
+                <span className="text-xs text-gray-600 mt-2 text-center group-hover:text-gray-800 transition-colors whitespace-nowrap">
                   {data.month}
                 </span>
                 
                 {/* 월별 총계 표시 */}
                 <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <div className="bg-white border border-gray-200 rounded-lg px-2 py-1 shadow-lg text-xs text-gray-700 whitespace-nowrap">
-                    총 {data.posts + data.schools}
+                    총 {data.postCount + data.companyCount}
                   </div>
                 </div>
               </div>
@@ -199,7 +290,7 @@ const AdminMainPage = () => {
             <div className="flex items-center gap-3">
               <div className="w-5 h-5 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-lg shadow-md"></div>
               <div className="flex flex-col">
-                <span className="text-sm font-semibold text-gray-800">학교</span>
+                <span className="text-sm font-semibold text-gray-800">업체</span>
                 <span className="text-xs text-gray-500">월별 등록 수</span>
               </div>
             </div>
@@ -209,15 +300,15 @@ const AdminMainPage = () => {
           <div className="mt-6 pt-4 border-t border-gray-100">
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
-                <div className="text-2xl font-bold text-green-600">{monthlyData[monthlyData.length - 1].posts}</div>
+                <div className="text-2xl font-bold text-green-600">{monthlyLoading ? "..." : monthlyData[0]?.postCount || 0}</div>
                 <div className="text-xs text-gray-500">이번 달 게시글</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-yellow-600">{monthlyData[monthlyData.length - 1].schools}</div>
-                <div className="text-xs text-gray-500">이번 달 학교</div>
+                <div className="text-2xl font-bold text-yellow-600">{monthlyLoading ? "..." : monthlyData[0]?.companyCount || 0}</div>
+                <div className="text-xs text-gray-500">이번 달 업체</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-blue-600">{monthlyData[monthlyData.length - 1].posts + monthlyData[monthlyData.length - 1].schools}</div>
+                <div className="text-2xl font-bold text-blue-600">{monthlyLoading ? "..." : (monthlyData[0]?.postCount || 0) + (monthlyData[0]?.companyCount || 0)}</div>
                 <div className="text-xs text-gray-500">총 활동</div>
               </div>
             </div>
@@ -227,22 +318,62 @@ const AdminMainPage = () => {
         {/* 최근 활동 */}
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">최근 활동</h3>
-          <div className="space-y-3 max-h-64 overflow-y-auto">
-            {recentActivities.map((activity, index) => (
-              <div key={index} className="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-lg ${
-                  activity.type === 'school_update' ? 'bg-blue-500' : 'bg-green-500'
-                }`}>
-                  {activity.icon}
-                </div>
-                <div className="ml-3 flex-1">
-                  <p className="text-sm font-medium text-gray-900">
-                    <span className="font-semibold text-blue-600">{activity.school}</span> {activity.action}
-                  </p>
-                  <p className="text-xs text-gray-500">{activity.time}</p>
-                </div>
-              </div>
-            ))}
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {activityLoading ? (
+              <div className="text-center py-8 text-gray-500">로딩 중...</div>
+            ) : recentActivities.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">최근 활동이 없습니다.</div>
+            ) : (
+              recentActivities.map((activity) => {
+                // 타입에 따른 아이콘과 액션 텍스트 설정
+                const getActivityInfo = (type: string, action: string) => {
+                  const icons: Record<string, string> = {
+                    church: "⛪",
+                    school: "🏫",
+                    company: "🏢",
+                    restaurant: "🍽️",
+                    outsource: "🔧",
+                    post: "📝",
+                    board: "📋"
+                  };
+                  
+                  const actions: Record<string, string> = {
+                    add: "등록됨",
+                    update: "수정됨",
+                    delete: "삭제됨",
+                    create: "작성됨"
+                  };
+                  
+                  return {
+                    icon: icons[type] || "📌",
+                    actionText: actions[action] || action
+                  };
+                };
+                
+                const { icon, actionText } = getActivityInfo(activity.type, activity.action);
+                const timeAgo = new Date(activity.timestamp).toLocaleString('ko-KR', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                });
+                
+                return (
+                  <div key={activity.id} className="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg bg-blue-500">
+                      {icon}
+                    </div>
+                    <div className="ml-3 flex-1">
+                      <p className="text-sm font-medium text-gray-900">
+                        <span className="font-semibold text-blue-600">{activity.name}</span> {actionText}
+                      </p>
+                      <p className="text-xs text-gray-500">{timeAgo}</p>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       </div>
