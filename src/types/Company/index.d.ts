@@ -53,6 +53,11 @@ export interface CompanyBoard {
   boardLike: number;
   boardHits: number;
   boardID: string;
+  boardType?: 'company' | 'interview' | 'salary'; // 후기 타입: 회사 후기, 면접 후기, 연봉 후기
+  // 연봉 후기 전용 필드
+  years?: number; // 몇 년차
+  position?: string; // 직군
+  salary?: number; // 연봉 (만원)
   company?: Company; // 옵셔널로 변경
 }
 

@@ -26,7 +26,11 @@ export default function CompanyDetailPage() {
     boardTitle: '',
     boardContent: '',
     boardID: '',
-    boardPw: ''
+    boardPw: '',
+    // 연봉 후기 전용 필드
+    years: '',
+    position: '',
+    salary: ''
   });
   
   // 카카오맵 관련 상태
@@ -50,6 +54,9 @@ export default function CompanyDetailPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
 
+  // 탭 관련 상태
+  const [activeTab, setActiveTab] = useState<'company' | 'interview' | 'salary'>('company');
+
   // 정렬된 후기 목록 계산
   const sortedBoards = [...boards].sort((a, b) => {
     const dateA = new Date(a.boardRegDate).getTime();
@@ -57,8 +64,15 @@ export default function CompanyDetailPage() {
     return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
   });
 
+  // 탭별 필터링된 후기 목록 계산
+  const tabFilteredBoards = sortedBoards.filter(board => {
+    // boardType 필드가 있으면 그대로 사용, 없으면 기본값 'company'
+    const boardType = board.boardType || 'company';
+    return boardType === activeTab;
+  });
+
   // 검색된 후기 목록 계산
-  const filteredBoards = sortedBoards.filter(board => {
+  const filteredBoards = tabFilteredBoards.filter(board => {
     if (!searchQuery.trim()) return true;
     
     const query = searchQuery.toLowerCase();
@@ -80,6 +94,12 @@ export default function CompanyDetailPage() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  // 탭 변경 핸들러
+  const handleTabChange = (tab: 'company' | 'interview' | 'salary') => {
+    setActiveTab(tab);
+    setCurrentPage(1); // 탭 변경 시 첫 페이지로 이동
+  };
 
   // 검색 핸들러
   const handleSearch = (e: React.FormEvent) => {
@@ -485,9 +505,17 @@ export default function CompanyDetailPage() {
   const handleWriteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!writeForm.boardTitle.trim() || !writeForm.boardContent.trim() || !writeForm.boardID.trim() || !writeForm.boardPw.trim()) {
-      alert('모든 필드를 입력해주세요.');
-      return;
+    // 연봉 후기인 경우 다른 검증
+    if (activeTab === 'salary') {
+      if (!writeForm.years.trim() || !writeForm.position.trim() || !writeForm.salary.trim()) {
+        alert('모든 필드를 입력해주세요.');
+        return;
+      }
+    } else {
+      if (!writeForm.boardTitle.trim() || !writeForm.boardContent.trim() || !writeForm.boardID.trim() || !writeForm.boardPw.trim()) {
+        alert('모든 필드를 입력해주세요.');
+        return;
+      }
     }
 
     if (!company) {
@@ -500,13 +528,25 @@ export default function CompanyDetailPage() {
     try {
       const backendURL = 'https://api.reviewhub.life';
       
-      const requestData = {
+      // 연봉 후기인 경우 다른 데이터 구조
+      const requestData: any = {
         compIdx: company.compIdx,
-        boardTitle: writeForm.boardTitle.trim(),
-        boardContent: writeForm.boardContent.trim(),
-        boardID: writeForm.boardID.trim(),
-        boardPw: writeForm.boardPw.trim()
+        boardType: activeTab
       };
+
+      if (activeTab === 'salary') {
+        requestData.years = parseInt(writeForm.years);
+        requestData.position = writeForm.position.trim();
+        requestData.salary = parseInt(writeForm.salary);
+        // 연봉 후기는 제목과 내용을 자동 생성
+        requestData.boardTitle = `${writeForm.position} ${writeForm.years}년차`;
+        requestData.boardContent = '';
+      } else {
+        requestData.boardID = writeForm.boardID.trim();
+        requestData.boardPw = writeForm.boardPw.trim();
+        requestData.boardTitle = writeForm.boardTitle.trim();
+        requestData.boardContent = writeForm.boardContent.trim();
+      }
       
       console.log('후기 작성 요청 데이터:', requestData);
       
@@ -529,7 +569,10 @@ export default function CompanyDetailPage() {
           boardTitle: '',
           boardContent: '',
           boardID: '',
-          boardPw: ''
+          boardPw: '',
+          years: '',
+          position: '',
+          salary: ''
         });
         // 후기 목록 새로고침
         window.location.reload();
@@ -554,7 +597,10 @@ export default function CompanyDetailPage() {
       boardTitle: '',
       boardContent: '',
       boardID: '',
-      boardPw: ''
+      boardPw: '',
+      years: '',
+      position: '',
+      salary: ''
     });
   };
 
@@ -724,8 +770,44 @@ export default function CompanyDetailPage() {
           {/* 우측 컨텐츠 - 회사 후기 */}
           <div className="space-y-6">
             <div className="bg-white rounded-lg shadow-md p-6">
+              {/* 탭 메뉴 */}
+              <div className="flex border-b border-gray-200 mb-4">
+                <button
+                  onClick={() => handleTabChange('company')}
+                  className={`px-4 py-2 text-sm font-semibold transition-all duration-200 border-b-2 ${
+                    activeTab === 'company'
+                      ? 'text-purple-600 border-purple-600'
+                      : 'text-gray-500 border-transparent hover:text-gray-700'
+                  }`}
+                >
+                  회사 후기
+                </button>
+                <button
+                  onClick={() => handleTabChange('interview')}
+                  className={`px-4 py-2 text-sm font-semibold transition-all duration-200 border-b-2 ${
+                    activeTab === 'interview'
+                      ? 'text-purple-600 border-purple-600'
+                      : 'text-gray-500 border-transparent hover:text-gray-700'
+                  }`}
+                >
+                  면접 후기
+                </button>
+                <button
+                  onClick={() => handleTabChange('salary')}
+                  className={`px-4 py-2 text-sm font-semibold transition-all duration-200 border-b-2 ${
+                    activeTab === 'salary'
+                      ? 'text-purple-600 border-purple-600'
+                      : 'text-gray-500 border-transparent hover:text-gray-700'
+                  }`}
+                >
+                  연봉 후기
+                </button>
+              </div>
+
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xs sm:text-sm md:text-base lg:text-xl font-semibold text-gray-800">회사 후기</h2>
+                <h2 className="text-xs sm:text-sm md:text-base lg:text-xl font-semibold text-gray-800">
+                  {activeTab === 'company' ? '회사 후기' : activeTab === 'interview' ? '면접 후기' : '연봉 후기'}
+                </h2>
                 <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-3">
                   {/* 정렬 필터 버튼 - 단일 토글 */}
                   <button
@@ -775,18 +857,49 @@ export default function CompanyDetailPage() {
                     {paginatedBoards.map((board) => (
                       <div
                         key={board.boardIdx}
-                        className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                        onClick={() => router.push(`/company-board/${board.boardIdx}`)}
+                        className={`border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow ${
+                          activeTab === 'salary' ? '' : 'cursor-pointer'
+                        }`}
+                        onClick={() => {
+                          if (activeTab !== 'salary') {
+                            router.push(`/company-board/${board.boardIdx}`);
+                          }
+                        }}
                       >
-                        <h3 className="font-semibold text-gray-900 mb-2">{board.boardTitle}</h3>
-                        <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
-                          <span>작성자: {board.boardID}</span>
-                          <span>{board.boardRegDate}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-xs text-gray-400">
-                          <span>조회수: {board.boardHits}</span>
-                          <span>좋아요: {board.boardLike}</span>
-                        </div>
+                        {activeTab === 'salary' ? (
+                          // 연봉 후기 표시 형식
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-3">
+                                <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
+                                  {board.position || '직군 정보 없음'}
+                                </span>
+                                <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
+                                  {board.years || 0}년차
+                                </span>
+                              </div>
+                              <span className="text-lg font-bold text-gray-900">
+                                {board.salary ? `${board.salary.toLocaleString()}만원` : '연봉 정보 없음'}
+                              </span>
+                            </div>
+                            <div className="flex justify-end items-center text-xs text-gray-500 pt-2 border-t border-gray-100">
+                              <span>{board.boardRegDate}</span>
+                            </div>
+                          </div>
+                        ) : (
+                          // 일반 후기 표시 형식
+                          <>
+                            <h3 className="font-semibold text-gray-900 mb-2">{board.boardTitle}</h3>
+                            <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
+                              <span>작성자: {board.boardID}</span>
+                              <span>{board.boardRegDate}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-xs text-gray-400">
+                              <span>조회수: {board.boardHits}</span>
+                              <span>좋아요: {board.boardLike}</span>
+                            </div>
+                          </>
+                        )}
                       </div>
                     ))}
                     
@@ -832,8 +945,16 @@ export default function CompanyDetailPage() {
                     )}
                   </>
                 ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    {searchQuery ? '검색 결과가 없습니다' : '아직 회사 후기가 없습니다.\n첫 번째 후기를 작성해보세요!'}
+                  <div className="text-center py-8 text-gray-500 whitespace-pre-line">
+                    {searchQuery ? (
+                      '검색 결과가 없습니다'
+                    ) : (
+                      <>
+                        {activeTab === 'company' && '아직 회사 후기가 없습니다.\n첫 번째 후기를 작성해보세요!'}
+                        {activeTab === 'interview' && '아직 면접 후기가 없습니다.\n첫 번째 면접 후기를 작성해보세요!'}
+                        {activeTab === 'salary' && '아직 연봉 후기가 없습니다.\n첫 번째 연봉 후기를 작성해보세요!'}
+                      </>
+                    )}
                   </div>
                 )}
 
@@ -897,7 +1018,9 @@ export default function CompanyDetailPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">{company?.compName}의 후기를 남겨주세요</h3>
+              <h3 className="text-lg font-semibold">
+                {company?.compName}의 {activeTab === 'company' ? '회사' : activeTab === 'interview' ? '면접' : '연봉'} 후기를 남겨주세요
+              </h3>
               <button 
                 onClick={handleCloseWriteModal}
                 className="text-gray-400 hover:text-gray-600"
@@ -906,51 +1029,97 @@ export default function CompanyDetailPage() {
               </button>
             </div>
             <form onSubmit={handleWriteSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">제목</label>
-                <input 
-                  type="text" 
-                  value={writeForm.boardTitle}
-                  onChange={(e) => setWriteForm({...writeForm, boardTitle: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" 
-                  maxLength={40} 
-                  required 
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">내용</label>
-                <textarea 
-                  value={writeForm.boardContent}
-                  onChange={(e) => setWriteForm({...writeForm, boardContent: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" 
-                  rows={4} 
-                  maxLength={700} 
-                  required
-                ></textarea>
-                <p className="text-xs text-gray-500 mt-1">다른 사람의 인격권을 침해하거나 명예를 훼손하게 하는 글은 삭제될 수 있습니다.</p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">작성자</label>
-                  <input 
-                    type="text" 
-                    value={writeForm.boardID}
-                    onChange={(e) => setWriteForm({...writeForm, boardID: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" 
-                    required 
-                  />
+              {activeTab === 'salary' ? (
+                // 연봉 후기 폼
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">몇 년차</label>
+                    <input 
+                      type="number" 
+                      value={writeForm.years}
+                      onChange={(e) => setWriteForm({...writeForm, years: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" 
+                      min="0"
+                      max="50"
+                      placeholder="예: 3"
+                      required 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">직군</label>
+                    <input 
+                      type="text" 
+                      value={writeForm.position}
+                      onChange={(e) => setWriteForm({...writeForm, position: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" 
+                      placeholder="예: 개발자"
+                      maxLength={20}
+                      required 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">연봉 (만원)</label>
+                    <input 
+                      type="number" 
+                      value={writeForm.salary}
+                      onChange={(e) => setWriteForm({...writeForm, salary: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" 
+                      min="0"
+                      placeholder="예: 5000"
+                      required 
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">비밀번호</label>
-                  <input 
-                    type="password" 
-                    value={writeForm.boardPw}
-                    onChange={(e) => setWriteForm({...writeForm, boardPw: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" 
-                    required 
-                  />
-                </div>
-              </div>
+              ) : (
+                // 일반 후기 폼 (회사 후기, 면접 후기)
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">제목</label>
+                    <input 
+                      type="text" 
+                      value={writeForm.boardTitle}
+                      onChange={(e) => setWriteForm({...writeForm, boardTitle: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" 
+                      maxLength={40} 
+                      required 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">내용</label>
+                    <textarea 
+                      value={writeForm.boardContent}
+                      onChange={(e) => setWriteForm({...writeForm, boardContent: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" 
+                      rows={4} 
+                      maxLength={700} 
+                      required
+                    ></textarea>
+                    <p className="text-xs text-gray-500 mt-1">다른 사람의 인격권을 침해하거나 명예를 훼손하게 하는 글은 삭제될 수 있습니다.</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">작성자</label>
+                      <input 
+                        type="text" 
+                        value={writeForm.boardID}
+                        onChange={(e) => setWriteForm({...writeForm, boardID: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" 
+                        required 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">비밀번호</label>
+                      <input 
+                        type="password" 
+                        value={writeForm.boardPw}
+                        onChange={(e) => setWriteForm({...writeForm, boardPw: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" 
+                        required 
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
 
               <div className="flex justify-end space-x-3 pt-6">
                 <button 
