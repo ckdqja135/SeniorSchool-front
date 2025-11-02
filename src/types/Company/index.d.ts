@@ -58,6 +58,7 @@ export interface CompanyBoard {
   years?: number; // 몇 년차
   position?: string; // 직군
   salary?: number; // 연봉 (만원)
+  joinDate?: string; // 입사년월 (yyyy-mm 형식)
   company?: Company; // 옵셔널로 변경
 }
 

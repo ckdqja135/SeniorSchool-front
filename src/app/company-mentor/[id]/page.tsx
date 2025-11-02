@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { Company, CompanyBoard } from '@/types/Company';
 
 export default function CompanyDetailPage() {
@@ -14,6 +16,8 @@ export default function CompanyDetailPage() {
   
   const [company, setCompany] = useState<Company | null>(null);
   const [boards, setBoards] = useState<CompanyBoard[]>([]);
+  const [interviews, setInterviews] = useState<any[]>([]); // 면접 후기 목록
+  const [salaries, setSalaries] = useState<any[]>([]); // 연봉 후기 목록
   const [isLoading, setIsLoading] = useState(true);
   const [isBoardLoading, setIsBoardLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +34,8 @@ export default function CompanyDetailPage() {
     // 연봉 후기 전용 필드
     years: '',
     position: '',
-    salary: ''
+    salary: '',
+    joinDate: '' // 입사년월 (yyyy-mm)
   });
   
   // 카카오맵 관련 상태
@@ -65,26 +70,73 @@ export default function CompanyDetailPage() {
   });
 
   // 탭별 필터링된 후기 목록 계산
-  const tabFilteredBoards = sortedBoards.filter(board => {
-    // boardType 필드가 있으면 그대로 사용, 없으면 기본값 'company'
-    const boardType = board.boardType || 'company';
-    return boardType === activeTab;
-  });
+  const getTabFilteredBoards = () => {
+    if (activeTab === 'interview') {
+      // 면접 후기는 interviews 배열 사용
+      return [...interviews].sort((a, b) => {
+        const dateA = new Date(a.interviewRegDate || a.regDate || a.createdAt).getTime();
+        const dateB = new Date(b.interviewRegDate || b.regDate || b.createdAt).getTime();
+        return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+      });
+    } else if (activeTab === 'salary') {
+      // 연봉 후기는 salaries 배열 사용
+      return [...salaries].sort((a, b) => {
+        const dateA = new Date(a.regDate || a.salaryRegDate || a.createdAt || a.joinDate).getTime();
+        const dateB = new Date(b.regDate || b.salaryRegDate || b.createdAt || b.joinDate).getTime();
+        return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+      });
+    } else {
+      // 회사 후기는 boards 배열 사용
+      return sortedBoards;
+    }
+  };
+
+  const tabFilteredBoards = getTabFilteredBoards();
 
   // 검색된 후기 목록 계산
   const filteredBoards = tabFilteredBoards.filter(board => {
     if (!searchQuery.trim()) return true;
     
     const query = searchQuery.toLowerCase();
-    switch (searchType) {
-      case 'title':
-        return board.boardTitle.toLowerCase().includes(query);
-      case 'content':
-        return board.boardContent.toLowerCase().includes(query);
-      case 'id':
-        return board.boardID.toLowerCase().includes(query);
-      default:
-        return true;
+    if (activeTab === 'interview') {
+      const interview = board as any;
+      switch (searchType) {
+        case 'title':
+          return (interview.interviewTitle || interview.title || '').toLowerCase().includes(query);
+        case 'content':
+          return (interview.interviewContent || interview.content || '').toLowerCase().includes(query);
+        case 'id':
+          return (interview.interviewID || interview.writerId || interview.id || '').toLowerCase().includes(query);
+        default:
+          return true;
+      }
+    } else if (activeTab === 'salary') {
+      const salary = board as any;
+      switch (searchType) {
+        case 'title':
+          // 연봉 후기는 직군이나 연봉으로 검색
+          return ((salary.department || salary.position || '')).toLowerCase().includes(query) || 
+                 (salary.salary ? String(salary.salary) : '').includes(query);
+        case 'content':
+          // 연봉 후기는 내용이 없을 수 있음
+          return false;
+        case 'id':
+          // 연봉 후기는 작성자가 없을 수 있음
+          return false;
+        default:
+          return true;
+      }
+    } else {
+      switch (searchType) {
+        case 'title':
+          return (board as any).boardTitle?.toLowerCase().includes(query);
+        case 'content':
+          return (board as any).boardContent?.toLowerCase().includes(query);
+        case 'id':
+          return (board as any).boardID?.toLowerCase().includes(query);
+        default:
+          return true;
+      }
     }
   });
 
@@ -241,7 +293,7 @@ export default function CompanyDetailPage() {
     fetchCompanyInfo();
   }, [companyId, compIdx]);
 
-  // 회사 게시판 목록 가져오기
+  // 회사 게시판 목록 가져오기 (회사 후기만)
   useEffect(() => {
     const fetchCompanyBoards = async () => {
       if (!company || !company.compIdx) return;
@@ -269,12 +321,13 @@ export default function CompanyDetailPage() {
         
         // API 응답이 직접 배열인 경우
         if (Array.isArray(data)) {
-          setBoards(data);
+          // boardType이 'company'이거나 없는 것만 필터링 (연봉 후기는 제외)
+          setBoards(data.filter((board: any) => !board.boardType || board.boardType === 'company'));
         } 
         // API 응답이 객체이고 status가 있는 경우
         else if (data && typeof data === 'object' && data.status === 200) {
           if (data.data && Array.isArray(data.data)) {
-            setBoards(data.data);
+            setBoards(data.data.filter((board: any) => !board.boardType || board.boardType === 'company'));
           } else {
             setBoards([]);
           }
@@ -293,6 +346,100 @@ export default function CompanyDetailPage() {
 
     if (company) {
       fetchCompanyBoards();
+    }
+  }, [company]);
+
+  // 면접 후기 목록 가져오기
+  useEffect(() => {
+    const fetchInterviews = async () => {
+      if (!company || !company.compIdx) return;
+      
+      try {
+        setIsBoardLoading(true);
+        setBoardError(null);
+        
+        const backendURL = 'https://api.reviewhub.life';
+        const response = await fetch(`${backendURL}/comp/interviews?compIdx=${company.compIdx}`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // API 응답이 직접 배열인 경우
+        if (Array.isArray(data)) {
+          setInterviews(data);
+        } 
+        // API 응답이 객체이고 status가 있는 경우
+        else if (data && typeof data === 'object' && data.status === 200) {
+          if (data.data && Array.isArray(data.data)) {
+            setInterviews(data.data);
+          } else {
+            setInterviews([]);
+          }
+        } 
+        // 기타 경우
+        else {
+          setInterviews([]);
+        }
+      } catch (error) {
+        console.error('면접 후기 로딩 오류:', error);
+        setBoardError('면접 후기를 불러오는 중 오류가 발생했습니다.');
+      } finally {
+        setIsBoardLoading(false);
+      }
+    };
+
+    if (company) {
+      fetchInterviews();
+    }
+  }, [company]);
+
+  // 연봉 후기 목록 가져오기
+  useEffect(() => {
+    const fetchSalaries = async () => {
+      if (!company || !company.compIdx) return;
+      
+      try {
+        setIsBoardLoading(true);
+        setBoardError(null);
+        
+        const backendURL = 'https://api.reviewhub.life';
+        const response = await fetch(`${backendURL}/comp/salaries?compIdx=${company.compIdx}`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // API 응답이 직접 배열인 경우
+        if (Array.isArray(data)) {
+          setSalaries(data);
+        } 
+        // API 응답이 객체이고 status가 있는 경우
+        else if (data && typeof data === 'object' && data.status === 200) {
+          if (data.data && Array.isArray(data.data)) {
+            setSalaries(data.data);
+          } else {
+            setSalaries([]);
+          }
+        } 
+        // 기타 경우
+        else {
+          setSalaries([]);
+        }
+      } catch (error) {
+        console.error('연봉 후기 로딩 오류:', error);
+        setBoardError('연봉 후기를 불러오는 중 오류가 발생했습니다.');
+      } finally {
+        setIsBoardLoading(false);
+      }
+    };
+
+    if (company) {
+      fetchSalaries();
     }
   }, [company]);
 
@@ -507,8 +654,13 @@ export default function CompanyDetailPage() {
     
     // 연봉 후기인 경우 다른 검증
     if (activeTab === 'salary') {
-      if (!writeForm.years.trim() || !writeForm.position.trim() || !writeForm.salary.trim()) {
+      if (!writeForm.years.trim() || !writeForm.position.trim() || !writeForm.salary.trim() || !writeForm.joinDate.trim()) {
         alert('모든 필드를 입력해주세요.');
+        return;
+      }
+      // yyyy-mm 형식 검증
+      if (!/^\d{4}-\d{2}$/.test(writeForm.joinDate)) {
+        alert('입사년월은 YYYY-MM 형식으로 입력해주세요.');
         return;
       }
     } else {
@@ -528,29 +680,46 @@ export default function CompanyDetailPage() {
     try {
       const backendURL = 'https://api.reviewhub.life';
       
-      // 연봉 후기인 경우 다른 데이터 구조
-      const requestData: any = {
-        compIdx: company.compIdx,
-        boardType: activeTab
-      };
+      let requestData: any;
+      let apiEndpoint: string;
 
-      if (activeTab === 'salary') {
-        requestData.years = parseInt(writeForm.years);
-        requestData.position = writeForm.position.trim();
-        requestData.salary = parseInt(writeForm.salary);
-        // 연봉 후기는 제목과 내용을 자동 생성
-        requestData.boardTitle = `${writeForm.position} ${writeForm.years}년차`;
-        requestData.boardContent = '';
+      if (activeTab === 'interview') {
+        // 면접 후기 작성
+        apiEndpoint = `${backendURL}/comp/interviews`;
+        requestData = {
+          compIdx: company.compIdx,
+          interviewTitle: writeForm.boardTitle.trim(),
+          interviewContent: writeForm.boardContent.trim(),
+          writerId: writeForm.boardID.trim(),
+          writerPw: writeForm.boardPw.trim()
+        };
+      } else if (activeTab === 'salary') {
+        // 연봉 후기 작성
+        apiEndpoint = `${backendURL}/comp/salaries`;
+        requestData = {
+          compIdx: company.compIdx,
+          salary: parseInt(writeForm.salary),
+          workYear: parseInt(writeForm.years),
+          department: writeForm.position.trim(),
+          joinDate: writeForm.joinDate.trim()
+        };
       } else {
-        requestData.boardID = writeForm.boardID.trim();
-        requestData.boardPw = writeForm.boardPw.trim();
-        requestData.boardTitle = writeForm.boardTitle.trim();
-        requestData.boardContent = writeForm.boardContent.trim();
+        // 회사 후기 작성
+        apiEndpoint = `${backendURL}/comp/board/insert`;
+        requestData = {
+          compIdx: company.compIdx,
+          boardType: 'company',
+          boardID: writeForm.boardID.trim(),
+          boardPw: writeForm.boardPw.trim(),
+          boardTitle: writeForm.boardTitle.trim(),
+          boardContent: writeForm.boardContent.trim()
+        };
       }
       
       console.log('후기 작성 요청 데이터:', requestData);
+      console.log('API 엔드포인트:', apiEndpoint);
       
-      const response = await fetch(`${backendURL}/comp/board/insert`, {
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -572,7 +741,8 @@ export default function CompanyDetailPage() {
           boardPw: '',
           years: '',
           position: '',
-          salary: ''
+          salary: '',
+          joinDate: ''
         });
         // 후기 목록 새로고침
         window.location.reload();
@@ -600,7 +770,8 @@ export default function CompanyDetailPage() {
       boardPw: '',
       years: '',
       position: '',
-      salary: ''
+      salary: '',
+      joinDate: ''
     });
   };
 
@@ -856,12 +1027,27 @@ export default function CompanyDetailPage() {
                   <>
                     {paginatedBoards.map((board) => (
                       <div
-                        key={board.boardIdx}
+                        key={activeTab === 'interview' 
+                          ? ((board as any).interviewIdx || (board as any).interview_id || (board as any).id || Math.random())
+                          : activeTab === 'salary'
+                          ? ((board as any).salaryIdx || (board as any).salary_id || (board as any).id || Math.random())
+                          : board.boardIdx}
                         className={`border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow ${
                           activeTab === 'salary' ? '' : 'cursor-pointer'
                         }`}
                         onClick={() => {
-                          if (activeTab !== 'salary') {
+                          if (activeTab === 'interview') {
+                            // 면접 후기 상세 페이지로 이동
+                            const interviewIdx = (board as any).interviewIdx || (board as any).interview_id || (board as any).id;
+                            if (interviewIdx) {
+                              const params = new URLSearchParams();
+                              if (company?.compName) params.set('company', company.compName);
+                              if (company?.compIdx) params.set('compIdx', company.compIdx.toString());
+                              const queryString = params.toString();
+                              router.push(`/comp/interviews/${interviewIdx}${queryString ? `?${queryString}` : ''}`);
+                            }
+                          } else if (activeTab !== 'salary') {
+                            // 회사 후기 상세 페이지로 이동
                             router.push(`/company-board/${board.boardIdx}`);
                           }
                         }}
@@ -872,31 +1058,46 @@ export default function CompanyDetailPage() {
                             <div className="flex items-center justify-between">
                               <div className="flex items-center space-x-3">
                                 <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
-                                  {board.position || '직군 정보 없음'}
+                                  {(board as any).department || (board as any).position || '직군 정보 없음'}
                                 </span>
                                 <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
-                                  {board.years || 0}년차
+                                  경력 {(board as any).workYear || (board as any).years || 0}년
                                 </span>
                               </div>
                               <span className="text-lg font-bold text-gray-900">
-                                {board.salary ? `${board.salary.toLocaleString()}만원` : '연봉 정보 없음'}
+                                {(board as any).salary ? `${(board as any).salary.toLocaleString()}만원` : '연봉 정보 없음'}
                               </span>
                             </div>
                             <div className="flex justify-end items-center text-xs text-gray-500 pt-2 border-t border-gray-100">
-                              <span>{board.boardRegDate}</span>
+                              <span>{(board as any).regDate || (board as any).boardRegDate || (board as any).createdAt}</span>
                             </div>
                           </div>
+                        ) : activeTab === 'interview' ? (
+                          // 면접 후기 표시 형식
+                          <>
+                            <h3 className="font-semibold text-gray-900 mb-2">
+                              {(board as any).interviewTitle || (board as any).title || '제목 없음'}
+                            </h3>
+                            <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
+                              <span>작성자: {(board as any).interviewID || (board as any).writerId || '익명'}</span>
+                              <span>{(board as any).interviewRegDate || (board as any).regDate || (board as any).createdAt}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-xs text-gray-400">
+                              <span>조회수: {(board as any).interviewHits || (board as any).hits || 0}</span>
+                              <span>좋아요: {(board as any).interviewLike || (board as any).likes || 0}</span>
+                            </div>
+                          </>
                         ) : (
                           // 일반 후기 표시 형식
                           <>
-                            <h3 className="font-semibold text-gray-900 mb-2">{board.boardTitle}</h3>
+                            <h3 className="font-semibold text-gray-900 mb-2">{(board as any).boardTitle}</h3>
                             <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
-                              <span>작성자: {board.boardID}</span>
-                              <span>{board.boardRegDate}</span>
+                              <span>작성자: {(board as any).boardID}</span>
+                              <span>{(board as any).boardRegDate}</span>
                             </div>
                             <div className="flex justify-between items-center text-xs text-gray-400">
-                              <span>조회수: {board.boardHits}</span>
-                              <span>좋아요: {board.boardLike}</span>
+                              <span>조회수: {(board as any).boardHits}</span>
+                              <span>좋아요: {(board as any).boardLike}</span>
                             </div>
                           </>
                         )}
@@ -1031,43 +1232,70 @@ export default function CompanyDetailPage() {
             <form onSubmit={handleWriteSubmit} className="space-y-4">
               {activeTab === 'salary' ? (
                 // 연봉 후기 폼
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">몇 년차</label>
-                    <input 
-                      type="number" 
-                      value={writeForm.years}
-                      onChange={(e) => setWriteForm({...writeForm, years: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" 
-                      min="0"
-                      max="50"
-                      placeholder="예: 3"
-                      required 
-                    />
+                <div className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">경력</label>
+                      <input 
+                        type="number" 
+                        value={writeForm.years}
+                        onChange={(e) => setWriteForm({...writeForm, years: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" 
+                        min="0"
+                        max="50"
+                        placeholder="예: 3"
+                        required 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">직군</label>
+                      <input 
+                        type="text" 
+                        value={writeForm.position}
+                        onChange={(e) => setWriteForm({...writeForm, position: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" 
+                        placeholder="예: 개발자"
+                        maxLength={20}
+                        required 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">연봉 (만원)</label>
+                      <input 
+                        type="number" 
+                        value={writeForm.salary}
+                        onChange={(e) => setWriteForm({...writeForm, salary: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" 
+                        min="0"
+                        placeholder="예: 5000"
+                        required 
+                      />
+                    </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">직군</label>
-                    <input 
-                      type="text" 
-                      value={writeForm.position}
-                      onChange={(e) => setWriteForm({...writeForm, position: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" 
-                      placeholder="예: 개발자"
-                      maxLength={20}
-                      required 
+                    <label className="block text-sm font-medium text-gray-700 mb-1">입사년월</label>
+                    <DatePicker
+                      selected={writeForm.joinDate ? new Date(writeForm.joinDate + '-01') : null}
+                      onChange={(date: Date | null) => {
+                        if (date) {
+                          const year = date.getFullYear();
+                          const month = String(date.getMonth() + 1).padStart(2, '0');
+                          setWriteForm({...writeForm, joinDate: `${year}-${month}`});
+                        } else {
+                          setWriteForm({...writeForm, joinDate: ''});
+                        }
+                      }}
+                      dateFormat="yyyy-MM"
+                      showMonthYearPicker
+                      placeholderText="YYYY-MM 선택"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+                      required
+                      maxDate={new Date()}
+                      minDate={new Date('1970-01-01')}
+                      isClearable
+                      wrapperClassName="w-full"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">연봉 (만원)</label>
-                    <input 
-                      type="number" 
-                      value={writeForm.salary}
-                      onChange={(e) => setWriteForm({...writeForm, salary: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" 
-                      min="0"
-                      placeholder="예: 5000"
-                      required 
-                    />
+                    <p className="text-xs text-gray-500 mt-1">달력을 클릭하여 입사년월을 선택하세요</p>
                   </div>
                 </div>
               ) : (
