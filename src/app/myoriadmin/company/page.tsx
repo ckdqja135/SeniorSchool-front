@@ -49,6 +49,8 @@ const CompanyManagementPage = () => {
   const [isAddMode, setIsAddMode] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+  const [showBatchDeleteConfirmModal, setShowBatchDeleteConfirmModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [editingCompany, setEditingCompany] = useState<CompanyData | null>(null);
@@ -59,6 +61,7 @@ const CompanyManagementPage = () => {
   const [newCompany, setNewCompany] = useState({
     compName: "",
     compLocation: "",
+    compLocate: "",
     compType: "",
     compIndustry: "",
     compEstablish: "",
@@ -201,6 +204,7 @@ const CompanyManagementPage = () => {
         setNewCompany({
           compName: "",
           compLocation: "",
+          compLocate: "",
           compType: "",
           compIndustry: "",
           compEstablish: "",
@@ -221,27 +225,40 @@ const CompanyManagementPage = () => {
     }
   };
 
-  // 회사 삭제
+  // 일괄 삭제 확인 모달 열기
+  const handleBatchDeleteClick = () => {
+    if (selectedCompanies.length === 0) return;
+    setShowBatchDeleteConfirmModal(true);
+  };
+
+  // 회사 삭제 (확인 후 실행)
   const handleDeleteCompanies = async () => {
+    if (selectedCompanies.length === 0) return;
+    
     try {
-      const deleteData = selectedCompanies.length === 1 
-        ? { compIdx: selectedCompanies[0] }
-        : { compIdx: selectedCompanies };
-
       const accessToken = localStorage.getItem("accessToken");
-
-      const response = await fetch(`https://api.reviewhub.life/admin/comp/comp/${selectedCompanies[0]}`, {
-        method: "DELETE",
-        headers: {
-          "Authorization": `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (response.ok) {
+      
+      // 선택된 모든 회사를 순차적으로 삭제
+      const deletePromises = selectedCompanies.map(compIdx =>
+        fetch(`https://api.reviewhub.life/admin/comp/deleteComp/${compIdx}`, {
+          method: "DELETE",
+          headers: {
+            "Authorization": `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+        })
+      );
+      
+      const results = await Promise.all(deletePromises);
+      const allSuccess = results.every(response => response.ok);
+      
+      if (allSuccess) {
+        setShowBatchDeleteConfirmModal(false);
         setShowDeleteModal(true);
         setSelectedCompanies([]);
         searchCompanies(searchKeyword);
+      } else {
+        alert("일부 회사 삭제에 실패했습니다.");
       }
     } catch (error) {
       console.error("회사 삭제 실패:", error);
@@ -443,14 +460,20 @@ const CompanyManagementPage = () => {
     }
   };
 
-  // 단일 회사 삭제
+  // 삭제 확인 모달 열기
+  const handleDeleteClick = () => {
+    if (!selectedCompany) return;
+    setShowDeleteConfirmModal(true);
+  };
+
+  // 단일 회사 삭제 (확인 후 실행)
   const handleDeleteSingleCompany = async () => {
     if (!selectedCompany) return;
 
     try {
       const accessToken = localStorage.getItem("accessToken");
 
-      const response = await fetch(`https://api.reviewhub.life/admin/comp/comp/${selectedCompany.compIdx}`, {
+      const response = await fetch(`https://api.reviewhub.life/admin/comp/deleteComp/${selectedCompany.compIdx}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
@@ -459,12 +482,15 @@ const CompanyManagementPage = () => {
       });
 
       if (response.ok) {
+        setShowDeleteConfirmModal(false);
         setShowDeleteModal(true);
         setSelectedCompany(null);
         setIsEditMode(false);
         setEditingCompany(null);
         setHasChanges(false);
         searchCompanies(searchKeyword);
+      } else {
+        alert("회사 삭제에 실패했습니다.");
       }
     } catch (error) {
       console.error("회사 삭제 실패:", error);
@@ -509,14 +535,7 @@ const CompanyManagementPage = () => {
             +
           </button>
           <button
-            onClick={handleBatchUpdateStatistics}
-            className="w-8 h-8 bg-blue-500 text-white rounded-full hover:bg-blue-600"
-            title="통계 일괄 업데이트"
-          >
-            📊
-          </button>
-          <button
-            onClick={handleDeleteCompanies}
+            onClick={handleBatchDeleteClick}
             disabled={selectedCompanies.length === 0}
             className={`w-8 h-8 rounded-full text-white ${
               selectedCompanies.length > 0 
@@ -702,131 +721,181 @@ const CompanyManagementPage = () => {
       <div className="w-1/2 bg-white rounded-lg shadow p-4 flex flex-col">
         {isAddMode ? (
           <div className="flex flex-col h-full">
-            <h3 className="text-lg font-semibold mb-4">회사 추가</h3>
-            <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-              <div>
-                <label className="block text-sm font-medium mb-1">회사명</label>
-                <input
-                  type="text"
-                  value={newCompany.compName}
-                  onChange={(e) => setNewCompany({...newCompany, compName: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">위치</label>
-                <input
-                  type="text"
-                  value={newCompany.compLocation}
-                  onChange={(e) => setNewCompany({...newCompany, compLocation: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">회사 종류</label>
-                <input
-                  type="text"
-                  value={newCompany.compType}
-                  onChange={(e) => setNewCompany({...newCompany, compType: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">산업군</label>
-                <input
-                  type="text"
-                  value={newCompany.compIndustry}
-                  onChange={(e) => setNewCompany({...newCompany, compIndustry: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">설립년도</label>
-                <input
-                  type="text"
-                  value={newCompany.compEstablish}
-                  onChange={(e) => setNewCompany({...newCompany, compEstablish: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">대표자</label>
-                <input
-                  type="text"
-                  value={newCompany.compCEO}
-                  onChange={(e) => setNewCompany({...newCompany, compCEO: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+            <div className="mb-6 pb-4 border-b">
+              <h3 className="text-xl font-bold text-gray-800">새 회사 추가</h3>
+              <p className="text-sm text-gray-500 mt-1">회사 정보를 입력해주세요</p>
+            </div>
+            <div className="flex-1 overflow-y-auto pr-2">
+              <div className="space-y-5">
+                {/* 기본 정보 섹션 */}
                 <div>
-                  <label className="block text-sm font-medium mb-1">위도</label>
-                  <input
-                    type="number"
-                    value={newCompany.compLateX}
-                    onChange={(e) => setNewCompany({...newCompany, compLateX: parseFloat(e.target.value)})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    step="any"
-                  />
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">기본 정보</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1.5">회사명 <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        value={newCompany.compName}
+                        onChange={(e) => setNewCompany({...newCompany, compName: e.target.value})}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                        placeholder="회사명을 입력하세요"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1.5">대표자 <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        value={newCompany.compCEO}
+                        onChange={(e) => setNewCompany({...newCompany, compCEO: e.target.value})}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                        placeholder="대표자명을 입력하세요"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1.5">회사 종류 <span className="text-red-500">*</span></label>
+                      <select
+                        value={newCompany.compType}
+                        onChange={(e) => setNewCompany({...newCompany, compType: e.target.value})}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white"
+                      >
+                        <option value="">선택하세요</option>
+                        <option value="대기업">대기업</option>
+                        <option value="중견기업">중견기업</option>
+                        <option value="중소기업">중소기업</option>
+                        <option value="스타트업">스타트업</option>
+                        <option value="공기업">공기업</option>
+                        <option value="외국계">외국계</option>
+                        <option value="기타">기타</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1.5">산업군 <span className="text-red-500">*</span></label>
+                      <select
+                        value={newCompany.compIndustry}
+                        onChange={(e) => setNewCompany({...newCompany, compIndustry: e.target.value})}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white"
+                      >
+                        <option value="">선택하세요</option>
+                        <option value="IT">IT</option>
+                        <option value="금융">금융</option>
+                        <option value="제조업">제조업</option>
+                        <option value="서비스업">서비스업</option>
+                        <option value="의료">의료</option>
+                        <option value="교육">교육</option>
+                        <option value="통신">통신</option>
+                        <option value="기타">기타</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1.5">설립년도</label>
+                      <input
+                        type="text"
+                        value={newCompany.compEstablish}
+                        onChange={(e) => setNewCompany({...newCompany, compEstablish: e.target.value})}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                        placeholder="예: 1984"
+                      />
+                    </div>
+                  </div>
                 </div>
+
+                {/* 위치 정보 섹션 */}
                 <div>
-                  <label className="block text-sm font-medium mb-1">경도</label>
-                  <input
-                    type="number"
-                    value={newCompany.compLateY}
-                    onChange={(e) => setNewCompany({...newCompany, compLateY: parseFloat(e.target.value)})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    step="any"
-                  />
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">위치 정보</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1.5">위치 <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        value={newCompany.compLocation}
+                        onChange={(e) => setNewCompany({...newCompany, compLocation: e.target.value, compLocate: e.target.value})}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                        placeholder="예: 서울특별시"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1.5">도로명 주소 <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        value={newCompany.compAddr}
+                        onChange={(e) => setNewCompany({...newCompany, compAddr: e.target.value})}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                        placeholder="도로명 주소를 입력하세요"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1.5">지번 주소 <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        value={newCompany.compLotAddr}
+                        onChange={(e) => setNewCompany({...newCompany, compLotAddr: e.target.value})}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                        placeholder="지번 주소를 입력하세요"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1.5">위도 <span className="text-red-500">*</span></label>
+                      <input
+                        type="number"
+                        value={newCompany.compLateX || ""}
+                        onChange={(e) => setNewCompany({...newCompany, compLateX: parseFloat(e.target.value) || 0})}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                        placeholder="예: 37.5665"
+                        step="any"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1.5">경도 <span className="text-red-500">*</span></label>
+                      <input
+                        type="number"
+                        value={newCompany.compLateY || ""}
+                        onChange={(e) => setNewCompany({...newCompany, compLateY: parseFloat(e.target.value) || 0})}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                        placeholder="예: 126.978"
+                        step="any"
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">웹사이트 URL</label>
-                <input
-                  type="url"
-                  value={newCompany.compURL}
-                  onChange={(e) => setNewCompany({...newCompany, compURL: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">지번</label>
-                <input
-                  type="text"
-                  value={newCompany.compLotAddr}
-                  onChange={(e) => setNewCompany({...newCompany, compLotAddr: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">주소</label>
-                <input
-                  type="text"
-                  value={newCompany.compAddr}
-                  onChange={(e) => setNewCompany({...newCompany, compAddr: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">이미지 URL</label>
-                <input
-                  type="url"
-                  value={newCompany.compMapIMG}
-                  onChange={(e) => setNewCompany({...newCompany, compMapIMG: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
+
+                {/* 기타 정보 섹션 */}
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">기타 정보</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1.5">웹사이트 URL</label>
+                      <input
+                        type="url"
+                        value={newCompany.compURL}
+                        onChange={(e) => setNewCompany({...newCompany, compURL: e.target.value})}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                        placeholder="https://www.example.com"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1.5">지도 이미지 URL</label>
+                      <input
+                        type="url"
+                        value={newCompany.compMapIMG}
+                        onChange={(e) => setNewCompany({...newCompany, compMapIMG: e.target.value})}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                        placeholder="https://maps.google.com/maps?q=..."
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="flex gap-2 mt-4 pt-4 border-t">
+            <div className="flex gap-3 mt-6 pt-4 border-t">
               <button
                 onClick={handleAddCompany}
-                className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600"
+                className="flex-1 px-4 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 font-medium shadow-md hover:shadow-lg transition-all duration-200"
               >
-                저장
+                저장하기
               </button>
               <button
                 onClick={() => setIsAddMode(false)}
-                className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                className="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-all duration-200"
               >
                 취소
               </button>
@@ -859,7 +928,7 @@ const CompanyManagementPage = () => {
                       ✏️
                     </button>
                     <button
-                      onClick={handleDeleteSingleCompany}
+                      onClick={handleDeleteClick}
                       className="w-8 h-8 bg-red-500 text-white rounded-md hover:bg-red-600 flex items-center justify-center"
                       title="삭제"
                     >
@@ -1113,18 +1182,136 @@ const CompanyManagementPage = () => {
         )}
       </div>
 
+      {/* 삭제 확인 모달 */}
+      {showDeleteConfirmModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 transform transition-all">
+            <div className="p-6">
+              {/* 아이콘 영역 */}
+              <div className="flex justify-center mb-4">
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+              </div>
+              
+              {/* 제목 */}
+              <h3 className="text-xl font-bold text-gray-900 mb-2 text-center">삭제 확인</h3>
+              
+              {/* 내용 */}
+              <div className="text-center mb-6">
+                <p className="text-gray-700 mb-2">
+                  정말로 <span className="font-bold text-red-600 text-lg">{selectedCompany?.compName}</span> 회사를
+                </p>
+                <p className="text-gray-700 mb-3">삭제하시겠습니까?</p>
+                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded">
+                  <p className="text-sm text-yellow-800 font-medium">
+                    ⚠️ 이 작업은 되돌릴 수 없습니다.
+                  </p>
+                </div>
+              </div>
+              
+              {/* 버튼 */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteConfirmModal(false)}
+                  className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-all duration-200"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleDeleteSingleCompany}
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 font-medium shadow-md hover:shadow-lg transition-all duration-200"
+                >
+                  삭제하기
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 일괄 삭제 확인 모달 */}
+      {showBatchDeleteConfirmModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 transform transition-all">
+            <div className="p-6">
+              {/* 아이콘 영역 */}
+              <div className="flex justify-center mb-4">
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+              </div>
+              
+              {/* 제목 */}
+              <h3 className="text-xl font-bold text-gray-900 mb-2 text-center">삭제 확인</h3>
+              
+              {/* 내용 */}
+              <div className="text-center mb-6">
+                <p className="text-gray-700 mb-2">
+                  정말로 <span className="font-bold text-red-600 text-lg">{selectedCompanies.length}개</span>의 회사를
+                </p>
+                <p className="text-gray-700 mb-3">삭제하시겠습니까?</p>
+                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded">
+                  <p className="text-sm text-yellow-800 font-medium">
+                    ⚠️ 이 작업은 되돌릴 수 없습니다.
+                  </p>
+                </div>
+              </div>
+              
+              {/* 버튼 */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowBatchDeleteConfirmModal(false)}
+                  className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-all duration-200"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleDeleteCompanies}
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 font-medium shadow-md hover:shadow-lg transition-all duration-200"
+                >
+                  삭제하기
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 삭제 완료 모달 */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h3 className="text-lg font-semibold mb-4">알림</h3>
-            <p className="mb-4">삭제가 완료되었습니다.</p>
-            <button
-              onClick={() => setShowDeleteModal(false)}
-              className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600"
-            >
-              확인
-            </button>
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 transform transition-all animate-in fade-in zoom-in duration-300">
+            <div className="p-6">
+              {/* 아이콘 영역 */}
+              <div className="flex justify-center mb-4">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
+              
+              {/* 제목 */}
+              <h3 className="text-xl font-bold text-gray-900 mb-2 text-center">삭제 완료</h3>
+              
+              {/* 내용 */}
+              <p className="text-gray-700 text-center mb-6">
+                회사가 성공적으로 삭제되었습니다.
+              </p>
+              
+              {/* 버튼 */}
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="w-full px-4 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 font-medium shadow-md hover:shadow-lg transition-all duration-200"
+              >
+                확인
+              </button>
+            </div>
           </div>
         </div>
       )}
