@@ -61,6 +61,9 @@ export default function CompanyDetailPage() {
 
   // 탭 관련 상태
   const [activeTab, setActiveTab] = useState<'company' | 'interview' | 'salary'>('company');
+  
+  // 회사 정보 탭 관련 상태 (직원정보, 채무정보, 매출정보)
+  const [companyInfoTab, setCompanyInfoTab] = useState<'employee' | 'debt' | 'revenue'>('employee');
 
   // 정렬된 후기 목록 계산
   const sortedBoards = [...boards].sort((a, b) => {
@@ -868,6 +871,165 @@ export default function CompanyDetailPage() {
                   </a>
                 )}
               </div>
+            </div>
+
+            {/* 회사 상세 정보 (직원/채무/매출) 탭 */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="flex border-b border-gray-200 mb-6">
+                <button
+                  onClick={() => setCompanyInfoTab('employee')}
+                  className={`px-4 py-2 text-sm font-semibold transition-all duration-200 border-b-2 ${
+                    companyInfoTab === 'employee'
+                      ? 'text-purple-600 border-purple-600'
+                      : 'text-gray-500 border-transparent hover:text-gray-700'
+                  }`}
+                >
+                  직원 정보
+                </button>
+                <button
+                  onClick={() => setCompanyInfoTab('debt')}
+                  className={`px-4 py-2 text-sm font-semibold transition-all duration-200 border-b-2 ${
+                    companyInfoTab === 'debt'
+                      ? 'text-purple-600 border-purple-600'
+                      : 'text-gray-500 border-transparent hover:text-gray-700'
+                  }`}
+                >
+                  채무 정보
+                </button>
+                <button
+                  onClick={() => setCompanyInfoTab('revenue')}
+                  className={`px-4 py-2 text-sm font-semibold transition-all duration-200 border-b-2 ${
+                    companyInfoTab === 'revenue'
+                      ? 'text-purple-600 border-purple-600'
+                      : 'text-gray-500 border-transparent hover:text-gray-700'
+                  }`}
+                >
+                  매출 정보
+                </button>
+              </div>
+
+              {/* 직원 정보 탭 */}
+              {companyInfoTab === 'employee' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200 hover:shadow-md transition-all duration-200">
+                    <span className="text-xs text-blue-700 font-bold uppercase tracking-wider mb-2 block">총 직원 수</span>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {(company.totalEmployees || company.compEmployeeCount)
+                        ? `${(company.totalEmployees || company.compEmployeeCount)!.toLocaleString()}명` 
+                        : '정보 없음'}
+                    </p>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border border-green-200 hover:shadow-md transition-all duration-200">
+                    <span className="text-xs text-green-700 font-bold uppercase tracking-wider mb-2 block">평균 연봉</span>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {company.compAvgSalary 
+                        ? `${Math.round(company.compAvgSalary / 10000).toLocaleString()}만원` 
+                        : '정보 없음'}
+                    </p>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200 hover:shadow-md transition-all duration-200">
+                    <span className="text-xs text-purple-700 font-bold uppercase tracking-wider mb-2 block">신규 입사자</span>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {company.newHires !== null && company.newHires !== undefined
+                        ? `${company.newHires.toLocaleString()}명` 
+                        : '정보 없음'}
+                    </p>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-lg border border-orange-200 hover:shadow-md transition-all duration-200">
+                    <span className="text-xs text-orange-700 font-bold uppercase tracking-wider mb-2 block">퇴사자 수</span>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {company.resignations !== null && company.resignations !== undefined
+                        ? `${company.resignations.toLocaleString()}명` 
+                        : '정보 없음'}
+                    </p>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-pink-50 to-pink-100 p-4 rounded-lg border border-pink-200 hover:shadow-md transition-all duration-200 col-span-2">
+                    <span className="text-xs text-pink-700 font-bold uppercase tracking-wider mb-2 block">평균 근속 연수</span>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {company.compAvgTenure !== null && company.compAvgTenure !== undefined
+                        ? `${company.compAvgTenure}년` 
+                        : '정보 없음'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* 채무 정보 탭 */}
+              {companyInfoTab === 'debt' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200 hover:shadow-md transition-all duration-200">
+                    <span className="text-xs text-blue-700 font-bold uppercase tracking-wider mb-2 block">자본금</span>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {company.compCapital 
+                        ? `${Math.round(company.compCapital / 100000000).toLocaleString()}억원` 
+                        : '정보 없음'}
+                    </p>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border border-green-200 hover:shadow-md transition-all duration-200">
+                    <span className="text-xs text-green-700 font-bold uppercase tracking-wider mb-2 block">자산 총계</span>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {company.compTotalAssets 
+                        ? `${Math.round(company.compTotalAssets / 100000000).toLocaleString()}억원` 
+                        : '정보 없음'}
+                    </p>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-lg border border-red-200 hover:shadow-md transition-all duration-200">
+                    <span className="text-xs text-red-700 font-bold uppercase tracking-wider mb-2 block">부채 총계</span>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {company.compTotalLiabilities 
+                        ? `${Math.round(company.compTotalLiabilities / 100000000).toLocaleString()}억원` 
+                        : '정보 없음'}
+                    </p>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200 hover:shadow-md transition-all duration-200">
+                    <span className="text-xs text-purple-700 font-bold uppercase tracking-wider mb-2 block">자본 총계</span>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {company.compTotalEquity 
+                        ? `${Math.round(company.compTotalEquity / 100000000).toLocaleString()}억원` 
+                        : '정보 없음'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* 매출 정보 탭 */}
+              {companyInfoTab === 'revenue' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200 hover:shadow-md transition-all duration-200 col-span-2">
+                    <span className="text-xs text-blue-700 font-bold uppercase tracking-wider mb-2 block">매출액</span>
+                    <p className="text-3xl font-bold text-gray-900">
+                      {company.compSales 
+                        ? `${Math.round(company.compSales / 100000000).toLocaleString()}억원` 
+                        : '정보 없음'}
+                    </p>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border border-green-200 hover:shadow-md transition-all duration-200">
+                    <span className="text-xs text-green-700 font-bold uppercase tracking-wider mb-2 block">영업 이익</span>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {company.compOperatingProfit 
+                        ? `${Math.round(company.compOperatingProfit / 100000000).toLocaleString()}억원` 
+                        : '정보 없음'}
+                    </p>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200 hover:shadow-md transition-all duration-200">
+                    <span className="text-xs text-purple-700 font-bold uppercase tracking-wider mb-2 block">당기 순이익</span>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {company.compNetIncome 
+                        ? `${Math.round(company.compNetIncome / 100000000).toLocaleString()}억원` 
+                        : '정보 없음'}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 지도 */}

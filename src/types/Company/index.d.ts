@@ -18,12 +18,27 @@ export interface Company {
   compMapIMG?: string;
   compStatus?: number;
   compViewCount?: number;
+  // 직원 정보
   compEmployeeCount?: number;
-  compCapital?: number;
-  compSales?: number;
   totalEmployees?: number;
   newHires?: number;
   resignations?: number;
+  compAvgSalary?: number; // 평균 연봉 (원)
+  compAvgTenure?: number; // 평균 근속 연수 (년)
+  // 재무 정보
+  compCapital?: number; // 자본금 (원)
+  compSales?: number; // 매출액 (원)
+  compOperatingProfit?: number; // 영업이익 (원)
+  compNetIncome?: number; // 당기순이익 (원)
+  compTotalAssets?: number; // 자산총계 (원)
+  compTotalLiabilities?: number; // 부채총계 (원)
+  compTotalEquity?: number; // 자본총계 (원)
+  // OpenDart 연동 정보
+  compCorpCode?: string; // OpenDart corp_code
+  compDataUpdatedAt?: string; // OpenDart 데이터 업데이트 일시
+  // 시스템 정보
+  created_at?: string; // 등록일
+  updated_at?: string; // 수정일
 }
 
 export interface CompanyAutoSearchResult {
