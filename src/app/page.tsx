@@ -1060,13 +1060,11 @@ export default function HomePage() {
                 ) : recentMatzalAlBoards.length > 0 ? (
                   // 실제 데이터
                   (() => {
-                    console.log('맛잘알 후기 데이터:', recentMatzalAlBoards);
                     return recentMatzalAlBoards.map((board: MatzalAlBoard, i: number) => (
                     <div 
                       key={board.boardIdx} 
                       onClick={(e) => {
                         e.preventDefault();
-                        console.log('클릭 이벤트 발생:', board);
                         handleMatzalAlBoardClick(board);
                       }} 
                       className="p-2 rounded hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
