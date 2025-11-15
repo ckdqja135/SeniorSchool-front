@@ -68,6 +68,7 @@ export interface CompanyBoard {
   boardLike: number;
   boardHits: number;
   boardID: string;
+  boardRating?: number; // 회사 평점 (0.5 ~ 5.0)
   boardType?: 'company' | 'interview' | 'salary'; // 후기 타입: 회사 후기, 면접 후기, 연봉 후기
   // 연봉 후기 전용 필드
   years?: number; // 몇 년차

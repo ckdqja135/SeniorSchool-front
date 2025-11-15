@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import DatePicker from 'react-datepicker';
@@ -31,6 +31,7 @@ export default function CompanyDetailPage() {
     boardContent: '',
     boardID: '',
     boardPw: '',
+    boardRating: 0,
     // 연봉 후기 전용 필드
     years: '',
     position: '',
@@ -61,7 +62,50 @@ export default function CompanyDetailPage() {
 
   // 탭 관련 상태
   const [activeTab, setActiveTab] = useState<'company' | 'interview' | 'salary'>('company');
-  
+  const [hoveredRating, setHoveredRating] = useState<number | null>(null);
+  const [remoteRating, setRemoteRating] = useState<{ average: number | null; count: number }>({
+    average: null,
+    count: 0
+  });
+
+  const normalizeRating = (value: any): number | null => {
+    if (value === undefined || value === null) return null;
+    const parsed = typeof value === 'string' ? parseFloat(value) : value;
+    if (typeof parsed !== 'number' || Number.isNaN(parsed) || parsed <= 0) return null;
+    return Math.min(parsed, 5);
+  };
+
+  const getBoardRating = (board: any) => normalizeRating(board?.boardRating ?? board?.boardScore);
+
+  const renderStarRating = (score?: number | null, size: 'sm' | 'md' | 'lg' = 'md') => {
+    const safeScore = Math.max(0, Math.min(score || 0, 5));
+    const sizeClasses = {
+      sm: { wrapper: 'w-4 h-4 text-xs', star: 'text-sm' },
+      md: { wrapper: 'w-5 h-5 text-base', star: 'text-base' },
+      lg: { wrapper: 'w-6 h-6 text-lg', star: 'text-lg' }
+    }[size];
+
+    return (
+      <div className="flex items-center space-x-1">
+        {Array.from({ length: 5 }).map((_, idx) => {
+          const fillLevel = Math.min(Math.max(safeScore - idx, 0), 1);
+          return (
+            <div key={`star-${idx}`} className={`relative ${sizeClasses.wrapper}`}>
+              <span className={`absolute inset-0 text-gray-300 select-none ${sizeClasses.star}`}>★</span>
+              <span
+                className={`absolute inset-0 text-yellow-400 overflow-hidden select-none ${sizeClasses.star}`}
+                style={{ width: `${fillLevel * 100}%` }}
+              >
+                ★
+              </span>
+              <span className={`invisible ${sizeClasses.star}`}>★</span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   // 회사 정보 탭 관련 상태 (직원정보, 채무정보, 매출정보)
   const [companyInfoTab, setCompanyInfoTab] = useState<'employee' | 'debt' | 'revenue'>('employee');
 
@@ -150,10 +194,30 @@ export default function CompanyDetailPage() {
     currentPage * itemsPerPage
   );
 
+  const localRatingStats = useMemo(() => {
+    const scores = boards
+      .map(board => getBoardRating(board as any))
+      .filter((score): score is number => typeof score === 'number');
+    if (!scores.length) {
+      return { average: null as number | null, count: 0 };
+    }
+    const sum = scores.reduce((acc, cur) => acc + cur, 0);
+    return { average: sum / scores.length, count: scores.length };
+  }, [boards]);
+
+  const averageRating = remoteRating.average ?? localRatingStats.average;
+  const ratingCount = remoteRating.average !== null ? remoteRating.count : localRatingStats.count;
+  const displayedRating = hoveredRating ?? writeForm.boardRating;
+
   // 탭 변경 핸들러
   const handleTabChange = (tab: 'company' | 'interview' | 'salary') => {
     setActiveTab(tab);
     setCurrentPage(1); // 탭 변경 시 첫 페이지로 이동
+  };
+
+  const handleRatingSelect = (value: number) => {
+    setWriteForm(prev => ({ ...prev, boardRating: value }));
+    setHoveredRating(null);
   };
 
   // 검색 핸들러
@@ -295,6 +359,61 @@ export default function CompanyDetailPage() {
 
     fetchCompanyInfo();
   }, [companyId, compIdx]);
+
+  // 회사 평점 정보 가져오기
+  useEffect(() => {
+    const fetchCompanyRating = async () => {
+      if (!company?.compIdx) return;
+
+      const backendURL = 'https://api.reviewhub.life';
+      try {
+        const response = await fetch(`${backendURL}/comp/companies/${company.compIdx}/rating`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const ratingData = data?.data ?? data;
+
+        const average =
+          normalizeRating(
+            ratingData?.averageRating ??
+            ratingData?.avgRating ??
+            ratingData?.average ??
+            ratingData?.rating ??
+            ratingData?.boardRating
+          ) ?? null;
+
+        const rawCount =
+          ratingData?.reviewCount ??
+          ratingData?.count ??
+          ratingData?.totalReviews ??
+          ratingData?.ratingCount ??
+          ratingData?.boardCount ??
+          ratingData?.total;
+
+        const count =
+          typeof rawCount === 'number'
+            ? rawCount
+            : typeof rawCount === 'string'
+            ? parseInt(rawCount, 10) || 0
+            : 0;
+
+        setRemoteRating({
+          average,
+          count
+        });
+      } catch (error) {
+        console.error('회사 평점 로딩 오류:', error);
+        setRemoteRating({
+          average: null,
+          count: 0
+        });
+      }
+    };
+
+    fetchCompanyRating();
+  }, [company?.compIdx]);
 
   // 회사 게시판 목록 가져오기 (회사 후기만)
   useEffect(() => {
@@ -671,6 +790,10 @@ export default function CompanyDetailPage() {
         alert('모든 필드를 입력해주세요.');
         return;
       }
+      if (activeTab === 'company' && writeForm.boardRating < 0.5) {
+        alert('평점을 선택해주세요. (0.5 ~ 5.0)');
+        return;
+      }
     }
 
     if (!company) {
@@ -715,7 +838,8 @@ export default function CompanyDetailPage() {
           boardID: writeForm.boardID.trim(),
           boardPw: writeForm.boardPw.trim(),
           boardTitle: writeForm.boardTitle.trim(),
-          boardContent: writeForm.boardContent.trim()
+          boardContent: writeForm.boardContent.trim(),
+          boardRating: writeForm.boardRating
         };
       }
       
@@ -742,11 +866,13 @@ export default function CompanyDetailPage() {
           boardContent: '',
           boardID: '',
           boardPw: '',
+          boardRating: 0,
           years: '',
           position: '',
           salary: '',
           joinDate: ''
         });
+        setHoveredRating(null);
         // 후기 목록 새로고침
         window.location.reload();
       } else {
@@ -771,11 +897,13 @@ export default function CompanyDetailPage() {
       boardContent: '',
       boardID: '',
       boardPw: '',
+      boardRating: 0,
       years: '',
       position: '',
       salary: '',
       joinDate: ''
     });
+    setHoveredRating(null);
   };
 
   if (isLoading) {
@@ -855,6 +983,25 @@ export default function CompanyDetailPage() {
                 <div className="bg-orange-50 p-3 rounded-lg border border-orange-100 hover:shadow-md transition-all duration-200">
                   <span className="text-xs text-orange-700 font-bold uppercase tracking-wider mb-1 block">CEO</span>
                   <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-900 leading-relaxed">{company.compCEO}</p>
+                </div>
+              </div>
+              
+              <div className="mt-6 p-4 bg-yellow-50 border border-yellow-100 rounded-lg">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold text-yellow-700 uppercase tracking-widest mb-1">평균 평점</p>
+                    {averageRating ? (
+                      <div className="flex items-center gap-3">
+                        {renderStarRating(averageRating, 'lg')}
+                        <span className="text-lg font-bold text-gray-900">{averageRating.toFixed(1)} / 5.0</span>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500">아직 평점이 없습니다. 첫 후기를 작성해보세요!</p>
+                    )}
+                  </div>
+                  <div className="text-sm text-gray-600 font-medium">
+                    {ratingCount > 0 ? `${ratingCount.toLocaleString()}개의 회사 후기` : '후기 0개'}
+                  </div>
                 </div>
               </div>
               
@@ -1252,6 +1399,21 @@ export default function CompanyDetailPage() {
                         ) : (
                           // 일반 후기 표시 형식
                           <>
+                          <div className="flex items-center mb-2">
+                            {(() => {
+                              const ratingValue = getBoardRating(board as any);
+                              return ratingValue ? (
+                                <div className="flex items-center space-x-2">
+                                  {renderStarRating(ratingValue, 'sm')}
+                                  <span className="text-xs font-semibold text-gray-600">
+                                    {ratingValue.toFixed(1)} / 5.0
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-gray-400">평점 없음</span>
+                              );
+                            })()}
+                          </div>
                             <h3 className="font-semibold text-gray-900 mb-2">{(board as any).boardTitle}</h3>
                             <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
                               <span>작성자: {(board as any).boardID}</span>
@@ -1463,6 +1625,56 @@ export default function CompanyDetailPage() {
               ) : (
                 // 일반 후기 폼 (회사 후기, 면접 후기)
                 <>
+                  {activeTab === 'company' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">회사 평점 <span className="text-red-500">*</span></label>
+                      <div
+                        className="flex flex-col gap-2"
+                        onMouseLeave={() => setHoveredRating(null)}
+                      >
+                        <div className="flex items-center space-x-2">
+                          {Array.from({ length: 5 }).map((_, idx) => {
+                            const fillLevel = Math.min(Math.max((displayedRating || 0) - idx, 0), 1);
+                            return (
+                              <div key={`interactive-star-${idx}`} className="relative w-8 h-8 text-3xl leading-none cursor-pointer">
+                                <span className="absolute inset-0 text-gray-300 select-none">★</span>
+                                <span
+                                  className="absolute inset-0 text-yellow-400 overflow-hidden select-none"
+                                  style={{ width: `${fillLevel * 100}%` }}
+                                >
+                                  ★
+                                </span>
+                                <span className="invisible">★</span>
+                                <div className="absolute inset-0 flex">
+                                  <button
+                                    type="button"
+                                    className="w-1/2 h-full bg-transparent"
+                                    aria-label={`${(idx + 0.5).toFixed(1)}점 선택`}
+                                    onMouseEnter={() => setHoveredRating(idx + 0.5)}
+                                    onFocus={() => setHoveredRating(idx + 0.5)}
+                                    onClick={() => handleRatingSelect(idx + 0.5)}
+                                  />
+                                  <button
+                                    type="button"
+                                    className="w-1/2 h-full bg-transparent"
+                                    aria-label={`${(idx + 1).toFixed(1)}점 선택`}
+                                    onMouseEnter={() => setHoveredRating(idx + 1)}
+                                    onFocus={() => setHoveredRating(idx + 1)}
+                                    onClick={() => handleRatingSelect(idx + 1)}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <p className="text-sm text-gray-600">
+                          {writeForm.boardRating >= 0.5
+                            ? `${writeForm.boardRating.toFixed(1)} / 5.0`
+                            : '0.5 단위로 평점을 선택해주세요.'}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">제목</label>
                     <input 

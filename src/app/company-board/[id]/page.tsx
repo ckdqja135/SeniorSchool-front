@@ -114,6 +114,8 @@ export default function CompanyBoardDetailPage() {
     title: '',
     content: ''
   });
+  const [editRating, setEditRating] = useState<number>(0);
+  const [hoveredEditRating, setHoveredEditRating] = useState<number | null>(null);
   
   const [commentForm, setCommentForm] = useState({
     content: '',
@@ -715,12 +717,50 @@ export default function CompanyBoardDetailPage() {
     }
   };
 
+  const normalizeRating = (value: any): number | null => {
+    if (value === null || value === undefined) return null;
+    const parsed = typeof value === 'string' ? parseFloat(value) : value;
+    if (typeof parsed !== 'number' || Number.isNaN(parsed) || parsed <= 0) return null;
+    return Math.min(parsed, 5);
+  };
+
+  const renderStarRating = (score?: number | null, size: 'sm' | 'md' = 'md') => {
+    const safeScore = Math.max(0, Math.min(score || 0, 5));
+    const sizeClasses = size === 'sm'
+      ? { wrapper: 'w-4 h-4 text-xs', star: 'text-xs' }
+      : { wrapper: 'w-6 h-6 text-lg', star: 'text-lg' };
+
+    return (
+      <div className="flex items-center space-x-1">
+        {Array.from({ length: 5 }).map((_, idx) => {
+          const fillLevel = Math.min(Math.max(safeScore - idx, 0), 1);
+          return (
+            <div key={`star-${idx}`} className={`relative ${sizeClasses.wrapper}`}>
+              <span className={`absolute inset-0 text-gray-300 select-none ${sizeClasses.star}`}>★</span>
+              <span
+                className={`absolute inset-0 text-yellow-400 overflow-hidden select-none ${sizeClasses.star}`}
+                style={{ width: `${fillLevel * 100}%` }}
+              >
+                ★
+              </span>
+              <span className={`invisible ${sizeClasses.star}`}>★</span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const currentBoardRating = normalizeRating(board?.boardRating ?? (board as any)?.boardScore);
+  const displayedEditRating = hoveredEditRating ?? editRating;
+
   // 게시글 수정
   const handleEditPost = () => {
     setEditForm({
       title: board?.boardTitle || '',
       content: board?.boardContent || ''
     });
+    setEditRating(currentBoardRating || 0);
     setShowEditModal(true);
     setShowPostMenu(false);
   };
@@ -750,7 +790,8 @@ export default function CompanyBoardDetailPage() {
           boardIdx: parseInt(boardId),
           boardTitle: editForm.title,
           boardContent: editForm.content,
-          boardPw: password
+          boardPw: password,
+          boardRating: editRating || null
         }),
       });
 
@@ -970,6 +1011,25 @@ export default function CompanyBoardDetailPage() {
               </button>
             </div>  
           </div>
+
+        <div className="mt-4 bg-yellow-50 p-4 rounded-lg border border-yellow-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <p className="text-xs text-yellow-700 font-bold uppercase tracking-widest mb-2">회사 평점</p>
+            {currentBoardRating ? (
+              <div className="flex items-center space-x-3">
+                {renderStarRating(currentBoardRating, 'md')}
+                <span className="text-base font-semibold text-gray-900">
+                  {currentBoardRating.toFixed(1)} / 5.0
+                </span>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">평점이 아직 등록되지 않았습니다.</p>
+            )}
+          </div>
+          <p className="text-xs text-gray-500">
+            평점은 회사 후기를 작성한 사용자 기준입니다.
+          </p>
+        </div>
 
           {/* 게시글 내용 */}
           <div className="border-t border-gray-200 pt-6">
@@ -1216,6 +1276,52 @@ export default function CompanyBoardDetailPage() {
               <h3 className="text-xl font-bold text-gray-800">게시글 수정</h3>
             </div>
             <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">평점</label>
+                <div
+                  className="flex flex-col gap-2"
+                  onMouseLeave={() => setHoveredEditRating(null)}
+                >
+                  <div className="flex items-center space-x-2">
+                    {Array.from({ length: 5 }).map((_, idx) => {
+                      const fillLevel = Math.min(Math.max((displayedEditRating || 0) - idx, 0), 1);
+                      return (
+                        <div key={`edit-star-${idx}`} className="relative w-8 h-8 text-3xl leading-none cursor-pointer">
+                          <span className="absolute inset-0 text-gray-300 select-none">★</span>
+                          <span
+                            className="absolute inset-0 text-yellow-400 overflow-hidden select-none"
+                            style={{ width: `${fillLevel * 100}%` }}
+                          >
+                            ★
+                          </span>
+                          <span className="invisible">★</span>
+                          <div className="absolute inset-0 flex">
+                            <button
+                              type="button"
+                              className="w-1/2 h-full bg-transparent"
+                              aria-label={`${(idx + 0.5).toFixed(1)}점 선택`}
+                              onMouseEnter={() => setHoveredEditRating(idx + 0.5)}
+                              onFocus={() => setHoveredEditRating(idx + 0.5)}
+                              onClick={() => setEditRating(idx + 0.5)}
+                            />
+                            <button
+                              type="button"
+                              className="w-1/2 h-full bg-transparent"
+                              aria-label={`${(idx + 1).toFixed(1)}점 선택`}
+                              onMouseEnter={() => setHoveredEditRating(idx + 1)}
+                              onFocus={() => setHoveredEditRating(idx + 1)}
+                              onClick={() => setEditRating(idx + 1)}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    {editRating >= 0.5 ? `${editRating.toFixed(1)} / 5.0` : '필수는 아니지만 0.5 단위로 선택 가능합니다.'}
+                  </p>
+                </div>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">제목</label>
                 <input
