@@ -180,6 +180,7 @@ export const devVendorSchema = baseVendorObjectSchema
     .extend({
         category: z.literal(VendorCategory.DEVELOPMENT),
         devInfo: devSpecificSchema,
+        isPublic: z.boolean().default(true),
     })
     .refine(
         (data) => {
@@ -229,6 +230,7 @@ export const vendorFormSchema = z.discriminatedUnion('category', [
                 VendorCategory.VIDEO,
                 VendorCategory.CONSULTING,
             ]),
+            isPublic: z.boolean().default(true),
         })
         .refine(
             (data) => {
