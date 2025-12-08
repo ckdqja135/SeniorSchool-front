@@ -318,3 +318,4 @@ export default async function VendorDetailPage({ params }: VendorDetailPageProps
         </div>
     );
 }
+

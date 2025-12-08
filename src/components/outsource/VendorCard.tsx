@@ -34,7 +34,7 @@ const getCategoryLabel = (category: string): string => {
 
 export default function VendorCard({ vendor }: VendorCardProps) {
     return (
-        <Link href={`/outsource-mentor/${encodeURIComponent(vendor.name)}`}>
+        <Link href={`/vendor/${vendor.id}`}>
             <div className="block p-6 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:border-blue-300 transition-all cursor-pointer">
                 {/* 헤더: 업체명 + 분야 */}
                 <div className="flex items-start justify-between mb-3">
