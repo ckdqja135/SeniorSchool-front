@@ -132,7 +132,7 @@ const baseVendorObjectSchema = z.object({
     timezone: z.string().max(50).optional(),
     contactEmail: z.string().email('유효한 이메일 주소를 입력해주세요.'),
     contactChannel: z.string().max(100).optional(),
-    isPublic: z.boolean().default(true),
+    isPublic: z.boolean(),
     team: teamCompositionSchema.optional(),
     govSupport: govSupportSchema.optional(),
     createdAt: z.date().optional(),

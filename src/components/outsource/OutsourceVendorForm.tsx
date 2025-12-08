@@ -25,9 +25,9 @@ export default function OutsourceVendorForm({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
 
-    const form = useForm<VendorFormInput>({
-        resolver: zodResolver(vendorFormSchema),
-        defaultValues: initialData || {
+    const form = useForm({
+        resolver: zodResolver(vendorFormSchema) as any,
+        defaultValues: (initialData || {
             name: '',
             tagline: '',
             category: '' as any,
@@ -47,7 +47,7 @@ export default function OutsourceVendorForm({
             govSupport: {
                 hasGovSupportExperience: false,
             },
-        },
+        }) as any,
     });
 
     const {
@@ -59,7 +59,7 @@ export default function OutsourceVendorForm({
     const category = watch('category');
     const isDevelopment = category === VendorCategory.DEVELOPMENT;
 
-    const onSubmit = async (data: VendorFormInput) => {
+    const onSubmit = async (data: any) => {
         setIsSubmitting(true);
         setSubmitError(null);
 
@@ -140,13 +140,13 @@ export default function OutsourceVendorForm({
             <div className="space-y-8">
                 {/* 기본 정보 섹션 */}
                 <div className="p-6 bg-white border rounded-lg shadow-sm">
-                    <BasicInfoSection form={form} />
+                    <BasicInfoSection form={form as any} />
                 </div>
 
                 {/* 예산 정보 섹션 (개발 분야 전용) */}
                 {isDevelopment && (
                     <div className="p-6 bg-white border rounded-lg shadow-sm">
-                        <BudgetSection form={form} />
+                        <BudgetSection form={form as any} />
                     </div>
                 )}
 
@@ -160,14 +160,14 @@ export default function OutsourceVendorForm({
                 {/* 팀 구성 섹션 (개발 분야 전용) */}
                 {isDevelopment && (
                     <div className="p-6 bg-white border rounded-lg shadow-sm">
-                        <TeamCompositionSection form={form} />
+                        <TeamCompositionSection form={form as any} />
                     </div>
                 )}
 
                 {/* 정부지원사업 섹션 (개발 분야 전용) */}
                 {isDevelopment && (
                     <div className="p-6 bg-white border rounded-lg shadow-sm">
-                        <GovSupportSection form={form} />
+                        <GovSupportSection form={form as any} />
                     </div>
                 )}
             </div>
