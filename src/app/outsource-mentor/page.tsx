@@ -16,18 +16,9 @@ export default function OutsourceMentorPage() {
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isBoardRefreshing, setIsBoardRefreshing] = useState(false);
-  const [showRequestModal, setShowRequestModal] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [requestForm, setRequestForm] = useState({
-    outsourceName: '',
-    outsourceAddr: '',
-    outsourceType: '웹개발',
-    outsourceLocation: '서울',
-    requesterId: ''
-  });
   const searchRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  
+
   // 중복 호출 방지를 위한 ref
   const hasFetchedPopularOutsources = useRef(false);
   const hasFetchedPopularBoards = useRef(false);
@@ -83,13 +74,13 @@ export default function OutsourceMentorPage() {
       setError(null);
 
       const response = await fetch(`https://api.reviewhub.life/search/outsource/auto?keyword=${encodeURIComponent(term)}`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      
+
       // API 응답이 배열인 경우 직접 사용
       if (Array.isArray(data)) {
         setSuggestions(data);
@@ -98,7 +89,7 @@ export default function OutsourceMentorPage() {
       } else {
         setSuggestions([]);
       }
-      
+
       console.log('자동완성 API 응답:', data); // 디버깅용
     } catch (err) {
       console.error('자동완성 검색 오류:', err);
@@ -142,10 +133,10 @@ export default function OutsourceMentorPage() {
   // 새로고침 핸들러
   const handleRefresh = async () => {
     if (isRefreshing) return;
-    
+
     setIsRefreshing(true);
     await fetchPopularOutsources();
-    
+
     setTimeout(() => {
       setIsRefreshing(false);
     }, 1000);
@@ -154,10 +145,10 @@ export default function OutsourceMentorPage() {
   // 후기 새로고침 핸들러
   const handleBoardRefresh = async () => {
     if (isBoardRefreshing) return;
-    
+
     setIsBoardRefreshing(true);
     await refetchBoards();
-    
+
     setTimeout(() => {
       setIsBoardRefreshing(false);
     }, 1000);
@@ -175,11 +166,11 @@ export default function OutsourceMentorPage() {
     try {
       const backendURL = 'https://api.reviewhub.life';
       const response = await fetch(`${backendURL}/search/outsource/auto?keyword=${encodeURIComponent(searchTerm.trim())}`);
-      
+
       if (response.ok) {
         const data = await response.json();
         let searchResults = [];
-        
+
         if (Array.isArray(data)) {
           searchResults = data;
         } else if (data.data && Array.isArray(data.data)) {
@@ -216,7 +207,7 @@ export default function OutsourceMentorPage() {
     setShowSuggestions(false);
     setError(null);
     addToRecentSearches(suggestion.outsourceName);
-    
+
     // 자동완성 선택 시에는 상세정보로 직접 이동 (외주업체명 사용)
     router.push(`/outsource-mentor/${encodeURIComponent(suggestion.outsourceName)}`);
   };
@@ -232,7 +223,7 @@ export default function OutsourceMentorPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchTerm(value);
-    
+
     if (value.trim()) {
       setShowSuggestions(true);
     } else {
@@ -268,11 +259,11 @@ export default function OutsourceMentorPage() {
       // 검색 결과를 확인하여 단일값이면 상세정보로, 다중값이면 검색결과로 이동
       const backendURL = 'https://api.reviewhub.life';
       const response = await fetch(`${backendURL}/search/outsource/auto?keyword=${encodeURIComponent(term)}`);
-      
+
       if (response.ok) {
         const data = await response.json();
         let searchResults = [];
-        
+
         if (Array.isArray(data)) {
           searchResults = data;
         } else if (data.data && Array.isArray(data.data)) {
@@ -308,68 +299,23 @@ export default function OutsourceMentorPage() {
     router.push(`/outsource-board/${board.boardIdx}`);
   };
 
-  // 외주업체 추가 요청 제출
-  const handleRequestSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!requestForm.outsourceName.trim() || !requestForm.outsourceAddr.trim()) {
-      alert('외주업체명과 주소를 입력해주세요.');
-      return;
-    }
 
-    setIsSubmitting(true);
-    
-    try {
-      const response = await fetch('https://api.reviewhub.life/outsource/requests', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestForm),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      if (data.success) {
-        alert('외주업체 추가 요청이 성공적으로 제출되었습니다.');
-        setShowRequestModal(false);
-        setRequestForm({
-          outsourceName: '',
-          outsourceAddr: '',
-          outsourceType: '웹개발',
-          outsourceLocation: '서울',
-          requesterId: ''
-        });
-      } else {
-        throw new Error(data.message || '요청 제출에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('외주업체 추가 요청 오류:', error);
-      alert('외주업체 추가 요청에 실패했습니다. 다시 시도해주세요.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   // 시간 포맷팅 함수
   const formatTimeAgo = (dateString: string) => {
     const now = new Date();
     const createdDate = new Date(dateString);
     const diffInHours = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60));
-    
+
     if (diffInHours < 1) return '방금 전';
     if (diffInHours < 24) return `약 ${diffInHours}시간 전`;
-    
+
     const diffInDays = Math.floor(diffInHours / 24);
     if (diffInDays < 7) return `${diffInDays}일 전`;
-    
+
     const diffInWeeks = Math.floor(diffInDays / 7);
     if (diffInWeeks < 4) return `${diffInWeeks}주 전`;
-    
+
     const diffInMonths = Math.floor(diffInDays / 30);
     return `${diffInMonths}개월 전`;
   };
@@ -378,21 +324,21 @@ export default function OutsourceMentorPage() {
     <div className="min-h-screen bg-gray-50">
       {/* 뒤로가기 버튼 */}
       <div className="absolute top-4 left-4 z-10">
-        <Link 
+        <Link
           href="/"
           className="flex items-center space-x-2 px-4 py-3 bg-white/90 backdrop-blur-sm hover:bg-white/95 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group border border-white/20"
         >
-          <svg 
-            className="w-5 h-5 text-gray-600 group-hover:text-gray-800 transition-colors duration-200" 
-            fill="none" 
-            stroke="currentColor" 
+          <svg
+            className="w-5 h-5 text-gray-600 group-hover:text-gray-800 transition-colors duration-200"
+            fill="none"
+            stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              strokeWidth={2} 
-              d="M10 19l-7-7m0 0l7-7m-7 7h18" 
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"
             />
           </svg>
           <span className="text-sm font-semibold text-gray-700 group-hover:text-gray-900 transition-colors duration-200">
@@ -410,7 +356,7 @@ export default function OutsourceMentorPage() {
           className="object-cover"
           priority
         />
-        
+
         {/* 검색 폼 오버레이 */}
         <div className="absolute inset-0 flex items-center justify-center px-4 sm:px-6 lg:px-8">
           <div className="text-center text-white w-full">
@@ -418,7 +364,7 @@ export default function OutsourceMentorPage() {
               <span className="block">세상 모든 외주업체 정보,</span>
               <span className="block">외주 오빠가 알려줄게</span>
             </h1>
-            
+
             {/* 검색 폼 */}
             <form onSubmit={handleSearch} className="max-w-xl mx-auto">
               <div className="relative" ref={searchRef}>
@@ -429,7 +375,7 @@ export default function OutsourceMentorPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                   </div>
-                  
+
                   {/* 검색 입력창 */}
                   <input
                     type="text"
@@ -442,7 +388,7 @@ export default function OutsourceMentorPage() {
                     className="flex-1 px-2 sm:px-4 py-3 sm:py-4 text-sm sm:text-base font-medium text-gray-900 bg-transparent border-0 focus:outline-none focus:ring-0 placeholder-gray-400 placeholder:text-xs sm:placeholder:text-sm"
                     autoComplete="off"
                   />
-                  
+
                   {/* 검색 버튼 */}
                   <button
                     type="submit"
@@ -466,7 +412,7 @@ export default function OutsourceMentorPage() {
                         <div className="text-gray-400 text-sm mt-1">잠시만 기다려주세요</div>
                       </div>
                     )}
-                    
+
                     {/* 에러 표시 */}
                     {error && !isLoading && (
                       <div className="px-6 py-6 text-center">
@@ -474,7 +420,7 @@ export default function OutsourceMentorPage() {
                         <div className="text-yellow-600 font-medium">{error}</div>
                       </div>
                     )}
-                    
+
                     {/* 자동완성 결과 */}
                     {suggestions.map((suggestion, index) => (
                       <div
@@ -501,7 +447,7 @@ export default function OutsourceMentorPage() {
                         </div>
                       </div>
                     ))}
-                    
+
                     {/* 결과가 없을 때 */}
                     {!isLoading && !error && suggestions.length === 0 && (
                       <div className="px-6 py-8 text-center">
@@ -514,7 +460,7 @@ export default function OutsourceMentorPage() {
                 )}
               </div>
             </form>
-            
+
             {/* 최근 검색어 태그들 - 검색창 바로 아래 */}
             {recentSearches.length > 0 && (
               <div className="mt-6">
@@ -529,7 +475,7 @@ export default function OutsourceMentorPage() {
                   >
                     Clear All
                   </button>
-                  
+
                   {/* 최근 검색어 태그들 */}
                   {recentSearches.map((search, index) => (
                     <div
@@ -566,18 +512,17 @@ export default function OutsourceMentorPage() {
             <div className="relative">
               {/* 외주업체 추가 요청 버튼 - 섹션 왼쪽 바깥쪽 */}
               <div className="absolute -left-48 top-0">
-                <button
-                  type="button"
-                  onClick={() => setShowRequestModal(true)}
+                <Link
+                  href="/outsource-mentor/new"
                   className="flex items-center space-x-2 px-3 py-1.5 rounded-lg transition-all duration-300 bg-yellow-100 text-yellow-600 hover:bg-yellow-200"
                 >
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
                   <span className="text-sm">외주업체 추가 요청</span>
-                </button>
+                </Link>
               </div>
-              
+
               <div className="bg-white rounded-lg shadow-sm border border-gray-200">
                 <div className="p-3 border-b border-gray-200">
                   <div className="flex items-center justify-between">
@@ -585,11 +530,10 @@ export default function OutsourceMentorPage() {
                     <button
                       onClick={handleRefresh}
                       disabled={isRefreshing}
-                      className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg transition-all duration-300 ${
-                        isRefreshing
+                      className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg transition-all duration-300 ${isRefreshing
                           ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                           : 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200'
-                      }`}
+                        }`}
                     >
                       <svg
                         className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`}
@@ -603,21 +547,19 @@ export default function OutsourceMentorPage() {
                     </button>
                   </div>
                 </div>
-                
+
                 <div className="p-3">
                   <div className="grid grid-cols-1 gap-1.5">
                     {popularOutsources.map((outsource, index) => (
                       <div
                         key={outsource.outsourceIdx}
                         onClick={() => handlePopularOutsourceClick(outsource)}
-                        className={`group p-1.5 rounded-lg border border-gray-200 hover:border-yellow-300 hover:shadow-md transition-all duration-300 cursor-pointer transform hover:scale-105 ${
-                          isRefreshing ? 'animate-pulse' : ''
-                        }`}
+                        className={`group p-1.5 rounded-lg border border-gray-200 hover:border-yellow-300 hover:shadow-md transition-all duration-300 cursor-pointer transform hover:scale-105 ${isRefreshing ? 'animate-pulse' : ''
+                          }`}
                       >
                         <div className="flex items-center space-x-1.5">
-                          <div className={`w-4 h-4 rounded-full flex items-center justify-center text-white font-bold text-xs ${
-                            index < 3 ? 'bg-gradient-to-r from-yellow-400 to-orange-500' : 'bg-gradient-to-r from-gray-400 to-gray-600'
-                          }`}>
+                          <div className={`w-4 h-4 rounded-full flex items-center justify-center text-white font-bold text-xs ${index < 3 ? 'bg-gradient-to-r from-yellow-400 to-orange-500' : 'bg-gradient-to-r from-gray-400 to-gray-600'
+                            }`}>
                             {index + 1}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -648,11 +590,10 @@ export default function OutsourceMentorPage() {
                   <button
                     onClick={handleBoardRefresh}
                     disabled={isBoardRefreshing}
-                    className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg transition-all duration-300 ${
-                      isBoardRefreshing
+                    className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg transition-all duration-300 ${isBoardRefreshing
                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                         : 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200'
-                    }`}
+                      }`}
                   >
                     <svg
                       className={`w-3 h-3 ${isBoardRefreshing ? 'animate-spin' : ''}`}
@@ -666,21 +607,19 @@ export default function OutsourceMentorPage() {
                   </button>
                 </div>
               </div>
-              
+
               <div className="p-3">
                 <div className="grid grid-cols-1 gap-1.5">
                   {popularBoards.map((board, index) => (
                     <div
                       key={board.boardIdx}
                       onClick={() => handlePopularBoardClick(board)}
-                      className={`group p-1.5 rounded-lg border border-gray-200 hover:border-yellow-300 hover:shadow-md transition-all duration-300 cursor-pointer transform hover:scale-105 ${
-                        isBoardRefreshing ? 'animate-pulse' : ''
-                      }`}
+                      className={`group p-1.5 rounded-lg border border-gray-200 hover:border-yellow-300 hover:shadow-md transition-all duration-300 cursor-pointer transform hover:scale-105 ${isBoardRefreshing ? 'animate-pulse' : ''
+                        }`}
                     >
                       <div className="flex items-center space-x-1.5">
-                        <div className={`w-4 h-4 rounded-full flex items-center justify-center text-white font-bold text-xs ${
-                          index < 3 ? 'bg-gradient-to-r from-yellow-400 to-yellow-500' : 'bg-gradient-to-r from-gray-400 to-gray-600'
-                        }`}>
+                        <div className={`w-4 h-4 rounded-full flex items-center justify-center text-white font-bold text-xs ${index < 3 ? 'bg-gradient-to-r from-yellow-400 to-yellow-500' : 'bg-gradient-to-r from-gray-400 to-gray-600'
+                          }`}>
                           {index + 1}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -705,100 +644,7 @@ export default function OutsourceMentorPage() {
         </div>
       </div>
 
-      {/* 외주업체 추가 요청 모달 */}
-      {showRequestModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-gray-900">외주업체 추가 요청</h3>
-                <button
-                  onClick={() => setShowRequestModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              
-              <form onSubmit={handleRequestSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    외주업체명 *
-                  </label>
-                  <input
-                    type="text"
-                    value={requestForm.outsourceName}
-                    onChange={(e) => setRequestForm({...requestForm, outsourceName: e.target.value})}
-                    placeholder="외주업체명을 입력하세요"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    대표자명
-                  </label>
-                  <input
-                    type="text"
-                    value={requestForm.requesterId}
-                    onChange={(e) => setRequestForm({...requestForm, requesterId: e.target.value})}
-                    placeholder="대표자명을 입력하세요 (선택사항)"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    외주업체 주소 *
-                  </label>
-                  <input
-                    type="text"
-                    value={requestForm.outsourceAddr}
-                    onChange={(e) => setRequestForm({...requestForm, outsourceAddr: e.target.value})}
-                    placeholder="외주업체 주소를 입력하세요"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    외주업체 종류 *
-                  </label>
-                  <input
-                    type="text"
-                    value={requestForm.outsourceType}
-                    onChange={(e) => setRequestForm({...requestForm, outsourceType: e.target.value})}
-                    placeholder="외주업체 종류를 입력하세요 (예: 웹개발, 앱개발, 디자인 등)"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                    required
-                  />
-                </div>
-                
-                <div className="flex space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowRequestModal(false)}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    취소
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="flex-1 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {isSubmitting ? '요청 중...' : '요청하기'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }
