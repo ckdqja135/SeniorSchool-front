@@ -194,18 +194,6 @@ export default function OutsourceVendorForm({
                             : '수정하기'}
                 </button>
             </div>
-
-            {/* 디버그 정보 (개발용, 프로덕션에서는 제거) */}
-            {process.env.NODE_ENV === 'development' && (
-                <details className="mt-8 p-4 bg-gray-100 rounded-lg">
-                    <summary className="cursor-pointer font-medium">
-                        폼 데이터 미리보기 (개발용)
-                    </summary>
-                    <pre className="mt-2 text-xs overflow-auto">
-                        {JSON.stringify(watch(), null, 2)}
-                    </pre>
-                </details>
-            )}
         </form>
     );
 }

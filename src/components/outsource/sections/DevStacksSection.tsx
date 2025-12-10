@@ -73,24 +73,24 @@ export default function DevStacksSection({ form }: DevStacksSectionProps) {
         fieldName: string,
         maxCount: number
     ) => (
-        <div className="flex flex-wrap gap-2 mt-2">
+        <div className="flex flex-wrap gap-1.5 mt-1.5">
             {tags.map((tag, index) => (
                 <span
                     key={index}
-                    className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs"
                 >
                     {tag}
                     <button
                         type="button"
                         onClick={() => handleRemoveTag(index, tags, fieldName)}
-                        className="hover:text-blue-900"
+                        className="hover:text-blue-900 text-sm leading-none"
                     >
                         ×
                     </button>
                 </span>
             ))}
             {tags.length > 0 && (
-                <span className="text-sm text-gray-500 self-center">
+                <span className="text-xs text-gray-500 self-center">
                     {tags.length}/{maxCount}
                 </span>
             )}
@@ -98,12 +98,12 @@ export default function DevStacksSection({ form }: DevStacksSectionProps) {
     );
 
     return (
-        <div className="space-y-6">
-            <h2 className="text-2xl font-bold">개발 스택 정보</h2>
+        <div className="space-y-4">
+            <h2 className="text-xl font-bold">개발 스택 정보</h2>
 
             {/* 주요 기술스택 요약 */}
             <div>
-                <label className="block text-sm font-medium mb-2">
+                <label className="block text-xs font-medium mb-1.5">
                     주요 기술스택 요약 <span className="text-red-500">*</span>
                 </label>
                 <div className="flex gap-2">
@@ -123,7 +123,7 @@ export default function DevStacksSection({ form }: DevStacksSectionProps) {
                                 );
                             }
                         }}
-                        className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="flex-1 px-3 py-1.5 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         placeholder="React, Node.js 등 (Enter로 추가)"
                     />
                     <button
@@ -137,301 +137,324 @@ export default function DevStacksSection({ form }: DevStacksSectionProps) {
                                 () => setTechStackInput('')
                             )
                         }
-                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                        className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600"
                     >
                         추가
                     </button>
                 </div>
                 {renderTags(techStackSummary, 'devInfo.techStackSummary', 10)}
-                <p className="text-sm text-red-500 mt-1">
+                <p className="text-xs text-red-500 mt-0.5">
                     {errors.devInfo?.techStackSummary?.message}
                 </p>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 mt-0.5">
                     1~10개 필수, 각 2~30자
                 </p>
             </div>
 
-            {/* 프론트엔드 스택 */}
-            <div>
-                <label className="block text-sm font-medium mb-2">
-                    프론트엔드 스택
-                </label>
-                <div className="flex gap-2">
-                    <input
-                        type="text"
-                        value={frontendInput}
-                        onChange={(e) => setFrontendInput(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                                e.preventDefault();
+            {/* 스택 그리드 레이아웃 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* 프론트엔드 스택 */}
+                <div>
+                    <label className="block text-xs font-medium mb-1.5">
+                        프론트엔드
+                    </label>
+                    <div className="flex gap-1.5">
+                        <input
+                            type="text"
+                            value={frontendInput}
+                            onChange={(e) => setFrontendInput(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleAddTag(
+                                        frontendInput,
+                                        frontendStacks,
+                                        'devInfo.frontendStacks',
+                                        15,
+                                        () => setFrontendInput('')
+                                    );
+                                }
+                            }}
+                            className="flex-1 px-2 py-1.5 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="React, Vue.js"
+                        />
+                        <button
+                            type="button"
+                            onClick={() =>
                                 handleAddTag(
                                     frontendInput,
                                     frontendStacks,
                                     'devInfo.frontendStacks',
                                     15,
                                     () => setFrontendInput('')
-                                );
+                                )
                             }
-                        }}
-                        className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="React, Vue.js 등"
-                    />
-                    <button
-                        type="button"
-                        onClick={() =>
-                            handleAddTag(
-                                frontendInput,
-                                frontendStacks,
-                                'devInfo.frontendStacks',
-                                15,
-                                () => setFrontendInput('')
-                            )
-                        }
-                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                    >
-                        추가
-                    </button>
+                            className="px-2 py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                        >
+                            +
+                        </button>
+                    </div>
+                    {renderTags(frontendStacks, 'devInfo.frontendStacks', 15)}
                 </div>
-                {renderTags(frontendStacks, 'devInfo.frontendStacks', 15)}
-            </div>
 
-            {/* 백엔드 스택 */}
-            <div>
-                <label className="block text-sm font-medium mb-2">백엔드 스택</label>
-                <div className="flex gap-2">
-                    <input
-                        type="text"
-                        value={backendInput}
-                        onChange={(e) => setBackendInput(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                                e.preventDefault();
+                {/* 백엔드 스택 */}
+                <div>
+                    <label className="block text-xs font-medium mb-1.5">백엔드</label>
+                    <div className="flex gap-1.5">
+                        <input
+                            type="text"
+                            value={backendInput}
+                            onChange={(e) => setBackendInput(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleAddTag(
+                                        backendInput,
+                                        backendStacks,
+                                        'devInfo.backendStacks',
+                                        15,
+                                        () => setBackendInput('')
+                                    );
+                                }
+                            }}
+                            className="flex-1 px-2 py-1.5 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Node.js, Spring"
+                        />
+                        <button
+                            type="button"
+                            onClick={() =>
                                 handleAddTag(
                                     backendInput,
                                     backendStacks,
                                     'devInfo.backendStacks',
                                     15,
                                     () => setBackendInput('')
-                                );
+                                )
                             }
-                        }}
-                        className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Node.js, Spring Boot 등"
-                    />
-                    <button
-                        type="button"
-                        onClick={() =>
-                            handleAddTag(
-                                backendInput,
-                                backendStacks,
-                                'devInfo.backendStacks',
-                                15,
-                                () => setBackendInput('')
-                            )
-                        }
-                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                    >
-                        추가
-                    </button>
+                            className="px-2 py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                        >
+                            +
+                        </button>
+                    </div>
+                    {renderTags(backendStacks, 'devInfo.backendStacks', 15)}
                 </div>
-                {renderTags(backendStacks, 'devInfo.backendStacks', 15)}
-            </div>
 
-            {/* AI/데이터 스택 */}
-            <div>
-                <label className="block text-sm font-medium mb-2">
-                    AI/데이터 스택
-                </label>
-                <div className="flex gap-2">
-                    <input
-                        type="text"
-                        value={aiInput}
-                        onChange={(e) => setAiInput(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                                e.preventDefault();
+                {/* AI/데이터 스택 */}
+                <div>
+                    <label className="block text-xs font-medium mb-1.5">
+                        AI/데이터
+                    </label>
+                    <div className="flex gap-1.5">
+                        <input
+                            type="text"
+                            value={aiInput}
+                            onChange={(e) => setAiInput(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleAddTag(
+                                        aiInput,
+                                        aiStacks,
+                                        'devInfo.aiStacks',
+                                        15,
+                                        () => setAiInput('')
+                                    );
+                                }
+                            }}
+                            className="flex-1 px-2 py-1.5 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="PyTorch, TensorFlow"
+                        />
+                        <button
+                            type="button"
+                            onClick={() =>
                                 handleAddTag(
                                     aiInput,
                                     aiStacks,
                                     'devInfo.aiStacks',
                                     15,
                                     () => setAiInput('')
-                                );
+                                )
                             }
-                        }}
-                        className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="PyTorch, TensorFlow 등"
-                    />
-                    <button
-                        type="button"
-                        onClick={() =>
-                            handleAddTag(
-                                aiInput,
-                                aiStacks,
-                                'devInfo.aiStacks',
-                                15,
-                                () => setAiInput('')
-                            )
-                        }
-                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                    >
-                        추가
-                    </button>
+                            className="px-2 py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                        >
+                            +
+                        </button>
+                    </div>
+                    {renderTags(aiStacks, 'devInfo.aiStacks', 15)}
                 </div>
-                {renderTags(aiStacks, 'devInfo.aiStacks', 15)}
-            </div>
 
-            {/* 모바일 스택 */}
-            <div>
-                <label className="block text-sm font-medium mb-2">
-                    모바일/크로스 플랫폼 스택
-                </label>
-                <div className="flex gap-2">
-                    <input
-                        type="text"
-                        value={mobileInput}
-                        onChange={(e) => setMobileInput(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                                e.preventDefault();
+                {/* 모바일 스택 */}
+                <div>
+                    <label className="block text-xs font-medium mb-1.5">
+                        모바일
+                    </label>
+                    <div className="flex gap-1.5">
+                        <input
+                            type="text"
+                            value={mobileInput}
+                            onChange={(e) => setMobileInput(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleAddTag(
+                                        mobileInput,
+                                        mobileStacks,
+                                        'devInfo.mobileStacks',
+                                        15,
+                                        () => setMobileInput('')
+                                    );
+                                }
+                            }}
+                            className="flex-1 px-2 py-1.5 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="React Native, Flutter"
+                        />
+                        <button
+                            type="button"
+                            onClick={() =>
                                 handleAddTag(
                                     mobileInput,
                                     mobileStacks,
                                     'devInfo.mobileStacks',
                                     15,
                                     () => setMobileInput('')
-                                );
+                                )
                             }
-                        }}
-                        className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="React Native, Flutter 등"
-                    />
-                    <button
-                        type="button"
-                        onClick={() =>
-                            handleAddTag(
-                                mobileInput,
-                                mobileStacks,
-                                'devInfo.mobileStacks',
-                                15,
-                                () => setMobileInput('')
-                            )
-                        }
-                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                    >
-                        추가
-                    </button>
+                            className="px-2 py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                        >
+                            +
+                        </button>
+                    </div>
+                    {renderTags(mobileStacks, 'devInfo.mobileStacks', 15)}
                 </div>
-                {renderTags(mobileStacks, 'devInfo.mobileStacks', 15)}
-            </div>
 
-            {/* 인프라/배포 환경 */}
-            <div>
-                <label className="block text-sm font-medium mb-2">
-                    인프라/배포 환경
-                </label>
-                <div className="flex gap-2">
-                    <input
-                        type="text"
-                        value={infraInput}
-                        onChange={(e) => setInfraInput(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                                e.preventDefault();
+                {/* 인프라/배포 환경 */}
+                <div>
+                    <label className="block text-xs font-medium mb-1.5">
+                        인프라/배포
+                    </label>
+                    <div className="flex gap-1.5">
+                        <input
+                            type="text"
+                            value={infraInput}
+                            onChange={(e) => setInfraInput(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleAddTag(
+                                        infraInput,
+                                        infraStacks,
+                                        'devInfo.infraStacks',
+                                        15,
+                                        () => setInfraInput('')
+                                    );
+                                }
+                            }}
+                            className="flex-1 px-2 py-1.5 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="AWS, Docker"
+                        />
+                        <button
+                            type="button"
+                            onClick={() =>
                                 handleAddTag(
                                     infraInput,
                                     infraStacks,
                                     'devInfo.infraStacks',
                                     15,
                                     () => setInfraInput('')
-                                );
+                                )
                             }
-                        }}
-                        className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="AWS, Docker 등"
-                    />
-                    <button
-                        type="button"
-                        onClick={() =>
-                            handleAddTag(
-                                infraInput,
-                                infraStacks,
-                                'devInfo.infraStacks',
-                                15,
-                                () => setInfraInput('')
-                            )
-                        }
-                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                    >
-                        추가
-                    </button>
+                            className="px-2 py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                        >
+                            +
+                        </button>
+                    </div>
+                    {renderTags(infraStacks, 'devInfo.infraStacks', 15)}
                 </div>
-                {renderTags(infraStacks, 'devInfo.infraStacks', 15)}
-            </div>
 
-            {/* 테크 분야 태그 */}
-            <div>
-                <label className="block text-sm font-medium mb-2">
-                    테크 분야 태그
-                </label>
-                <div className="flex gap-2">
-                    <input
-                        type="text"
-                        value={devTagInput}
-                        onChange={(e) => setDevTagInput(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                                e.preventDefault();
+                {/* 테크 분야 태그 */}
+                <div>
+                    <label className="block text-xs font-medium mb-1.5">
+                        테크 태그
+                    </label>
+                    <div className="flex gap-1.5">
+                        <input
+                            type="text"
+                            value={devTagInput}
+                            onChange={(e) => setDevTagInput(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleAddTag(
+                                        devTagInput,
+                                        devTags,
+                                        'devInfo.devTags',
+                                        10,
+                                        () => setDevTagInput('')
+                                    );
+                                }
+                            }}
+                            className="flex-1 px-2 py-1.5 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="SaaS, Fintech"
+                        />
+                        <button
+                            type="button"
+                            onClick={() =>
                                 handleAddTag(
                                     devTagInput,
                                     devTags,
                                     'devInfo.devTags',
                                     10,
                                     () => setDevTagInput('')
-                                );
+                                )
                             }
-                        }}
-                        className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="SaaS, Fintech 등"
-                    />
-                    <button
-                        type="button"
-                        onClick={() =>
-                            handleAddTag(
-                                devTagInput,
-                                devTags,
-                                'devInfo.devTags',
-                                10,
-                                () => setDevTagInput('')
-                            )
-                        }
-                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                    >
-                        추가
-                    </button>
+                            className="px-2 py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                        >
+                            +
+                        </button>
+                    </div>
+                    {renderTags(devTags, 'devInfo.devTags', 10)}
                 </div>
-                {renderTags(devTags, 'devInfo.devTags', 10)}
             </div>
 
-            {/* GitHub 계정 */}
-            <div>
-                <label className="block text-sm font-medium mb-2">
-                    GitHub 조직/계정
-                </label>
-                <input
-                    type="text"
-                    {...form.register('devInfo.githubAccount')}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="github.com/your-org"
-                />
+            {/* GitHub 계정 및 저장소 링크 그리드 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* GitHub 계정 */}
+                <div>
+                    <label className="block text-xs font-medium mb-1.5">
+                        GitHub 조직/계정
+                    </label>
+                    <input
+                        type="text"
+                        {...form.register('devInfo.githubAccount')}
+                        className="w-full px-2 py-1.5 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="github.com/your-org"
+                    />
+                </div>
+
+                {/* 평균 개발 경력 */}
+                <div>
+                    <label className="block text-xs font-medium mb-1.5">
+                        평균 개발 경력 (년)
+                    </label>
+                    <input
+                        type="number"
+                        {...form.register('devInfo.avgDevExperienceYears', {
+                            valueAsNumber: true,
+                        })}
+                        className="w-full px-2 py-1.5 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="7"
+                        min={0}
+                        max={30}
+                    />
+                </div>
             </div>
 
             {/* 저장소 링크 */}
             <div>
-                <label className="block text-sm font-medium mb-2">
+                <label className="block text-xs font-medium mb-1.5">
                     코드 저장소 링크 (최대 5개)
                 </label>
-                <div className="flex gap-2">
+                <div className="flex gap-1.5">
                     <input
                         type="url"
                         value={repoUrlInput}
@@ -448,7 +471,7 @@ export default function DevStacksSection({ form }: DevStacksSectionProps) {
                                 );
                             }
                         }}
-                        className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="flex-1 px-2 py-1.5 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         placeholder="https://github.com/..."
                     />
                     <button
@@ -462,43 +485,26 @@ export default function DevStacksSection({ form }: DevStacksSectionProps) {
                                 () => setRepoUrlInput('')
                             )
                         }
-                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                        className="px-2 py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600"
                     >
-                        추가
+                        +
                     </button>
                 </div>
                 {renderTags(repoUrls, 'devInfo.repoUrls', 5)}
             </div>
 
-            {/* 평균 개발 경력 */}
-            <div>
-                <label className="block text-sm font-medium mb-2">
-                    팀 평균 개발 경력 (년)
-                </label>
-                <input
-                    type="number"
-                    {...form.register('devInfo.avgDevExperienceYears', {
-                        valueAsNumber: true,
-                    })}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="7"
-                    min={0}
-                    max={30}
-                />
-            </div>
-
             {/* 선호 기술/스택 메모 */}
             <div>
-                <label className="block text-sm font-medium mb-2">
+                <label className="block text-xs font-medium mb-1.5">
                     선호 기술/스택 메모
                 </label>
                 <textarea
                     {...form.register('devInfo.devPreferenceNote')}
-                    rows={3}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    rows={2}
+                    className="w-full px-2 py-1.5 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Next.js + TypeScript 기반의 B2B SaaS를 선호합니다."
                 />
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 mt-0.5">
                     {watch('devInfo.devPreferenceNote')?.length || 0}/500
                 </p>
             </div>

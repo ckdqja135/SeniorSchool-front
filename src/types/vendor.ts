@@ -13,6 +13,7 @@ export enum VendorCategory {
     MARKETING = 'MARKETING',
     VIDEO = 'VIDEO',
     CONSULTING = 'CONSULTING',
+    OTHER = 'OTHER',
 }
 
 /**
@@ -120,6 +121,8 @@ export interface BaseVendor {
     tagline: string;
     /** 분야(대분류) */
     category: VendorCategory;
+    /** 커스텀 분야명 (category가 OTHER일 때 필수, 한글만 2~20자) */
+    customCategory?: string;
     /** 세부 서비스 타입 (최대 5개, 각 2~30자) */
     serviceTypes?: string[];
     /** 소개 상세 설명 (최대 2000자) */

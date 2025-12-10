@@ -3,9 +3,17 @@
 import { UseFormReturn } from 'react-hook-form';
 import { VendorFormInput } from '@/schemas/vendor.schema';
 import { VendorCategory } from '@/types/vendor';
+import { useEffect, useState } from 'react';
 
 interface BasicInfoSectionProps {
     form: UseFormReturn<VendorFormInput>;
+}
+
+// 카카오 주소 API 타입 선언
+declare global {
+    interface Window {
+        daum: any;
+    }
 }
 
 export default function BasicInfoSection({ form }: BasicInfoSectionProps) {
@@ -13,10 +21,56 @@ export default function BasicInfoSection({ form }: BasicInfoSectionProps) {
         register,
         formState: { errors },
         watch,
+        setValue,
     } = form;
 
     const tagline = watch('tagline') || '';
     const name = watch('name') || '';
+    const category = watch('category');
+    const customCategory = watch('customCategory') || '';
+    const [isKakaoLoaded, setIsKakaoLoaded] = useState(false);
+
+    // 카카오 주소 API 스크립트 로드
+    useEffect(() => {
+        if (window.daum) {
+            setIsKakaoLoaded(true);
+            return;
+        }
+
+        const script = document.createElement('script');
+        script.src = '//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+        script.async = true;
+        script.onload = () => setIsKakaoLoaded(true);
+        script.onerror = () => console.error('카카오 주소 API 로드 실패');
+        document.head.appendChild(script);
+    }, []);
+
+    // 주소 검색 팝업 열기
+    const handleAddressSearch = () => {
+        if (!isKakaoLoaded || !window.daum) {
+            alert('주소 검색 서비스를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+            return;
+        }
+
+        new window.daum.Postcode({
+            oncomplete: function (data: any) {
+                // 도로명 주소 또는 지번 주소 선택 (전체 주소 사용)
+                const address = data.roadAddress || data.jibunAddress;
+                // 상세주소가 있으면 추가
+                const fullAddress = address + (data.buildingName ? ` ${data.buildingName}` : '');
+
+                setValue('region', fullAddress, { shouldValidate: true });
+            },
+        }).open();
+    };
+
+    // 커스텀 분야 입력 시 공백을 제외한 특수문자만 제거 (한글, 영문, 숫자, 공백 허용)
+    const handleCustomCategoryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        // 한글, 영문, 숫자, 공백만 남기고 특수문자는 제거
+        const sanitized = value.replace(/[^가-힣a-zA-Z0-9\s]/g, '');
+        setValue('customCategory', sanitized, { shouldValidate: true });
+    };
 
     return (
         <div className="space-y-6">
@@ -71,9 +125,33 @@ export default function BasicInfoSection({ form }: BasicInfoSectionProps) {
                     <option value={VendorCategory.MARKETING}>마케팅</option>
                     <option value={VendorCategory.VIDEO}>영상</option>
                     <option value={VendorCategory.CONSULTING}>컨설팅</option>
+                    <option value={VendorCategory.OTHER}>기타</option>
                 </select>
                 <p className="text-sm text-red-500 mt-1">{errors.category?.message}</p>
             </div>
+
+            {/* 커스텀 분야명 (기타 선택 시에만 표시) */}
+            {category === VendorCategory.OTHER && (
+                <div className="ml-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <label className="block text-sm font-medium mb-2">
+                        기타 분야명 입력 <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        value={customCategory}
+                        onChange={handleCustomCategoryChange}
+                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="예: 인테리어, 교육, 법률 (한글만 입력 가능)"
+                    />
+                    <div className="flex justify-between mt-1">
+                        <p className="text-sm text-red-500">{errors.customCategory?.message}</p>
+                        <p className="text-sm text-gray-500">{customCategory.length}/20</p>
+                    </div>
+                    <p className="text-xs text-blue-600 mt-2">
+                        ⓘ 공백을 제외한 특수문자는 자동으로 제거됩니다. 한글, 영문, 숫자, 공백만 입력 가능합니다.
+                    </p>
+                </div>
+            )}
 
             {/* 세부 서비스 타입 */}
             <div>
@@ -107,15 +185,28 @@ export default function BasicInfoSection({ form }: BasicInfoSectionProps) {
                 </p>
             </div>
 
-            {/* 지역 */}
+            {/* 지역 (카카오 주소 API) */}
             <div>
                 <label className="block text-sm font-medium mb-2">지역</label>
-                <input
-                    type="text"
-                    {...register('region')}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="예: 서울 강남, 부산 해운대"
-                />
+                <div className="flex gap-2">
+                    <input
+                        type="text"
+                        {...register('region')}
+                        className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
+                        placeholder="주소 찾기 버튼을 클릭하세요"
+                        readOnly
+                    />
+                    <button
+                        type="button"
+                        onClick={handleAddressSearch}
+                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                    >
+                        주소 찾기
+                    </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                    카카오 주소 검색을 통해 정확한 지역을 선택할 수 있습니다.
+                </p>
             </div>
 
             {/* 웹사이트 URL */}

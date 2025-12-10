@@ -120,6 +120,15 @@ const baseVendorObjectSchema = z.object({
         .min(5, '한 줄 소개는 최소 5자 이상이어야 합니다.')
         .max(80, '한 줄 소개는 최대 80자까지 입력 가능합니다.'),
     category: vendorCategorySchema,
+    customCategory: z
+        .string()
+        .min(2, '분야명은 최소 2자 이상이어야 합니다.')
+        .max(20, '분야명은 최대 20자까지 입력 가능합니다.')
+        .regex(
+            /^[가-힣\s]+$/,
+            '분야명은 한글만 입력 가능합니다 (특수문자, 숫자 불가)일.'
+        )
+        .optional(),
     serviceTypes: z.array(z.string().min(2).max(30)).max(5).optional(),
     description: z.string().max(2000).optional(),
     minBudget: z.number().int().min(0).optional(),
@@ -228,8 +237,22 @@ export const vendorFormSchema = z.discriminatedUnion('category', [
                 VendorCategory.MARKETING,
                 VendorCategory.VIDEO,
                 VendorCategory.CONSULTING,
+                VendorCategory.OTHER,
             ]),
         })
+        .refine(
+            (data) => {
+                // category가 OTHER일 때 customCategory 필수
+                if (data.category === VendorCategory.OTHER) {
+                    return data.customCategory && data.customCategory.trim().length >= 2;
+                }
+                return true;
+            },
+            {
+                message: '기타 분야를 선택한 경우 분야명을 입력해야 합니다.',
+                path: ['customCategory'],
+            }
+        )
         .refine(
             (data) => {
                 // minBudget과 maxBudget이 모두 있을 때 검증
