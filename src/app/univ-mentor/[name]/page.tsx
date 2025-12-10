@@ -797,7 +797,7 @@ export default function SchoolPage() {
                       <div 
                         key={review.boardIdx} 
                         className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                        onClick={() => router.push(`/board/${review.boardIdx}`)}
+                        onClick={() => router.push(`/univ-board/${review.boardIdx}`)}
                       >
                         <h3 className="font-semibold text-gray-900 mb-2">{review.boardTitle}</h3>
                         <div className="flex justify-between items-center text-xs text-gray-500 mb-2">

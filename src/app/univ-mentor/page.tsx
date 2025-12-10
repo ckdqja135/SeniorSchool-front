@@ -327,7 +327,7 @@ export default function SchoolPage() {
 
   // 인기 후기 클릭
   const handlePopularBoardClick = (board: PopularBoard) => {
-    router.push(`/board/${board.boardIdx}`);
+    router.push(`/univ-board/${board.boardIdx}`);
   };
 
   // 대학교 추가 요청 제출
