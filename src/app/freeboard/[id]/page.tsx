@@ -444,7 +444,7 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
         category: editBoardCategory,
         tags: editBoardTags,
         boardID: editBoardId,
-        boardPassword: editBoardPassword
+        boardPW: editBoardPassword
       });
 
       // 수정 성공 후 게시글 새로고침
@@ -511,7 +511,7 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
     try {
       await deleteFreeboardPost(params.id, {
         boardID: boardDeleteId,
-        boardPassword: boardDeletePassword
+        boardPW: boardDeletePassword
       });
       
       alert('게시글이 삭제되었습니다.');

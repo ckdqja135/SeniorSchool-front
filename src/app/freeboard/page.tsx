@@ -187,7 +187,7 @@ export default function FreeBoardPage() {
         category: reviewData.category,
         boardID: reviewData.boardID,
         tags: reviewData.tags,
-        boardPassword: (reviewData as any).boardPassword || '',
+        boardPW: (reviewData as any).boardPassword || '',
       });
 
       // 첫 페이지로 이동하여 목록 새로고침 트리거

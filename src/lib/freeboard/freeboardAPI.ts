@@ -65,14 +65,14 @@ export interface CreatePostBody {
   category: string;
   boardID?: string;
   tags?: string[];
-  boardPassword: string;
+  boardPW: string;
 }
 
 export async function createFreeboardPost(body: CreatePostBody) {
   const res = await fetchJson(api('/freeboard'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ boards: [body] }),
   });
   return res;
 }
@@ -146,7 +146,7 @@ export interface UpdateBoardBody {
   category: string;
   tags?: string[];
   boardID: string;
-  boardPassword: string;
+  boardPW: string;
 }
 
 export async function updateFreeboardPost(id: number | string, body: UpdateBoardBody) {
@@ -160,7 +160,7 @@ export async function updateFreeboardPost(id: number | string, body: UpdateBoard
 
 export interface DeleteBoardBody {
   boardID: string;
-  boardPassword: string;
+  boardPW: string;
 }
 
 export async function deleteFreeboardPost(id: number | string, body: DeleteBoardBody) {
