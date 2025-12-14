@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -25,6 +25,9 @@ function MatzalAlSearchContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // 중복 호출 방지를 위한 ref
+  const lastFetchedSearchName = useRef<string | null>(null);
+
   // 검색 결과 가져오기
   useEffect(() => {
     const fetchSearchResults = async () => {
@@ -32,6 +35,12 @@ function MatzalAlSearchContent() {
         setIsLoading(false);
         return;
       }
+
+      // 중복 호출 방지: 같은 검색어로 다시 호출하지 않음
+      if (lastFetchedSearchName.current === searchName) {
+        return;
+      }
+      lastFetchedSearchName.current = searchName;
 
       try {
         setIsLoading(true);
@@ -139,7 +148,7 @@ function MatzalAlSearchContent() {
           ) : (
             searchResults.map((restaurant, index) => (
               <div
-                key={restaurant.restaurantIdx || index}
+                key={restaurant.restaurantIdx || `restaurant-${index}`}
                 onClick={() => handleRestaurantClick(restaurant)}
                 className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-all duration-200 hover:border-blue-300"
               >

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -31,6 +31,9 @@ function UnivSearchContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // 중복 호출 방지를 위한 ref
+  const lastFetchedSearchName = useRef<string | null>(null);
+
   // 검색 결과 가져오기
   useEffect(() => {
     const fetchSearchResults = async () => {
@@ -38,6 +41,12 @@ function UnivSearchContent() {
         setIsLoading(false);
         return;
       }
+
+      // 중복 호출 방지: 같은 검색어로 다시 호출하지 않음
+      if (lastFetchedSearchName.current === searchName) {
+        return;
+      }
+      lastFetchedSearchName.current = searchName;
 
       try {
         setIsLoading(true);
@@ -114,49 +123,49 @@ function UnivSearchContent() {
         </div>
 
         {/* 검색 결과 목록 */}
-        <div className="space-y-6">
-          {error ? (
-            <div className="text-center py-8">
-              <div className="text-red-600 text-6xl mb-4">⚠️</div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">오류 발생</h2>
-              <p className="text-gray-600 mb-8">{error}</p>
-              <Link href="/univ-mentor" className="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition-colors">
-                대학 오빠로 돌아가기
-              </Link>
-            </div>
-          ) : searchResults.length === 0 ? (
-            <div className="text-center py-8">
-              <div className="text-gray-400 text-6xl mb-4">🔍</div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">검색 결과가 없습니다</h2>
-              <p className="text-gray-600 mb-8">다른 검색어로 시도해보세요.</p>
-              <Link href="/univ-mentor" className="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition-colors">
-                대학 오빠로 돌아가기
-              </Link>
-            </div>
-          ) : (
-            searchResults.map((university) => (
+        {error ? (
+          <div className="text-center py-8">
+            <div className="text-red-600 text-6xl mb-4">⚠️</div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">오류 발생</h2>
+            <p className="text-gray-600 mb-8">{error}</p>
+            <Link href="/univ-mentor" className="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition-colors">
+              대학 오빠로 돌아가기
+            </Link>
+          </div>
+        ) : searchResults.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="text-gray-400 text-6xl mb-4">🔍</div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">검색 결과가 없습니다</h2>
+            <p className="text-gray-600 mb-8">다른 검색어로 시도해보세요.</p>
+            <Link href="/univ-mentor" className="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition-colors">
+              대학 오빠로 돌아가기
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {searchResults.map((university, index) => (
               <div
-                key={university.univIdx}
+                key={university.univIdx || `university-${index}`}
                 onClick={() => handleUniversityClick(university)}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-all duration-200 hover:border-green-300"
+                className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-pointer hover:shadow-md transition-all duration-200 hover:border-green-300 group"
               >
-                <div className="flex items-start space-x-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-start space-x-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-semibold text-gray-900 truncate">{university.univName}</h3>
-                    <p className="text-sm text-gray-500 mt-1">📍 {university.univLocate}</p>
+                    <h3 className="text-base font-semibold text-gray-900 truncate">{university.univName}</h3>
+                    <p className="text-sm text-gray-500 mt-1 truncate">📍 {university.univLocate}</p>
                     <div className="mt-2 space-y-1">
                       <div className="flex justify-between text-xs text-gray-400">
                         <span>대학 종류:</span>
-                        <span className="font-medium">{university.univType}</span>
+                        <span className="font-medium truncate ml-2">{university.univType}</span>
                       </div>
                       <div className="flex justify-between text-xs text-gray-400">
                         <span>총장:</span>
-                        <span className="font-medium">{university.univPresident}</span>
+                        <span className="font-medium truncate ml-2">{university.univPresident}</span>
                       </div>
                       {university.univEstablish && (
                         <div className="flex justify-between text-xs text-gray-400">
@@ -164,30 +173,18 @@ function UnivSearchContent() {
                           <span className="font-medium">{university.univEstablish}년</span>
                         </div>
                       )}
-                      {university.univAddr && (
-                        <div className="flex justify-between text-xs text-gray-400">
-                          <span>주소:</span>
-                          <span className="font-medium text-xs">{university.univAddr}</span>
-                        </div>
-                      )}
-                      {university.univViewCount !== undefined && (
-                        <div className="flex justify-between text-xs text-gray-400">
-                          <span>조회수:</span>
-                          <span className="font-medium">{university.univViewCount}</span>
-                        </div>
-                      )}
                     </div>
                   </div>
-                  <div className="text-green-400 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                  <div className="text-green-400 opacity-0 group-hover:opacity-100 transition-all duration-200 flex-shrink-0">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </div>
                 </div>
               </div>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
