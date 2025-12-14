@@ -126,50 +126,50 @@ function MatzalAlSearchContent() {
         </div>
 
         {/* 검색 결과 목록 */}
-        <div className="space-y-6">
-          {error ? (
-            <div className="text-center py-8">
-              <div className="text-red-600 text-6xl mb-4">⚠️</div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">오류 발생</h2>
-              <p className="text-gray-600 mb-8">{error}</p>
-              <Link href="/matzal-al-mentor" className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors">
-                맛잘알 오빠로 돌아가기
-              </Link>
-            </div>
-          ) : searchResults.length === 0 ? (
-            <div className="text-center py-8">
-              <div className="text-gray-400 text-6xl mb-4">🔍</div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">검색 결과가 없습니다</h2>
-              <p className="text-gray-600 mb-8">다른 검색어로 시도해보세요.</p>
-              <Link href="/matzal-al-mentor" className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors">
-                맛잘알 오빠로 돌아가기
-              </Link>
-            </div>
-          ) : (
-            searchResults.map((restaurant, index) => (
+        {error ? (
+          <div className="text-center py-8">
+            <div className="text-red-600 text-6xl mb-4">⚠️</div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">오류 발생</h2>
+            <p className="text-gray-600 mb-8">{error}</p>
+            <Link href="/matzal-al-mentor" className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors">
+              맛잘알 오빠로 돌아가기
+            </Link>
+          </div>
+        ) : searchResults.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="text-gray-400 text-6xl mb-4">🔍</div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">검색 결과가 없습니다</h2>
+            <p className="text-gray-600 mb-8">다른 검색어로 시도해보세요.</p>
+            <Link href="/matzal-al-mentor" className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors">
+              맛잘알 오빠로 돌아가기
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {searchResults.map((restaurant, index) => (
               <div
                 key={restaurant.restaurantIdx || `restaurant-${index}`}
                 onClick={() => handleRestaurantClick(restaurant)}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-all duration-200 hover:border-blue-300"
+                className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-pointer hover:shadow-md transition-all duration-200 hover:border-blue-300 group"
               >
-                <div className="flex items-start space-x-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-start space-x-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-semibold text-gray-900 truncate">{restaurant.restaurantName}</h3>
-                    <p className="text-sm text-gray-500 mt-1">📍 {restaurant.restaurantAddr || restaurant.restaurantLocation}</p>
+                    <h3 className="text-base font-semibold text-gray-900 truncate">{restaurant.restaurantName}</h3>
+                    <p className="text-sm text-gray-500 mt-1 truncate">📍 {restaurant.restaurantAddr || restaurant.restaurantLocation}</p>
                     <div className="mt-2 space-y-1">
                       <div className="flex justify-between text-xs text-gray-400">
                         <span>업종:</span>
-                        <span className="font-medium">{restaurant.restaurantType}</span>
+                        <span className="font-medium truncate ml-2">{restaurant.restaurantType}</span>
                       </div>
                       {restaurant.restaurantOwner && (
                         <div className="flex justify-between text-xs text-gray-400">
                           <span>대표자:</span>
-                          <span className="font-medium">{restaurant.restaurantOwner}</span>
+                          <span className="font-medium truncate ml-2">{restaurant.restaurantOwner}</span>
                         </div>
                       )}
                       {restaurant.restaurantEstablished && (
@@ -178,24 +178,18 @@ function MatzalAlSearchContent() {
                           <span className="font-medium">{restaurant.restaurantEstablished}년</span>
                         </div>
                       )}
-                      {restaurant.restaurantViewCount !== undefined && (
-                        <div className="flex justify-between text-xs text-gray-400">
-                          <span>조회수:</span>
-                          <span className="font-medium">{restaurant.restaurantViewCount}</span>
-                        </div>
-                      )}
                     </div>
                   </div>
-                  <div className="text-blue-400 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                  <div className="text-blue-400 opacity-0 group-hover:opacity-100 transition-all duration-200 flex-shrink-0">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </div>
                 </div>
               </div>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
