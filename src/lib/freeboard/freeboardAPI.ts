@@ -1,12 +1,11 @@
-const API_BASE = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_BASE_URL === ''
-  ? (process.env.NEXT_PUBLIC_BASE_URL as string)
-  : (process.env.NEXT_PUBLIC_BASE_URL as string);
-// prefer NEXT_PUBLIC_BASE_URL; fall back to NEXT_PUBLIC_BASE_URL kept for compatibility
-const API_BASE_COMPAT = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_BASE_URL;
-const BASE = (process.env.NEXT_PUBLIC_BASE_URL as string) || (process.env.NEXT_PUBLIC_BASE_URL as string) || '';
+const API_BASE = process.env.NEXT_PUBLIC_BASE_URL;
+
+if (!API_BASE) {
+  throw new Error('NEXT_PUBLIC_BASE_URL environment variable is not set');
+}
 
 function api(path: string): string {
-  return `${process.env.NEXT_PUBLIC_BASE_URL || BASE}${path}`;
+  return `${API_BASE}${path}`;
 }
 
 // In-flight de-duplication (JSON-level) to avoid duplicate concurrent requests/body reuse

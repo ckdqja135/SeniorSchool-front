@@ -12,6 +12,35 @@ const CommentItem = ({ comment, onEdit, onDelete, onReply }: {
   onReply: (comment: CompanyComment) => void;
 }) => {
   const [showMenu, setShowMenu] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  const MAX_LENGTH = 500;
+  const LINE_BREAK_LENGTH = 80; // 한 줄에 표시할 최대 글자수
+  const content = comment.commentContent || '';
+  const isLongContent = content.length > MAX_LENGTH;
+  
+  // 일정 글자수마다 줄바꿈을 삽입하는 함수
+  const insertLineBreaks = (text: string, maxLength: number): string => {
+    // 이미 줄바꿈이 있거나 띄어쓰기가 있는 경우는 그대로 유지
+    if (text.includes('\n') || text.includes(' ')) {
+      return text;
+    }
+    
+    // 띄어쓰기 없이 긴 문자열인 경우만 처리
+    if (text.length > maxLength) {
+      const lines: string[] = [];
+      for (let i = 0; i < text.length; i += maxLength) {
+        lines.push(text.substring(i, i + maxLength));
+      }
+      return lines.join('\n');
+    }
+    
+    return text;
+  };
+  
+  // 표시할 내용 처리
+  let displayContent = isExpanded || !isLongContent ? content : content.substring(0, MAX_LENGTH) + '...';
+  displayContent = insertLineBreaks(displayContent, LINE_BREAK_LENGTH);
 
   // 날짜 포맷팅 함수
   const formatDate = (dateString: string | undefined) => {
@@ -29,13 +58,13 @@ const CommentItem = ({ comment, onEdit, onDelete, onReply }: {
   };
 
   return (
-    <div className={`bg-white rounded-lg border border-gray-200 p-3 sm:p-4 shadow-sm ${comment.commentDepth > 0 ? 'ml-3 sm:ml-6' : ''}`}>
+    <div className={`bg-white rounded-lg border border-gray-200 p-3 sm:p-4 shadow-sm overflow-hidden ${comment.commentDepth > 0 ? 'ml-3 sm:ml-6' : ''}`}>
       <div className="flex items-start justify-between">
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <div className="flex items-center space-x-2 mb-2">
             {/* 답글인 경우 화살표를 작성자 이름 앞에 표시 */}
             {comment.commentDepth > 0 && (
-              <svg className="w-4 h-4 text-blue-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-4 h-4 text-blue-500 mr-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
             )}
@@ -43,7 +72,17 @@ const CommentItem = ({ comment, onEdit, onDelete, onReply }: {
             <span className="text-gray-400 text-xs">•</span>
             <span className="text-gray-500 text-xs">{formatDate(comment.regDate || comment.commentRegDate)}</span>
           </div>
-          <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{comment.commentContent}</p>
+          <div className="overflow-hidden">
+            <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap" style={{ wordBreak: 'break-all', overflowWrap: 'break-word', maxWidth: '100%' }}>{displayContent}</p>
+            {isLongContent && (
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="mt-2 text-xs text-blue-600 hover:text-blue-800 font-medium"
+              >
+                {isExpanded ? '접기' : '더보기'}
+              </button>
+            )}
+          </div>
         </div>
         <div className="relative">
           <button
@@ -1087,13 +1126,20 @@ export default function CompanyBoardDetailPage() {
                           <form onSubmit={handleReplySubmit} className="space-y-3">
                             <textarea
                               value={replyForm.content}
-                              onChange={(e) => setReplyForm({...replyForm, content: e.target.value})}
-                              placeholder="답글을 입력하세요..."
+                              onChange={(e) => {
+                                if (e.target.value.length <= 500) {
+                                  setReplyForm({...replyForm, content: e.target.value});
+                                }
+                              }}
+                              placeholder="답글을 입력하세요... (최대 500자)"
                               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
                               rows={3}
-                              maxLength={200}
+                              maxLength={500}
                               required
                             />
+                            <div className="text-right text-xs text-gray-500 mt-1">
+                              {replyForm.content.length}/500
+                            </div>
                             <div className="space-y-3">
                               <div className="flex space-x-1 sm:space-x-2">
                                 <input
@@ -1153,15 +1199,19 @@ export default function CompanyBoardDetailPage() {
               <div>
                 <textarea
                   value={commentForm.content}
-                  onChange={(e) => setCommentForm({...commentForm, content: e.target.value})}
-                  placeholder="댓글을 입력하세요..."
+                  onChange={(e) => {
+                    if (e.target.value.length <= 500) {
+                      setCommentForm({...commentForm, content: e.target.value});
+                    }
+                  }}
+                  placeholder="댓글을 입력하세요... (최대 500자)"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                   rows={3}
-                  maxLength={200}
+                  maxLength={500}
                   required
                 />
                 <div className="text-right text-xs text-gray-500 mt-1">
-                  {commentForm.content.length}/200
+                  {commentForm.content.length}/500
                 </div>
               </div>
               <div className="space-y-3">

@@ -10,7 +10,11 @@ import {
   OutsourceRequest
 } from '@/types/Outsource';
 
-const BASE_URL = 'https://api.reviewhub.life';
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+
+if (!BASE_URL) {
+  throw new Error('NEXT_PUBLIC_BASE_URL environment variable is not set');
+}
 
 // 외주업체 목록 조회
 export const getOutsourceList = async (params?: OutsourceSearchParams): Promise<OutsourceListResponse> => {

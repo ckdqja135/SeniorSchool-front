@@ -11,6 +11,52 @@ interface FreeBoardDetailPageProps {
   };
 }
 
+// 댓글 내용 표시 컴포넌트 (더보기 기능 포함)
+const CommentContentDisplay = ({ content }: { content: string }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  const MAX_LENGTH = 500;
+  const LINE_BREAK_LENGTH = 80; // 한 줄에 표시할 최대 글자수
+  const isLongContent = content.length > MAX_LENGTH;
+  
+  // 일정 글자수마다 줄바꿈을 삽입하는 함수
+  const insertLineBreaks = (text: string, maxLength: number): string => {
+    // 이미 줄바꿈이 있거나 띄어쓰기가 있는 경우는 그대로 유지
+    if (text.includes('\n') || text.includes(' ')) {
+      return text;
+    }
+    
+    // 띄어쓰기 없이 긴 문자열인 경우만 처리
+    if (text.length > maxLength) {
+      const lines: string[] = [];
+      for (let i = 0; i < text.length; i += maxLength) {
+        lines.push(text.substring(i, i + maxLength));
+      }
+      return lines.join('\n');
+    }
+    
+    return text;
+  };
+  
+  // 표시할 내용 처리
+  let displayContent = isExpanded || !isLongContent ? content : content.substring(0, MAX_LENGTH) + '...';
+  displayContent = insertLineBreaks(displayContent, LINE_BREAK_LENGTH);
+  
+  return (
+    <div className="overflow-hidden">
+      <p className="text-sm text-gray-900 whitespace-pre-wrap" style={{ wordBreak: 'break-all', overflowWrap: 'break-word', maxWidth: '100%' }}>{displayContent}</p>
+      {isLongContent && (
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="mt-2 text-xs text-blue-600 hover:text-blue-800 font-medium"
+        >
+          {isExpanded ? '접기' : '더보기'}
+        </button>
+      )}
+    </div>
+  );
+};
+
 export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps) {
   const router = useRouter();
   const [post, setPost] = useState<FreeBoardPost | null>(null);
@@ -722,14 +768,14 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                 {comments
                   .sort((a, b) => new Date(a.commentRegDate || 0).getTime() - new Date(b.commentRegDate || 0).getTime())
                   .map((comment) => (
-                  <div key={comment.commentIdx} className="border-b border-gray-100 pb-4 last:border-b-0">
+                  <div key={comment.commentIdx} className="border-b border-gray-100 pb-4 last:border-b-0 overflow-hidden">
                     <div className="flex items-start space-x-3">
                       <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
                         <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
                       </div>
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 overflow-hidden">
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center space-x-2">
                             <span className="text-sm font-medium text-gray-900">{comment.writerId}</span>
@@ -783,10 +829,18 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                           <div className="space-y-3">
                             <textarea
                               value={editCommentContent}
-                              onChange={(e) => setEditCommentContent(e.target.value)}
+                              onChange={(e) => {
+                                if (e.target.value.length <= 500) {
+                                  setEditCommentContent(e.target.value);
+                                }
+                              }}
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
                               rows={3}
+                              maxLength={500}
                             />
+                            <div className="text-right text-xs text-gray-500 mt-1">
+                              {editCommentContent.length}/500
+                            </div>
                             <div className="flex items-center space-x-2">
                               <input
                                 type="password"
@@ -812,7 +866,7 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                         ) : (
                           // 일반 모드
                           <>
-                            <p className="text-sm text-gray-900 whitespace-pre-wrap">{comment.commentContent}</p>
+                            <CommentContentDisplay content={comment.commentContent} />
                             <div className="flex items-center space-x-4 mt-2">
                               <button 
                                 onClick={() => handleCommentLike(comment.commentIdx)}
@@ -872,10 +926,15 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                 <div className="relative">
                   <textarea
                     value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="댓글을 작성해주세요..."
+                    onChange={(e) => {
+                      if (e.target.value.length <= 500) {
+                        setNewComment(e.target.value);
+                      }
+                    }}
+                    placeholder="댓글을 작성해주세요... (최대 500자)"
                     className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none transition-all duration-200 shadow-sm hover:shadow-md"
                     rows={4}
+                    maxLength={500}
                     disabled={isSubmittingComment}
                   />
                   <div className="absolute bottom-2 sm:bottom-3 right-2 sm:right-3 text-xs text-gray-400">

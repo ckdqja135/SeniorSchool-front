@@ -17,6 +17,7 @@ interface Comment {
   regDate?: string;
   modDate?: string;
   replies?: Comment[];
+  originalIndex?: number;
 }
 
 // 재귀적으로 댓글을 렌더링하는 컴포넌트
@@ -248,18 +249,28 @@ export default function OutsourceBoardDetailPage() {
 
   // 댓글 구조화 함수
   const organizeComments = (comments: Comment[]) => {
-    console.log('댓글 구조화 시작:', comments);
+  
     const commentMap = new Map();
     const rootComments: Comment[] = [];
-    const orphanComments: { orphan: Comment; deletedParentId: number }[] = [];
-
-    // 1단계: 모든 댓글을 맵에 저장
-    comments.forEach(comment => {
-      commentMap.set(comment.commentIdx, { ...comment, replies: [] });
+    const orphanComments: { orphan: Comment; deletedParentId: number; originalIndex: number }[] = [];
+    
+    // 원본 배열의 인덱스를 저장하기 위한 맵
+    const originalIndexMap = new Map<number, number>();
+    comments.forEach((comment, index) => {
+      originalIndexMap.set(comment.commentIdx, index);
     });
 
-    // 2단계: 댓글 구조 생성
-    comments.forEach(comment => {
+    // 1단계: 모든 댓글을 맵에 저장 (원본 인덱스 포함)
+    comments.forEach((comment, index) => {
+      commentMap.set(comment.commentIdx, { 
+        ...comment, 
+        replies: [],
+        originalIndex: index 
+      });
+    });
+
+    // 2단계: 댓글 구조 생성 (원본 순서대로 처리)
+    comments.forEach((comment, index) => {
       // commentParent가 0이거나 commentPerent가 0인 경우, 또는 둘 다 없는 경우 루트 댓글로 처리
       if ((comment.commentParent === 0) || 
           (comment.commentPerent === 0) || 
@@ -276,25 +287,42 @@ export default function OutsourceBoardDetailPage() {
           // 부모를 찾을 수 없는 경우 일단 보류
           console.log('부모를 찾을 수 없는 댓글:', comment.commentIdx, '부모 ID:', parentId);
           if (parentId) {
-            orphanComments.push({ orphan: comment, deletedParentId: parentId });
+            orphanComments.push({ orphan: comment, deletedParentId: parentId, originalIndex: index });
           }
         }
       }
     });
+    
+    // 댓글들을 원본 순서대로 정렬
+    rootComments.sort((a, b) => (a.originalIndex || 0) - (b.originalIndex || 0));
+    
+    // 각 댓글의 replies도 원본 순서대로 정렬
+    const sortReplies = (comment: Comment) => {
+      if (comment.replies && comment.replies.length > 0) {
+        comment.replies.sort((a, b) => (a.originalIndex || 0) - (b.originalIndex || 0));
+        comment.replies.forEach(sortReplies);
+      }
+    };
+    rootComments.forEach(sortReplies);
 
     // 3단계: 고아 댓글 처리
     // 문제: 삭제된 부모의 부모를 알 수 없으므로, 휴리스틱 방법 사용
     
-    // 먼저 삭제된 부모 ID별로 그룹화
-    const orphansByParent = new Map<number, Comment[]>();
-    orphanComments.forEach(({ orphan, deletedParentId }) => {
+    // 먼저 삭제된 부모 ID별로 그룹화 (원본 순서 정보 포함)
+    const orphansByParent = new Map<number, { orphan: Comment; originalIndex: number }[]>();
+    orphanComments.forEach(({ orphan, deletedParentId, originalIndex }) => {
       if (!orphansByParent.has(deletedParentId)) {
         orphansByParent.set(deletedParentId, []);
       }
-      orphansByParent.get(deletedParentId)!.push(orphan);
+      orphansByParent.get(deletedParentId)!.push({ orphan, originalIndex });
+    });
+    
+    // 각 그룹 내에서 원본 순서대로 정렬
+    orphansByParent.forEach((orphanGroup) => {
+      orphanGroup.sort((a, b) => a.originalIndex - b.originalIndex);
     });
 
-    console.log('삭제된 부모별 고아 그룹:', Array.from(orphansByParent.entries()).map(([k, v]) => [k, v.map(c => c.commentIdx)]));
+    console.log('삭제된 부모별 고아 그룹:', Array.from(orphansByParent.entries()).map(([k, v]) => [k, v.map(c => c.orphan.commentIdx)]));
 
     // 각 그룹별로 처리
     orphansByParent.forEach((orphanGroup, deletedParentId) => {
@@ -327,8 +355,8 @@ export default function OutsourceBoardDetailPage() {
 
       groupAttached = findLocationByDeletedParentId(rootComments, null);
 
-      // 고아들을 적절한 위치에 배치
-      orphanGroup.forEach(orphan => {
+      // 고아들을 적절한 위치에 배치 (원본 순서대로)
+      orphanGroup.forEach(({ orphan, originalIndex }) => {
         const orphanNode = commentMap.get(orphan.commentIdx);
         
         if (groupAttached && targetComment) {
@@ -351,7 +379,10 @@ export default function OutsourceBoardDetailPage() {
       });
     });
 
-    console.log('구조화된 댓글:', rootComments);
+    // 고아 댓글 추가 후 다시 정렬
+    rootComments.sort((a, b) => (a.originalIndex || 0) - (b.originalIndex || 0));
+    rootComments.forEach(sortReplies);
+    
     return rootComments;
   };
 
@@ -474,10 +505,9 @@ export default function OutsourceBoardDetailPage() {
       const response = await fetch(`https://api.reviewhub.life/outsource/comment?boardIdx=${boardId}`);
       if (response.ok) {
         const data = await response.json();
-        console.log('댓글 API 응답:', data);
         
         // API 응답 구조에 따라 데이터 추출
-        let commentsData = [];
+        let commentsData: Comment[] = [];
         if (Array.isArray(data)) {
           // 응답이 직접 배열인 경우
           commentsData = data;
@@ -486,7 +516,18 @@ export default function OutsourceBoardDetailPage() {
           commentsData = data.data;
         }
         
-        console.log('추출된 댓글 데이터:', commentsData);
+        // 문자열로 온 숫자 필드를 숫자로 변환
+        commentsData = commentsData.map((comment, index) => ({
+          ...comment,
+          commentIdx: typeof comment.commentIdx === 'string' ? parseInt(comment.commentIdx, 10) : comment.commentIdx,
+          boardIdx: typeof comment.boardIdx === 'string' ? parseInt(comment.boardIdx, 10) : comment.boardIdx,
+          commentLike: typeof comment.commentLike === 'string' ? parseInt(comment.commentLike, 10) : comment.commentLike,
+          commentDepth: typeof comment.commentDepth === 'string' ? parseInt(comment.commentDepth, 10) : comment.commentDepth,
+          commentParent: typeof comment.commentParent === 'string' ? parseInt(comment.commentParent, 10) : comment.commentParent,
+          commentPerent: typeof comment.commentPerent === 'string' ? parseInt(comment.commentPerent, 10) : comment.commentPerent,
+          originalIndex: index
+        }));
+        
         setComments(commentsData);
       }
     } catch (error) {

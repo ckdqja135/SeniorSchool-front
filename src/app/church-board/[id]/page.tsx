@@ -415,14 +415,30 @@ export default function ChurchBoardDetailPage() {
           commentsData = data.data;
         }
         
+        // 문자열로 온 숫자 필드를 숫자로 변환
+        commentsData = commentsData.map(comment => ({
+          ...comment,
+          commentIdx: typeof comment.commentIdx === 'string' ? parseInt(comment.commentIdx, 10) : comment.commentIdx,
+          boardIdx: typeof comment.boardIdx === 'string' ? parseInt(comment.boardIdx, 10) : comment.boardIdx,
+          commentLike: typeof comment.commentLike === 'string' ? parseInt(comment.commentLike, 10) : comment.commentLike,
+          commentDepth: typeof comment.commentDepth === 'string' ? parseInt(comment.commentDepth, 10) : comment.commentDepth,
+          commentParent: typeof comment.commentParent === 'string' ? parseInt(comment.commentParent, 10) : comment.commentParent,
+        }));
+        
         const organizedComments = organizeComments(commentsData);
         setComments(organizedComments);
         setTotalComments(commentsData.length);
         
-        // 초기 댓글 로드 (학교 오빠와 동일)
-        const initialIds = new Set(pickNextIdsFromList(commentsData, commentsPerLoad));
+        // 계층 구조로 정리된 모든 댓글을 평탄화 (최상위 + 대댓글 모두 포함)
+        const allFlattenedComments = organizedComments.flatMap(comment => [
+          comment,
+          ...(comment.replies || [])
+        ]);
+        
+        // 초기 댓글 로드 - 계층 구조로 정리된 댓글 기준
+        const initialIds = new Set(allFlattenedComments.slice(0, commentsPerLoad).map(comment => comment.commentIdx));
         setVisibleIds(initialIds);
-        setHasMoreComments(commentsData.length > commentsPerLoad);
+        setHasMoreComments(allFlattenedComments.length > commentsPerLoad);
         
       } catch (error) {
         console.error('댓글 로딩 오류:', error);
@@ -491,14 +507,30 @@ export default function ChurchBoardDetailPage() {
         commentsData = data.data;
       }
       
+      // 문자열로 온 숫자 필드를 숫자로 변환
+      commentsData = commentsData.map(comment => ({
+        ...comment,
+        commentIdx: typeof comment.commentIdx === 'string' ? parseInt(comment.commentIdx, 10) : comment.commentIdx,
+        boardIdx: typeof comment.boardIdx === 'string' ? parseInt(comment.boardIdx, 10) : comment.boardIdx,
+        commentLike: typeof comment.commentLike === 'string' ? parseInt(comment.commentLike, 10) : comment.commentLike,
+        commentDepth: typeof comment.commentDepth === 'string' ? parseInt(comment.commentDepth, 10) : comment.commentDepth,
+        commentParent: typeof comment.commentParent === 'string' ? parseInt(comment.commentParent, 10) : comment.commentParent,
+      }));
+      
       const organizedComments = organizeComments(commentsData);
       setComments(organizedComments);
       setTotalComments(commentsData.length);
       
-      // 초기 댓글 로드
-      const initialIds = new Set(pickNextIdsFromList(commentsData, commentsPerLoad));
+      // 계층 구조로 정리된 모든 댓글을 평탄화 (최상위 + 대댓글 모두 포함)
+      const allFlattenedComments = organizedComments.flatMap(comment => [
+        comment,
+        ...(comment.replies || [])
+      ]);
+      
+      // 초기 댓글 로드 - 계층 구조로 정리된 댓글 기준
+      const initialIds = new Set(allFlattenedComments.slice(0, commentsPerLoad).map(comment => comment.commentIdx));
       setVisibleIds(initialIds);
-      setHasMoreComments(commentsData.length > commentsPerLoad);
+      setHasMoreComments(allFlattenedComments.length > commentsPerLoad);
       
     } catch (error) {
       console.error('댓글 새로고침 오류:', error);
@@ -786,11 +818,6 @@ export default function ChurchBoardDetailPage() {
     }
   };
 
-  // 댓글 페이지네이션 함수들 (학교 오빠와 동일)
-  const pickNextIdsFromList = (comments: ChurchComment[], count: number): number[] => {
-    return comments.slice(0, count).map(comment => comment.commentIdx);
-  };
-
   const loadMoreComments = () => {
     const allComments = comments.flatMap(comment => [
       comment,
@@ -800,8 +827,9 @@ export default function ChurchBoardDetailPage() {
     const nextComments = allComments.slice(visibleIds.size, visibleIds.size + commentsPerLoad);
     const nextIds = nextComments.map(comment => comment.commentIdx);
     
-    setVisibleIds(prev => new Set([...prev, ...nextIds]));
-    setHasMoreComments(visibleIds.size + nextIds.length < allComments.length);
+    const newVisibleIds = new Set([...visibleIds, ...nextIds]);
+    setVisibleIds(newVisibleIds);
+    setHasMoreComments(newVisibleIds.size < allComments.length);
   };
 
   const getVisibleCommentCount = (): number => {
