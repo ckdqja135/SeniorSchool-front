@@ -317,7 +317,7 @@ export default function ChurchBoardDetailPage() {
     }
   };
   
-  // 햄버거 메뉴 외부 클릭 시 닫기
+  // 햄버거 메뉴 외부 클릭 시 닫기 (댓글)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
@@ -334,6 +334,29 @@ export default function ChurchBoardDetailPage() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [activeCommentMenu]);
+
+  // 게시글 드롭다운 메뉴 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      // 게시글 드롭다운 버튼인지 확인
+      const isBoardMenuButton = target.closest('button[class*="hover:bg-gray-100"][class*="p-2"]');
+      // 게시글 드롭다운 메뉴인지 확인
+      const isBoardDropdownMenu = target.closest('.absolute.right-0.mt-2');
+      
+      if (showPasswordModal && !isBoardMenuButton && !isBoardDropdownMenu) {
+        setShowPasswordModal(false);
+      }
+    };
+
+    if (showPasswordModal) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showPasswordModal]);
 
   // 게시글 상세 정보 가져오기
   useEffect(() => {

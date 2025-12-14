@@ -563,6 +563,57 @@ export default function MatzalAlMentorPage() {
       {/* 검색창 밑 컨텐츠 */}
       <div className="bg-white py-6">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* 3×3 맛집 카드 그리드 섹션 */}
+          <div className="mb-8">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">오늘의 맛잘알 추천</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {popularMatzalAl.slice(0, 9).map((matzalAl, index) => (
+                <div
+                  key={matzalAl.matzalAlIdx}
+                  onClick={() => handlePopularMatzalAlClick(matzalAl)}
+                  className="group bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-blue-300 transition-all duration-300 cursor-pointer overflow-hidden"
+                >
+                  {/* 이미지 영역 */}
+                  <div className="relative w-full h-40 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
+                    {/* 플레이스홀더 이미지 - 실제 이미지가 있으면 사용 */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    {/* 평점 뱃지 - 우측 상단 */}
+                    <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full shadow-sm">
+                      <span className="text-xs font-semibold text-gray-700">
+                        {matzalAl.viewCount ? (matzalAl.viewCount > 1000 ? '4.5' : '4.0') : '3.5'}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* 카드 내용 영역 */}
+                  <div className="p-4">
+                    {/* 가게명 */}
+                    <h3 className="font-bold text-gray-900 text-sm mb-2 line-clamp-1 group-hover:text-blue-600 transition-colors">
+                      {matzalAl.matzalAlName}
+                    </h3>
+                    
+                    {/* 주소 */}
+                    <p className="text-xs text-gray-500 mb-3 line-clamp-2">
+                      {matzalAl.matzalAlLocation}
+                    </p>
+                    
+                    {/* 카테고리 뱃지 */}
+                    <div className="flex items-center justify-between">
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                        {matzalAl.matzalAlType || '맛집'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 인기 식당 TOP 10 및 인기 후기 TOP 10 섹션 */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* 인기 맛잘알 섹션 */}
             <div className="relative">

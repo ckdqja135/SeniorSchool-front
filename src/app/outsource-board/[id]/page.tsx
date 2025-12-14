@@ -61,12 +61,12 @@ const CommentItem = ({
   return (
     <div className={`border border-gray-200 rounded-lg p-3 ${bgColor} hover:shadow-sm transition-shadow`}>
       <div className="flex justify-between items-start mb-2">
-        <div className="flex items-center gap-3">
-          {normalizedLevel > 0 && <span className="text-yellow-600 text-sm">↳</span>}
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-gray-900">{comment.writerId}</span>
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          {normalizedLevel > 0 && <span className="text-yellow-600 text-sm flex-shrink-0">↳</span>}
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="font-semibold text-gray-900 truncate">{comment.writerId}</span>
             {comment.regDate && (
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-gray-500 whitespace-nowrap flex-shrink-0">
                 {new Date(comment.regDate).toLocaleDateString('ko-KR', {
                   year: 'numeric',
                   month: 'short',
@@ -80,7 +80,7 @@ const CommentItem = ({
             )}
           </div>
         </div>
-        <div className="relative">
+        <div className="relative flex-shrink-0">
           <button
             onClick={() => setActiveCommentMenu(activeCommentMenu === comment.commentIdx ? null : comment.commentIdx)}
             className="p-1 hover:bg-gray-100 rounded"
@@ -91,7 +91,7 @@ const CommentItem = ({
           </button>
           
           {activeCommentMenu === comment.commentIdx && (
-            <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[80px]">
+            <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[80px]">
               <button
                 onClick={() => {
                   setEditCommentForm({
@@ -124,7 +124,7 @@ const CommentItem = ({
         </div>
       </div>
       
-      <div className="text-gray-800 mb-3 whitespace-pre-wrap">
+      <div className="text-gray-800 mb-3 whitespace-pre-wrap break-words">
         {comment.commentContent}
       </div>
       
@@ -797,6 +797,52 @@ export default function OutsourceBoardDetailPage() {
       alert('댓글 삭제 중 오류가 발생했습니다.');
     }
   };
+
+  // 댓글 햄버거 메뉴 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      // 댓글 햄버거 메뉴 버튼인지 확인
+      const isCommentMenuButton = target.closest('button[class*="hover:bg-gray-100"][class*="p-1"]');
+      // 댓글 드롭다운 메뉴인지 확인
+      const isCommentDropdownMenu = target.closest('.absolute.right-0.top-8');
+      
+      if (activeCommentMenu !== null && !isCommentMenuButton && !isCommentDropdownMenu) {
+        setActiveCommentMenu(null);
+      }
+    };
+
+    if (activeCommentMenu !== null) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [activeCommentMenu]);
+
+  // 게시글 드롭다운 메뉴 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      // 게시글 드롭다운 버튼인지 확인
+      const isBoardMenuButton = target.closest('button[class*="hover:bg-gray-100"][class*="p-2"]');
+      // 게시글 드롭다운 메뉴인지 확인
+      const isBoardDropdownMenu = target.closest('.absolute.right-0.mt-2');
+      
+      if (showPasswordModal && !isBoardMenuButton && !isBoardDropdownMenu) {
+        setShowPasswordModal(false);
+      }
+    };
+
+    if (showPasswordModal) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showPasswordModal]);
 
   useEffect(() => {
     const fetchBoardDetail = async () => {

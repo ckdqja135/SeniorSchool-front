@@ -5,36 +5,16 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CompanyBoard, CompanyComment } from '@/types/Company';
 
-const CommentItem = ({ comment, onEdit, onDelete, onReply }: {
+const CommentItem = ({ comment, onEdit, onDelete, onReply, onMenuToggle, isActive, onMenuClick }: {
   comment: CompanyComment;
   onEdit: (comment: CompanyComment) => void;
   onDelete: (comment: CompanyComment) => void;
   onReply: (comment: CompanyComment) => void;
+  onMenuToggle?: () => void;
+  isActive: boolean;
+  onMenuClick: (commentIdx: number) => void;
 }) => {
-  const [showMenu, setShowMenu] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  
-  // 햄버거 메뉴 외부 클릭 시 닫기
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element;
-      // 햄버거 메뉴 버튼이나 드롭다운 메뉴 내부 클릭인지 확인
-      const isMenuButton = target.closest('button[class*="hover:text-gray-600"]');
-      const isDropdownMenu = target.closest('.absolute.right-0.mt-1');
-      
-      if (showMenu && !isMenuButton && !isDropdownMenu) {
-        setShowMenu(false);
-      }
-    };
-
-    if (showMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showMenu]);
   
   const MAX_LENGTH = 500;
   const LINE_BREAK_LENGTH = 80; // 한 줄에 표시할 최대 글자수
@@ -108,19 +88,25 @@ const CommentItem = ({ comment, onEdit, onDelete, onReply }: {
         </div>
         <div className="relative">
           <button
-            onClick={() => setShowMenu(!showMenu)}
+            onClick={() => {
+              onMenuClick(comment.commentIdx);
+              // 댓글 메뉴가 열릴 때 게시글 메뉴 닫기
+              if (!isActive && onMenuToggle) {
+                onMenuToggle();
+              }
+            }}
             className="text-gray-400 hover:text-gray-600 p-1"
           >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
             </svg>
           </button>
-          {showMenu && (
+          {isActive && (
             <div className="absolute right-0 mt-1 w-32 bg-white rounded-md shadow-lg z-10 border border-gray-200">
               <button
                 onClick={() => {
                   onEdit(comment);
-                  setShowMenu(false);
+                  onMenuClick(comment.commentIdx);
                 }}
                 className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
@@ -129,7 +115,7 @@ const CommentItem = ({ comment, onEdit, onDelete, onReply }: {
               <button
                 onClick={() => {
                   onDelete(comment);
-                  setShowMenu(false);
+                  onMenuClick(comment.commentIdx);
                 }}
                 className="block w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-gray-100"
               >
@@ -254,6 +240,29 @@ export default function CompanyBoardDetailPage() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showPostMenu]);
+
+  // 댓글 햄버거 메뉴 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      // 댓글 햄버거 메뉴 버튼인지 확인
+      const isCommentMenuButton = target.closest('button[class*="hover:text-gray-600"][class*="p-1"]');
+      // 댓글 드롭다운 메뉴인지 확인
+      const isCommentDropdownMenu = target.closest('.absolute.right-0.mt-1');
+      
+      if (activeCommentMenu !== null && !isCommentMenuButton && !isCommentDropdownMenu) {
+        setActiveCommentMenu(null);
+      }
+    };
+
+    if (activeCommentMenu !== null) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [activeCommentMenu]);
 
   // 게시글 정보 가져오기
   useEffect(() => {
@@ -1140,6 +1149,11 @@ export default function CompanyBoardDetailPage() {
                         onEdit={handleEditComment}
                         onDelete={handleDeleteComment}
                         onReply={handleReply}
+                        onMenuToggle={() => setShowPostMenu(false)}
+                        isActive={activeCommentMenu === comment.commentIdx}
+                        onMenuClick={(commentIdx) => {
+                          setActiveCommentMenu(activeCommentMenu === commentIdx ? null : commentIdx);
+                        }}
                       />
                       
                       {/* 답글 작성 폼 - 각 댓글에 답글 작성할 때 */}

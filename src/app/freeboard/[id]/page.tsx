@@ -768,22 +768,22 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                 {comments
                   .sort((a, b) => new Date(a.commentRegDate || 0).getTime() - new Date(b.commentRegDate || 0).getTime())
                   .map((comment) => (
-                  <div key={comment.commentIdx} className="border-b border-gray-100 pb-4 last:border-b-0 overflow-hidden">
+                  <div key={comment.commentIdx} className="border-b border-gray-100 pb-4 last:border-b-0">
                     <div className="flex items-start space-x-3">
                       <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
                         <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
                       </div>
-                      <div className="flex-1 min-w-0 overflow-hidden">
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-sm font-medium text-gray-900">{comment.writerId}</span>
-                            <span className="text-xs text-gray-500">•</span>
-                            <span className="text-xs text-gray-500">{formatTimeAgo(comment.commentRegDate || new Date().toISOString())}</span>
+                          <div className="flex items-center space-x-2 min-w-0">
+                            <span className="text-sm font-medium text-gray-900 truncate">{comment.writerId}</span>
+                            <span className="text-xs text-gray-500 flex-shrink-0">•</span>
+                            <span className="text-xs text-gray-500 whitespace-nowrap flex-shrink-0">{formatTimeAgo(comment.commentRegDate || new Date().toISOString())}</span>
                           </div>
                           {/* 햄버거 메뉴 */}
-                          <div className="relative comment-menu">
+                          <div className="relative comment-menu flex-shrink-0">
                             <button
                               onClick={() => toggleCommentMenu(comment.commentIdx)}
                               className="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
@@ -795,7 +795,7 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                             
                             {/* 드롭다운 메뉴 */}
                             {openMenuComment === comment.commentIdx && (
-                              <div className="absolute right-0 top-8 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                              <div className="absolute right-0 top-8 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
                                 <button
                                   onClick={() => {
                                     handleEditComment(comment.commentIdx);
