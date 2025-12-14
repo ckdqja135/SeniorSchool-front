@@ -139,6 +139,22 @@ export default function MatzalAlMentorPage() {
       
       const data = await response.json();
       
+      // 이미지 URL 헬퍼 함수
+      const getImageUrl = (imagePath: string | undefined | null): string | null => {
+        if (!imagePath) return null;
+        const backendURL = 'https://api.reviewhub.life';
+        // 이미 절대 URL인 경우 그대로 반환
+        if (imagePath.startsWith('http://') || imagePath.startsWith('https://') || imagePath.startsWith('data:')) {
+          return imagePath;
+        }
+        // 상대 경로인 경우 서버 URL과 결합
+        if (imagePath.startsWith('/')) {
+          return `${backendURL}${imagePath}`;
+        }
+        // 그 외의 경우 서버 URL과 결합
+        return `${backendURL}/${imagePath}`;
+      };
+
       // API 응답에서 식당 정보 추출
       if (Array.isArray(data)) {
         const restaurants = data
@@ -147,7 +163,8 @@ export default function MatzalAlMentorPage() {
             matzalAlName: item.restaurantName || item.matzalAlName || '맛집명 없음',
             matzalAlLocation: item.restaurantAddr || item.matzalAlLocation || '위치 정보 없음',
             matzalAlType: item.restaurantType || item.matzalAlType || '맛집',
-            viewCount: item.boardHits || item.viewCount || 0
+            viewCount: item.boardHits || item.viewCount || 0,
+            restaurantImage: item.restaurantImage || null
           }))
           .filter((item: any) => item.matzalAlIdx && item.matzalAlName);
         
@@ -159,7 +176,8 @@ export default function MatzalAlMentorPage() {
             matzalAlName: item.restaurantName || item.matzalAlName || '맛집명 없음',
             matzalAlLocation: item.restaurantAddr || item.matzalAlLocation || '위치 정보 없음',
             matzalAlType: item.restaurantType || item.matzalAlType || '맛집',
-            viewCount: item.boardHits || item.viewCount || 0
+            viewCount: item.boardHits || item.viewCount || 0,
+            restaurantImage: item.restaurantImage || null
           }))
           .filter((item: any) => item.matzalAlIdx && item.matzalAlName);
         
@@ -575,8 +593,43 @@ export default function MatzalAlMentorPage() {
                 >
                   {/* 이미지 영역 */}
                   <div className="relative w-full h-40 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
-                    {/* 플레이스홀더 이미지 - 실제 이미지가 있으면 사용 */}
-                    <div className="absolute inset-0 flex items-center justify-center">
+                    {/* 실제 이미지 또는 플레이스홀더 */}
+                    {(() => {
+                      const backendURL = 'https://api.reviewhub.life';
+                      const getImageUrl = (imagePath: string | undefined | null): string | null => {
+                        if (!imagePath) return null;
+                        if (imagePath.startsWith('http://') || imagePath.startsWith('https://') || imagePath.startsWith('data:')) {
+                          return imagePath;
+                        }
+                        if (imagePath.startsWith('/')) {
+                          return `${backendURL}${imagePath}`;
+                        }
+                        return `${backendURL}/${imagePath}`;
+                      };
+                      const imageUrl = getImageUrl((matzalAl as any).restaurantImage);
+                      
+                      return imageUrl ? (
+                        <img
+                          src={imageUrl}
+                          alt={matzalAl.matzalAlName}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // 이미지 로드 실패 시 플레이스홀더 표시
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const parent = target.parentElement;
+                            if (parent) {
+                              const placeholder = parent.querySelector('.image-placeholder') as HTMLElement;
+                              if (placeholder) {
+                                placeholder.style.display = 'flex';
+                              }
+                            }
+                          }}
+                        />
+                      ) : null;
+                    })()}
+                    {/* 플레이스홀더 이미지 */}
+                    <div className={`absolute inset-0 flex items-center justify-center image-placeholder ${((matzalAl as any).restaurantImage ? 'hidden' : '')}`}>
                       <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>

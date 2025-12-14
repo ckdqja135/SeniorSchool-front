@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "../Sidebar/index";
+import { UserProps } from "@/types/User";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -11,7 +12,21 @@ interface DashboardLayoutProps {
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [user, setUser] = useState<UserProps | null>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    // localStorage에서 사용자 정보 가져오기
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      try {
+        const userData = JSON.parse(userStr);
+        setUser(userData);
+      } catch (error) {
+        console.error("사용자 정보 파싱 오류:", error);
+      }
+    }
+  }, []);
 
   const handleHomeClick = () => {
     router.push("/myoriadmin");
@@ -48,7 +63,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   className="flex items-center space-x-2 text-gray-600 hover:text-gray-800"
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                 >
-                  <span className="text-sm">Admin</span>
+                  <span className="text-sm">{user?.username || "Admin"}</span>
                   <span className="text-xs">▼</span>
                 </button>
                 

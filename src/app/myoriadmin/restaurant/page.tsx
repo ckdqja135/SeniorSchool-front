@@ -15,6 +15,7 @@ interface RestaurantData {
   restaurantLotAddr: string;
   restaurantAddr: string;
   restaurantMapIMG: string;
+  restaurantImage?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -38,6 +39,24 @@ interface ApiResponseV2 { // 식당 검색 실제 응답 포맷
 
 const API_BASE_URL = "https://api.reviewhub.life";
 
+// 이미지 URL 헬퍼 함수
+const getImageUrl = (imagePath: string | undefined | null): string | null => {
+  if (!imagePath) return null;
+  
+  // 이미 절대 URL인 경우 그대로 반환
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://') || imagePath.startsWith('data:')) {
+    return imagePath;
+  }
+  
+  // 상대 경로인 경우 서버 URL과 결합
+  if (imagePath.startsWith('/')) {
+    return `${API_BASE_URL}${imagePath}`;
+  }
+  
+  // 그 외의 경우 서버 URL과 결합
+  return `${API_BASE_URL}/${imagePath}`;
+};
+
 const RestaurantManagementPage: React.FC = () => {
   const [searchKeyword, setSearchKeyword] = useState("");
   const [restaurants, setRestaurants] = useState<RestaurantData[]>([]);
@@ -51,6 +70,8 @@ const RestaurantManagementPage: React.FC = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showSwitchConfirmModal, setShowSwitchConfirmModal] = useState(false);
+  const [pendingRestaurant, setPendingRestaurant] = useState<RestaurantData | null>(null);
   const [loading, setLoading] = useState(true);
   const [editingRestaurant, setEditingRestaurant] = useState<RestaurantData | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
@@ -68,7 +89,12 @@ const RestaurantManagementPage: React.FC = () => {
     restaurantLotAddr: "",
     restaurantAddr: "",
     restaurantMapIMG: "",
+    restaurantImage: "",
   });
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [editSelectedImage, setEditSelectedImage] = useState<File | null>(null);
+  const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
 
   const searchRestaurants = async (keyword = "", page = 1, pageSize = rowsPerPage) => {
     setLoading(true);
@@ -137,16 +163,107 @@ const RestaurantManagementPage: React.FC = () => {
     else setSelectedIds(restaurants.map((r) => r.restaurantIdx));
   };
 
+  // 이미지 압축 헬퍼 함수
+  const compressImage = async (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          // 최대 크기 설정 (800px)
+          const maxSize = 800;
+          if (width > height) {
+            if (width > maxSize) {
+              height = (height * maxSize) / width;
+              width = maxSize;
+            }
+          } else {
+            if (height > maxSize) {
+              width = (width * maxSize) / height;
+              height = maxSize;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+
+          // JPEG로 압축 (품질 0.7)
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          resolve(compressedDataUrl);
+        };
+        img.onerror = reject;
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // 파일 크기 제한 (예: 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert("이미지 크기는 5MB 이하여야 합니다.");
+        return;
+      }
+      // 이미지 파일 타입 확인
+      if (!file.type.startsWith('image/')) {
+        alert("이미지 파일만 업로드 가능합니다.");
+        return;
+      }
+      setSelectedImage(file);
+
+      try {
+        // 이미지 압축 후 미리보기 생성 및 데이터 저장
+        const compressedDataUrl = await compressImage(file);
+        setImagePreview(compressedDataUrl);
+        // 이미지 데이터를 newRestaurant에 저장하여 POST 요청에 포함되도록 함
+        setNewRestaurant({ ...newRestaurant, restaurantImage: compressedDataUrl });
+      } catch (error) {
+        console.error('이미지 압축 실패:', error);
+        alert('이미지 처리 중 오류가 발생했습니다.');
+      }
+    }
+  };
+
+  const handleImageUpload = async (): Promise<string | null> => {
+    if (!selectedImage) return null;
+
+    // 이미지 업로드 API가 없는 경우, 사용자에게 경로 입력 안내
+    alert("이미지 업로드 기능은 현재 사용할 수 없습니다.\n\n이미지 경로를 직접 입력해주세요.\n예: /uploads/restaurants/image.jpg");
+    return null;
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    setNewRestaurant({ ...newRestaurant, restaurantImage: "" });
+  };
+
   const handleAdd = async () => {
     try {
       const accessToken = localStorage.getItem("accessToken");
+
+      // 이미지 경로는 사용자가 직접 입력한 값 사용
+      const restaurantData = {
+        ...newRestaurant,
+        restaurantImage: newRestaurant.restaurantImage || null,
+      };
+
       const res = await fetch(`${API_BASE_URL}/admin/restaurant/createRestaurant`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newRestaurant),
+        body: JSON.stringify(restaurantData),
       });
       if (res.ok) {
         alert("식당이 성공적으로 추가되었습니다.");
@@ -163,10 +280,14 @@ const RestaurantManagementPage: React.FC = () => {
           restaurantLotAddr: "",
           restaurantAddr: "",
           restaurantMapIMG: "",
+          restaurantImage: "",
         });
+        setSelectedImage(null);
+        setImagePreview(null);
         searchRestaurants(searchKeyword);
       } else {
-        alert("식당 추가에 실패했습니다.");
+        const errorData = await res.json().catch(() => ({}));
+        alert(errorData.message || "식당 추가에 실패했습니다.");
       }
     } catch (e) {
       console.error("식당 추가 실패:", e);
@@ -214,11 +335,64 @@ const RestaurantManagementPage: React.FC = () => {
     searchRestaurants(searchKeyword, 1, n);
   };
 
+  const handleEditImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // 파일 크기 제한 (예: 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert("이미지 크기는 5MB 이하여야 합니다.");
+        return;
+      }
+      // 이미지 파일 타입 확인
+      if (!file.type.startsWith('image/')) {
+        alert("이미지 파일만 업로드 가능합니다.");
+        return;
+      }
+      setEditSelectedImage(file);
+
+      try {
+        // 이미지 압축 후 미리보기 생성 및 데이터 저장
+        const compressedDataUrl = await compressImage(file);
+        setEditImagePreview(compressedDataUrl);
+        // 이미지 데이터를 editingRestaurant에 저장하여 PUT 요청에 포함되도록 함
+        if (editingRestaurant) {
+          handleEditChange("restaurantImage", compressedDataUrl);
+        }
+      } catch (error) {
+        console.error('이미지 압축 실패:', error);
+        alert('이미지 처리 중 오류가 발생했습니다.');
+      }
+    }
+  };
+
+  const handleEditImageUpload = async (): Promise<string | null> => {
+    if (!editSelectedImage) return null;
+
+    // 이미지 업로드 API가 없는 경우, 사용자에게 경로 입력 안내
+    alert("이미지 업로드 기능은 현재 사용할 수 없습니다.\n\n이미지 경로를 직접 입력해주세요.\n예: /uploads/restaurants/image.jpg");
+    return null;
+  };
+
+  const handleRemoveEditImage = () => {
+    setEditSelectedImage(null);
+    setEditImagePreview(null);
+    if (editingRestaurant) {
+      handleEditChange("restaurantImage", "");
+    }
+  };
+
   const handleEditStart = () => {
     if (selectedRestaurant) {
       setEditingRestaurant({ ...selectedRestaurant });
       setIsEditMode(true);
       setHasChanges(false);
+      // 기존 이미지 경로가 있으면 미리보기 설정
+      if (selectedRestaurant.restaurantImage) {
+        setEditImagePreview(selectedRestaurant.restaurantImage);
+      } else {
+        setEditImagePreview(null);
+      }
+      setEditSelectedImage(null);
     }
   };
 
@@ -228,6 +402,8 @@ const RestaurantManagementPage: React.FC = () => {
       setIsEditMode(false);
       setEditingRestaurant(null);
       setHasChanges(false);
+      setEditSelectedImage(null);
+      setEditImagePreview(null);
     }
   };
 
@@ -235,7 +411,29 @@ const RestaurantManagementPage: React.FC = () => {
     setIsEditMode(false);
     setEditingRestaurant(null);
     setHasChanges(false);
+    setEditSelectedImage(null);
+    setEditImagePreview(null);
     setShowCancelModal(false);
+  };
+
+  const handleSwitchConfirm = () => {
+    // 수정 모드 취소하고 새로운 식당 선택
+    setIsEditMode(false);
+    setEditingRestaurant(null);
+    setHasChanges(false);
+    setEditSelectedImage(null);
+    setEditImagePreview(null);
+    if (pendingRestaurant) {
+      setSelectedRestaurant(pendingRestaurant);
+    }
+    setPendingRestaurant(null);
+    setShowSwitchConfirmModal(false);
+  };
+
+  const handleSwitchCancel = () => {
+    // 현상 유지 (수정 모드 유지)
+    setPendingRestaurant(null);
+    setShowSwitchConfirmModal(false);
   };
 
   const handleEditChange = (field: keyof RestaurantData, value: string | number) => {
@@ -251,13 +449,28 @@ const RestaurantManagementPage: React.FC = () => {
     if (!editingRestaurant || !selectedRestaurant) return;
     try {
       const accessToken = localStorage.getItem("accessToken");
+
       const changedData: Partial<RestaurantData> = { restaurantIdx: editingRestaurant.restaurantIdx } as any;
+
+      // 이미지 경로 업데이트 (값이 있거나 변경되었으면 항상 포함)
+      const currentImage = editingRestaurant.restaurantImage || "";
+      const originalImage = (selectedRestaurant.restaurantImage || "").trim();
+      const currentImageTrimmed = currentImage.trim();
+
+      // 이미지가 변경되었으면 항상 포함 (새 이미지가 있거나, 기존과 다른 경우)
+      if (currentImageTrimmed !== originalImage) {
+        (changedData as any).restaurantImage = currentImageTrimmed || null;
+      }
+
       (Object.keys(editingRestaurant) as (keyof RestaurantData)[]).forEach((k) => {
         const value = editingRestaurant[k];
-        if (value !== selectedRestaurant[k] && k !== 'createdAt' && k !== 'updatedAt' && value !== undefined) {
+        if (value !== selectedRestaurant[k] && k !== 'createdAt' && k !== 'updatedAt' && k !== 'restaurantImage' && value !== undefined) {
           (changedData as any)[k] = value;
         }
       });
+
+      // 디버깅: 변경된 데이터 확인
+      console.log("변경된 데이터:", changedData);
 
       const res = await fetch(`${API_BASE_URL}/admin/restaurant/${editingRestaurant.restaurantIdx}`, {
         method: "PUT",
@@ -273,9 +486,12 @@ const RestaurantManagementPage: React.FC = () => {
         setIsEditMode(false);
         setEditingRestaurant(null);
         setHasChanges(false);
+        setEditSelectedImage(null);
+        setEditImagePreview(null);
         searchRestaurants(searchKeyword, currentPage, rowsPerPage);
       } else {
-        alert("식당 수정에 실패했습니다.");
+        const errorData = await res.json().catch(() => ({}));
+        alert(errorData.message || "식당 수정에 실패했습니다.");
       }
     } catch (e) {
       console.error("식당 수정 실패:", e);
@@ -357,7 +573,15 @@ const RestaurantManagementPage: React.FC = () => {
                     <tr
                       key={r.restaurantIdx}
                       className={`hover:bg-gray-50 cursor-pointer ${selectedRestaurant?.restaurantIdx === r.restaurantIdx ? "bg-blue-50" : ""}`}
-                      onClick={() => setSelectedRestaurant(r)}
+                      onClick={() => {
+                        // 수정 모드이고 다른 식당을 클릭한 경우
+                        if (isEditMode && selectedRestaurant?.restaurantIdx !== r.restaurantIdx) {
+                          setPendingRestaurant(r);
+                          setShowSwitchConfirmModal(true);
+                        } else {
+                          setSelectedRestaurant(r);
+                        }
+                      }}
                     >
                       <td className="px-3 py-2">
                         <input
@@ -578,6 +802,57 @@ const RestaurantManagementPage: React.FC = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">식당 이미지</label>
+                <div className="space-y-2">
+                  {imagePreview ? (
+                    <div className="relative">
+                      <img
+                        src={imagePreview}
+                        alt="미리보기"
+                        className="w-full h-48 object-cover rounded-md border border-gray-300"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleRemoveImage}
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="border-2 border-dashed border-gray-300 rounded-md p-4">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageSelect}
+                        className="hidden"
+                        id="restaurant-image-upload"
+                      />
+                      <label
+                        htmlFor="restaurant-image-upload"
+                        className="flex flex-col items-center justify-center cursor-pointer"
+                      >
+                        <svg className="w-12 h-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span className="text-sm text-gray-600">이미지를 선택하거나 드래그하세요</span>
+                        <span className="text-xs text-gray-400 mt-1">최대 5MB</span>
+                      </label>
+                    </div>
+                  )}
+                  <div className="text-xs text-gray-500">
+                    또는 이미지 URL을 직접 입력하세요:
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="/uploads/restaurants/image.jpg 또는 URL"
+                    value={newRestaurant.restaurantImage}
+                    onChange={(e) => setNewRestaurant({ ...newRestaurant, restaurantImage: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  />
+                </div>
+              </div>
             </div>
             <div className="flex gap-2 mt-4 pt-4 border-t">
               <button onClick={handleAdd} className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">저장</button>
@@ -650,31 +925,112 @@ const RestaurantManagementPage: React.FC = () => {
                   <label className="block text-sm font-medium mb-1">지도 이미지 URL</label>
                   <input type="url" value={isEditMode ? editingRestaurant?.restaurantMapIMG || "" : selectedRestaurant.restaurantMapIMG} onChange={(e) => handleEditChange("restaurantMapIMG", e.target.value)} readOnly={!isEditMode} className={`w-full px-3 py-2 border border-gray-300 rounded-md ${isEditMode ? "bg-white" : "bg-gray-50"}`} />
                 </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium mb-1">식당 이미지</label>
+                  <div className="space-y-2">
+                    {isEditMode ? (
+                      <>
+                        {editImagePreview ? (
+                          <div className="relative">
+                            <img
+                              src={editImagePreview}
+                              alt="미리보기"
+                              className="w-full h-48 object-cover rounded-md border border-gray-300"
+                            />
+                            <button
+                              type="button"
+                              onClick={handleRemoveEditImage}
+                              className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="border-2 border-dashed border-gray-300 rounded-md p-4">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleEditImageSelect}
+                              className="hidden"
+                              id="edit-restaurant-image-upload"
+                            />
+                            <label
+                              htmlFor="edit-restaurant-image-upload"
+                              className="flex flex-col items-center justify-center cursor-pointer"
+                            >
+                              <svg className="w-12 h-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                              <span className="text-sm text-gray-600">이미지를 선택하거나 드래그하세요</span>
+                              <span className="text-xs text-gray-400 mt-1">최대 5MB</span>
+                            </label>
+                          </div>
+                        )}
+                        <div className="text-xs text-gray-500">
+                          또는 이미지 URL을 직접 입력하세요:
+                        </div>
+                        <input
+                          type="text"
+                          placeholder="/uploads/restaurants/image.jpg 또는 URL"
+                          value={editingRestaurant?.restaurantImage || ""}
+                          onChange={(e) => handleEditChange("restaurantImage", e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        />
+                      </>
+                    ) : (
+                      <div className="w-full">
+                        {selectedRestaurant.restaurantImage ? (
+                          <img
+                            src={getImageUrl(selectedRestaurant.restaurantImage) || ''}
+                            alt="식당 이미지"
+                            className="w-full h-48 object-cover rounded-md border border-gray-300"
+                            onError={(e) => {
+                              // 이미지 로드 실패 시 플레이스홀더 표시
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              const parent = target.parentElement;
+                              if (parent && !parent.querySelector('.image-placeholder')) {
+                                const placeholder = document.createElement('div');
+                                placeholder.className = 'image-placeholder w-full h-48 bg-gray-100 rounded-md border border-gray-300 flex items-center justify-center text-gray-400';
+                                placeholder.textContent = '이미지를 불러올 수 없습니다';
+                                parent.appendChild(placeholder);
+                              }
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-48 bg-gray-100 rounded-md border border-gray-300 flex items-center justify-center text-gray-400">
+                            이미지 없음
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">등록일</label>
                   <div className="w-full px-3 py-2 text-gray-700 bg-gray-50 rounded-md">
-                    {selectedRestaurant.createdAt 
+                    {selectedRestaurant.createdAt
                       ? new Date(selectedRestaurant.createdAt).toLocaleString('ko-KR', {
-                          year: 'numeric',
-                          month: '2-digit',
-                          day: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })
                       : '-'}
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">수정일</label>
                   <div className="w-full px-3 py-2 text-gray-700 bg-gray-50 rounded-md">
-                    {selectedRestaurant.updatedAt 
+                    {selectedRestaurant.updatedAt
                       ? new Date(selectedRestaurant.updatedAt).toLocaleString('ko-KR', {
-                          year: 'numeric',
-                          month: '2-digit',
-                          day: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })
                       : '-'}
                   </div>
                 </div>
@@ -711,6 +1067,19 @@ const RestaurantManagementPage: React.FC = () => {
             <div className="flex gap-2 justify-end">
               <button onClick={handleCancelConfirm} className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">예</button>
               <button onClick={() => setShowCancelModal(false)} className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">아니오</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSwitchConfirmModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h3 className="text-lg font-semibold mb-4">확인</h3>
+            <p className="mb-4">수정을 취소하시겠습니까?</p>
+            <div className="flex gap-2 justify-end">
+              <button onClick={handleSwitchConfirm} className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">확인</button>
+              <button onClick={handleSwitchCancel} className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">취소</button>
             </div>
           </div>
         </div>
