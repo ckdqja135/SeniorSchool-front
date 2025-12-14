@@ -4,30 +4,24 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-interface University {
-  univIdx: number;
-  univName: string;
-  univLocate: string;
-  univType: string;
-  univEstablish: string;
-  univPresident: string;
-  univCampos: string;
-  univLateX: number;
-  univLateY: number;
-  univURL: string;
-  univLotAddr: string;
-  univAddr: string;
-  univMapIMG: string;
-  univStatus: number;
-  univViewCount: number;
+interface Restaurant {
+  restaurantName: string;
+  restaurantAddr: string;
+  restaurantOwner: string;
+  restaurantType: string;
+  restaurantIdx?: number;
+  restaurantLocation?: string;
+  restaurantEstablished?: string;
+  restaurantStatus?: number;
+  restaurantViewCount?: number;
 }
 
-function UnivSearchContent() {
+function MatzalAlSearchContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const searchName = searchParams.get('name') || '';
 
-  const [searchResults, setSearchResults] = useState<University[]>([]);
+  const [searchResults, setSearchResults] = useState<Restaurant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,7 +39,7 @@ function UnivSearchContent() {
 
         const backendURL = 'https://api.reviewhub.life';
         // 자동완성 API 사용 (검색어로 필터링된 결과)
-        const response = await fetch(`${backendURL}/search/auto?keyword=${encodeURIComponent(searchName)}`);
+        const response = await fetch(`${backendURL}/restaurant/auto?keyword=${encodeURIComponent(searchName)}`);
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -55,6 +49,8 @@ function UnivSearchContent() {
 
         if (Array.isArray(data)) {
           setSearchResults(data);
+        } else if (data.data && Array.isArray(data.data)) {
+          setSearchResults(data.data);
         } else {
           setSearchResults([]);
         }
@@ -70,16 +66,23 @@ function UnivSearchContent() {
     fetchSearchResults();
   }, [searchName]);
 
-  // 대학교 클릭 핸들러
-  const handleUniversityClick = (university: University) => {
-    router.push(`/univ-mentor/${encodeURIComponent(university.univName)}`);
+  // 식당 클릭 핸들러
+  const handleRestaurantClick = (restaurant: Restaurant) => {
+    const params = new URLSearchParams();
+    if (restaurant.restaurantIdx) {
+      params.append('restaurantIdx', restaurant.restaurantIdx.toString());
+    }
+    if (restaurant.restaurantAddr) {
+      params.append('restaurantAddr', restaurant.restaurantAddr);
+    }
+    router.push(`/matzal-al-mentor/${encodeURIComponent(restaurant.restaurantName)}?${params.toString()}`);
   };
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">검색 결과를 불러오는 중...</p>
         </div>
       </div>
@@ -92,8 +95,8 @@ function UnivSearchContent() {
       <nav className="bg-gray-800 text-white shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <Link href="/univ-mentor" className="text-2xl font-bold text-green-400">
-              대학 오빠
+            <Link href="/matzal-al-mentor" className="text-2xl font-bold text-blue-400">
+              맛잘알 오빠
             </Link>
             <div className="text-gray-300">
               검색 결과
@@ -109,7 +112,7 @@ function UnivSearchContent() {
             '{searchName}' 검색 결과
           </h1>
           <p className="text-gray-600">
-            {searchResults.length}개의 대학교를 찾았습니다.
+            {searchResults.length}개의 식당을 찾았습니다.
           </p>
         </div>
 
@@ -120,8 +123,8 @@ function UnivSearchContent() {
               <div className="text-red-600 text-6xl mb-4">⚠️</div>
               <h2 className="text-2xl font-bold text-gray-800 mb-4">오류 발생</h2>
               <p className="text-gray-600 mb-8">{error}</p>
-              <Link href="/univ-mentor" className="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition-colors">
-                대학 오빠로 돌아가기
+              <Link href="/matzal-al-mentor" className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors">
+                맛잘알 오빠로 돌아가기
               </Link>
             </div>
           ) : searchResults.length === 0 ? (
@@ -129,56 +132,52 @@ function UnivSearchContent() {
               <div className="text-gray-400 text-6xl mb-4">🔍</div>
               <h2 className="text-2xl font-bold text-gray-800 mb-4">검색 결과가 없습니다</h2>
               <p className="text-gray-600 mb-8">다른 검색어로 시도해보세요.</p>
-              <Link href="/univ-mentor" className="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition-colors">
-                대학 오빠로 돌아가기
+              <Link href="/matzal-al-mentor" className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors">
+                맛잘알 오빠로 돌아가기
               </Link>
             </div>
           ) : (
-            searchResults.map((university) => (
+            searchResults.map((restaurant, index) => (
               <div
-                key={university.univIdx}
-                onClick={() => handleUniversityClick(university)}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-all duration-200 hover:border-green-300"
+                key={restaurant.restaurantIdx || index}
+                onClick={() => handleRestaurantClick(restaurant)}
+                className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-all duration-200 hover:border-blue-300"
               >
                 <div className="flex items-start space-x-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-semibold text-gray-900 truncate">{university.univName}</h3>
-                    <p className="text-sm text-gray-500 mt-1">📍 {university.univLocate}</p>
+                    <h3 className="text-lg font-semibold text-gray-900 truncate">{restaurant.restaurantName}</h3>
+                    <p className="text-sm text-gray-500 mt-1">📍 {restaurant.restaurantAddr || restaurant.restaurantLocation}</p>
                     <div className="mt-2 space-y-1">
                       <div className="flex justify-between text-xs text-gray-400">
-                        <span>대학 종류:</span>
-                        <span className="font-medium">{university.univType}</span>
+                        <span>업종:</span>
+                        <span className="font-medium">{restaurant.restaurantType}</span>
                       </div>
-                      <div className="flex justify-between text-xs text-gray-400">
-                        <span>총장:</span>
-                        <span className="font-medium">{university.univPresident}</span>
-                      </div>
-                      {university.univEstablish && (
+                      {restaurant.restaurantOwner && (
+                        <div className="flex justify-between text-xs text-gray-400">
+                          <span>대표자:</span>
+                          <span className="font-medium">{restaurant.restaurantOwner}</span>
+                        </div>
+                      )}
+                      {restaurant.restaurantEstablished && (
                         <div className="flex justify-between text-xs text-gray-400">
                           <span>설립년도:</span>
-                          <span className="font-medium">{university.univEstablish}년</span>
+                          <span className="font-medium">{restaurant.restaurantEstablished}년</span>
                         </div>
                       )}
-                      {university.univAddr && (
-                        <div className="flex justify-between text-xs text-gray-400">
-                          <span>주소:</span>
-                          <span className="font-medium text-xs">{university.univAddr}</span>
-                        </div>
-                      )}
-                      {university.univViewCount !== undefined && (
+                      {restaurant.restaurantViewCount !== undefined && (
                         <div className="flex justify-between text-xs text-gray-400">
                           <span>조회수:</span>
-                          <span className="font-medium">{university.univViewCount}</span>
+                          <span className="font-medium">{restaurant.restaurantViewCount}</span>
                         </div>
                       )}
                     </div>
                   </div>
-                  <div className="text-green-400 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                  <div className="text-blue-400 opacity-0 group-hover:opacity-100 transition-all duration-200">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
@@ -193,10 +192,11 @@ function UnivSearchContent() {
   );
 }
 
-export default function UnivSearchPage() {
+export default function MatzalAlSearchPage() {
   return (
     <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-lg">로딩 중...</div></div>}>
-      <UnivSearchContent />
+      <MatzalAlSearchContent />
     </Suspense>
   );
 }
+

@@ -20,6 +20,7 @@ export default function MatzalAlMentorPage() {
   const [isBoardRefreshing, setIsBoardRefreshing] = useState(false);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
   const [requestForm, setRequestForm] = useState({
     matzalAlName: '',
     matzalAlAddr: '',
@@ -68,9 +69,8 @@ export default function MatzalAlMentorPage() {
     setError(null);
     
     try {
-      // TODO: 맛잘알 API 엔드포인트로 변경
       const backendURL = 'https://api.reviewhub.life';
-      const response = await fetch(`${backendURL}/search/matzal-al/?matzalAlName=${encodeURIComponent(keyword)}`);
+      const response = await fetch(`${backendURL}/restaurant/auto?keyword=${encodeURIComponent(keyword)}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -78,14 +78,35 @@ export default function MatzalAlMentorPage() {
       
       const data = await response.json();
       
+      // API 응답 데이터 매핑 (restaurantName -> matzalAlName 등)
+      let mappedData: any[] = [];
       if (Array.isArray(data)) {
-        setSuggestions(data);
+        mappedData = data.map((item: any) => ({
+          restaurantName: item.restaurantName,
+          restaurantAddr: item.restaurantAddr,
+          restaurantOwner: item.restaurantOwner,
+          restaurantType: item.restaurantType,
+          // 호환성을 위한 필드 매핑
+          matzalAlName: item.restaurantName,
+          matzalAlLocation: item.restaurantAddr,
+          matzalAlType: item.restaurantType,
+          restaurantIdx: item.restaurantIdx || null
+        }));
       } else if (data.data && Array.isArray(data.data)) {
-        setSuggestions(data.data);
-      } else {
-        console.warn('예상하지 못한 응답 형식:', data);
-        setSuggestions([]);
+        mappedData = data.data.map((item: any) => ({
+          restaurantName: item.restaurantName,
+          restaurantAddr: item.restaurantAddr,
+          restaurantOwner: item.restaurantOwner,
+          restaurantType: item.restaurantType,
+          // 호환성을 위한 필드 매핑
+          matzalAlName: item.restaurantName,
+          matzalAlLocation: item.restaurantAddr,
+          matzalAlType: item.restaurantType,
+          restaurantIdx: item.restaurantIdx || null
+        }));
       }
+      
+      setSuggestions(mappedData);
     } catch (error) {
       console.error('자동완성 검색 오류:', error);
       setError('자동완성을 불러오는 중 오류가 발생했습니다.');
@@ -274,12 +295,21 @@ export default function MatzalAlMentorPage() {
 
   // 자동완성 선택
   const handleSuggestionClick = (suggestion: any) => {
-    setSearchTerm(suggestion.matzalAlName);
+    const restaurantName = suggestion.restaurantName || suggestion.matzalAlName;
+    const restaurantAddr = suggestion.restaurantAddr || suggestion.matzalAlLocation;
+    setSearchTerm(restaurantName);
     setShowSuggestions(false);
     setError(null);
-    addToRecentSearches(suggestion.matzalAlName);
-    // 자동완성 선택 시에는 matzalAlIdx와 함께 상세 페이지로 이동
-    router.push(`/matzal-al-mentor/${encodeURIComponent(suggestion.matzalAlName)}?matzalAlIdx=${suggestion.matzalAlIdx}`);
+    addToRecentSearches(restaurantName);
+    // 자동완성 선택 시에는 식당명과 주소로 상세 페이지로 이동
+    const params = new URLSearchParams();
+    if (suggestion.restaurantIdx) {
+      params.append('restaurantIdx', suggestion.restaurantIdx);
+    }
+    if (restaurantAddr) {
+      params.append('restaurantAddr', restaurantAddr);
+    }
+    router.push(`/matzal-al-mentor/${encodeURIComponent(restaurantName)}?${params.toString()}`);
   };
 
   // 검색 수행 및 결과에 따른 라우팅
@@ -291,7 +321,7 @@ export default function MatzalAlMentorPage() {
       const backendURL = 'https://api.reviewhub.life';
       
       // 자동완성 API를 사용해서 결과 개수 확인
-      const autoResponse = await fetch(`${backendURL}/search/matzal-al/?matzalAlName=${encodeURIComponent(searchTerm)}`);
+      const autoResponse = await fetch(`${backendURL}/restaurant/auto?keyword=${encodeURIComponent(searchTerm)}`);
       
       if (!autoResponse.ok) {
         throw new Error(`HTTP error! status: ${autoResponse.status}`);
@@ -302,10 +332,20 @@ export default function MatzalAlMentorPage() {
       const results = Array.isArray(autoData) ? autoData : (autoData.data || []);
 
       // 자동완성 결과가 배열인지 확인
-      if (Array.isArray(results)) {
+      if (Array.isArray(results) && results.length > 0) {
         if (results.length === 1) {
-          // 정확히 1개 결과가 있으면 matzalAlIdx와 함께 바로 상세 페이지로 이동
-          router.push(`/matzal-al-mentor/${encodeURIComponent(results[0].matzalAlName)}?matzalAlIdx=${results[0].matzalAlIdx}`);
+          // 정확히 1개 결과가 있으면 식당명과 주소로 바로 상세 페이지로 이동
+          const result = results[0];
+          const restaurantName = result.restaurantName || result.matzalAlName;
+          const restaurantAddr = result.restaurantAddr || result.matzalAlLocation;
+          const params = new URLSearchParams();
+          if (result.restaurantIdx) {
+            params.append('restaurantIdx', result.restaurantIdx);
+          }
+          if (restaurantAddr) {
+            params.append('restaurantAddr', restaurantAddr);
+          }
+          router.push(`/matzal-al-mentor/${encodeURIComponent(restaurantName)}?${params.toString()}`);
         } else {
           // 2개 이상의 결과가 있으면 검색 결과 페이지로 이동
           router.push(`/matzal-al-search?name=${encodeURIComponent(searchTerm)}`);
@@ -546,9 +586,15 @@ export default function MatzalAlMentorPage() {
                             </svg>
                           </div>
                           <div className="flex-1">
-                            <div className="font-semibold text-gray-900">{suggestion.matzalAlName}</div>
-                            <div className="text-sm text-gray-500">📍 {suggestion.matzalAlLocation}</div>
-                            <div className="text-xs text-gray-400">🍽️ {suggestion.matzalAlType}</div>
+                            <div className="font-semibold text-gray-900">
+                              {suggestion.restaurantName || suggestion.matzalAlName}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              📍 {suggestion.restaurantAddr || suggestion.matzalAlLocation}
+                            </div>
+                            <div className="text-xs text-gray-400">
+                              🍽️ {suggestion.restaurantType || suggestion.matzalAlType}
+                            </div>
                           </div>
                           <div className="text-blue-400 opacity-0 group-hover:opacity-100 transition-all duration-200">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -629,7 +675,7 @@ export default function MatzalAlMentorPage() {
                   className="group bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-blue-300 transition-all duration-300 cursor-pointer overflow-hidden"
                 >
                   {/* 이미지 영역 */}
-                  <div className="relative w-full h-40 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
+                  <div className="relative w-full h-40 bg-gradient-to-br from-orange-100 via-amber-50 to-yellow-100 overflow-hidden">
                     {/* 실제 이미지 또는 플레이스홀더 */}
                     {(() => {
                       const backendURL = 'https://api.reviewhub.life';
@@ -644,33 +690,26 @@ export default function MatzalAlMentorPage() {
                         return `${backendURL}/${imagePath}`;
                       };
                       const imageUrl = getImageUrl((matzalAl as any).restaurantImage);
+                      const hasError = imageErrors.has(matzalAl.matzalAlIdx);
                       
-                      return imageUrl ? (
+                      return imageUrl && !hasError ? (
                         <img
                           src={imageUrl}
                           alt={matzalAl.matzalAlName}
                           className="w-full h-full object-cover"
-                          onError={(e) => {
-                            // 이미지 로드 실패 시 플레이스홀더 표시
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                            const parent = target.parentElement;
-                            if (parent) {
-                              const placeholder = parent.querySelector('.image-placeholder') as HTMLElement;
-                              if (placeholder) {
-                                placeholder.style.display = 'flex';
-                              }
-                            }
+                          onError={() => {
+                            setImageErrors(prev => new Set(prev).add(matzalAl.matzalAlIdx));
                           }}
                         />
-                      ) : null;
+                      ) : (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-orange-50 via-red-50 to-pink-50">
+                          <svg className="w-20 h-20 text-orange-400 mb-2" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8.1 13.34l2.83-2.83L3.91 3.5c-1.56 1.56-1.56 4.09 0 5.66l4.19 4.18zm6.78-1.81c1.53.71 3.68.21 5.27-1.38 1.91-1.91 2.28-4.65.81-6.12-1.46-1.46-4.20-1.10-6.12.81-1.59 1.59-2.09 3.74-1.38 5.27L3.7 19.87l1.41 1.41L12 14.41l6.88 6.88 1.41-1.41L13.41 13l1.47-1.47z"/>
+                          </svg>
+                          <span className="text-xs text-orange-600 font-medium">맛잘알 오빠</span>
+                        </div>
+                      );
                     })()}
-                    {/* 플레이스홀더 이미지 */}
-                    <div className={`absolute inset-0 flex items-center justify-center image-placeholder ${((matzalAl as any).restaurantImage ? 'hidden' : '')}`}>
-                      <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
                     {/* 평점 뱃지 - 우측 상단 */}
                     {(matzalAl as any).averageRating !== null && (matzalAl as any).averageRating !== undefined && (matzalAl as any).averageRating > 0 ? (
                       <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full shadow-sm">
