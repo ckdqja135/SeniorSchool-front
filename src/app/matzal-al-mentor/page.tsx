@@ -163,8 +163,12 @@ export default function MatzalAlMentorPage() {
             matzalAlName: item.restaurantName || item.matzalAlName || '맛집명 없음',
             matzalAlLocation: item.restaurantAddr || item.matzalAlLocation || '위치 정보 없음',
             matzalAlType: item.restaurantType || item.matzalAlType || '맛집',
-            viewCount: item.boardHits || item.viewCount || 0,
-            restaurantImage: item.restaurantImage || null
+            viewCount: item.restaurantViewCount || item.boardHits || item.viewCount || 0,
+            restaurantImage: item.restaurantImage || null,
+            averageRating: item.averageRating !== null && item.averageRating !== undefined 
+              ? (typeof item.averageRating === 'string' ? parseFloat(item.averageRating) : Number(item.averageRating))
+              : null,
+            ratingCount: item.ratingCount || 0
           }))
           .filter((item: any) => item.matzalAlIdx && item.matzalAlName);
         
@@ -176,8 +180,12 @@ export default function MatzalAlMentorPage() {
             matzalAlName: item.restaurantName || item.matzalAlName || '맛집명 없음',
             matzalAlLocation: item.restaurantAddr || item.matzalAlLocation || '위치 정보 없음',
             matzalAlType: item.restaurantType || item.matzalAlType || '맛집',
-            viewCount: item.boardHits || item.viewCount || 0,
-            restaurantImage: item.restaurantImage || null
+            viewCount: item.restaurantViewCount || item.boardHits || item.viewCount || 0,
+            restaurantImage: item.restaurantImage || null,
+            averageRating: item.averageRating !== null && item.averageRating !== undefined 
+              ? (typeof item.averageRating === 'string' ? parseFloat(item.averageRating) : Number(item.averageRating))
+              : null,
+            ratingCount: item.ratingCount || 0
           }))
           .filter((item: any) => item.matzalAlIdx && item.matzalAlName);
         
@@ -200,6 +208,35 @@ export default function MatzalAlMentorPage() {
     } catch (error) {
       console.error('인기 후기 로딩 오류:', error);
     }
+  };
+
+  // 별점 렌더링 함수
+  const renderStarRating = (score?: number | null, size: 'sm' | 'md' = 'sm') => {
+    // null이거나 0이면 빈 별 5개 표시
+    const safeScore = score && score > 0 ? Math.max(0, Math.min(score, 5)) : 0;
+    const sizeClasses = size === 'sm'
+      ? { wrapper: 'w-3 h-3 text-xs', star: 'text-xs' }
+      : { wrapper: 'w-4 h-4 text-sm', star: 'text-sm' };
+
+    return (
+      <div className="flex items-center space-x-0.5">
+        {Array.from({ length: 5 }).map((_, idx) => {
+          const fillLevel = Math.min(Math.max(safeScore - idx, 0), 1);
+          return (
+            <div key={`star-${idx}`} className={`relative ${sizeClasses.wrapper}`}>
+              <span className={`absolute inset-0 text-gray-300 select-none ${sizeClasses.star}`}>★</span>
+              <span
+                className={`absolute inset-0 text-yellow-400 overflow-hidden select-none ${sizeClasses.star}`}
+                style={{ width: `${fillLevel * 100}%` }}
+              >
+                ★
+              </span>
+              <span className={`invisible ${sizeClasses.star}`}>★</span>
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
   // 인기 맛잘알 새로고침
@@ -635,11 +672,13 @@ export default function MatzalAlMentorPage() {
                       </svg>
                     </div>
                     {/* 평점 뱃지 - 우측 상단 */}
-                    <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full shadow-sm">
-                      <span className="text-xs font-semibold text-gray-700">
-                        {matzalAl.viewCount ? (matzalAl.viewCount > 1000 ? '4.5' : '4.0') : '3.5'}
-                      </span>
-                    </div>
+                    {(matzalAl as any).averageRating !== null && (matzalAl as any).averageRating !== undefined && (matzalAl as any).averageRating > 0 ? (
+                      <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full shadow-sm">
+                        <span className="text-xs font-semibold text-gray-700">
+                          {((matzalAl as any).averageRating as number).toFixed(1)}
+                        </span>
+                      </div>
+                    ) : null}
                   </div>
                   
                   {/* 카드 내용 영역 */}
@@ -732,7 +771,26 @@ export default function MatzalAlMentorPage() {
                                 {matzalAl.matzalAlName}
                               </h3>
                               <p className="text-xs text-gray-500 truncate">📍 {matzalAl.matzalAlLocation}</p>
-                              <p className="text-xs text-gray-400 truncate">🍽️ {matzalAl.matzalAlType} • 👁️ {matzalAl.viewCount || 0}</p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                {matzalAl.averageRating !== null && matzalAl.averageRating !== undefined && matzalAl.averageRating > 0 ? (
+                                  <>
+                                    {renderStarRating(matzalAl.averageRating, 'sm')}
+                                    <span className="text-xs text-gray-600 font-semibold">
+                                      {matzalAl.averageRating.toFixed(1)}
+                                    </span>
+                                    <span className="text-xs text-gray-400">
+                                      ({matzalAl.ratingCount || 0})
+                                    </span>
+                                  </>
+                                ) : (
+                                  <>
+                                    {renderStarRating(null, 'sm')}
+                                    <span className="text-xs text-gray-400">평점 없음</span>
+                                  </>
+                                )}
+                                <span className="text-xs text-gray-400">•</span>
+                                <p className="text-xs text-gray-400 truncate">🍽️ {matzalAl.matzalAlType} • 👁️ {matzalAl.viewCount || 0}</p>
+                              </div>
                             </div>
                             <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
                               <svg className="w-2.5 h-2.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
