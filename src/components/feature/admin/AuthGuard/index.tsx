@@ -23,7 +23,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
         setIsAuthenticated(false);
         // 로그인 페이지가 아닌 경우에만 리다이렉트
         if (pathname !== "/myoriadmin/sign-in") {
-          router.push("/myoriadmin/sign-in");
+          router.replace("/myoriadmin/sign-in");
         }
       }
     };
@@ -36,10 +36,15 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
       try {
         const response = await originalFetch(...args);
         if (response && (response.status === 401 || response.status === 403)) {
+          // 토큰 만료 또는 인증 실패
           localStorage.removeItem("user");
           localStorage.removeItem("accessToken");
-          if (pathname !== "/myoriadmin/sign-in") {
-            router.push("/myoriadmin/sign-in");
+          setIsAuthenticated(false);
+          
+          // 현재 경로가 로그인 페이지가 아니면 리다이렉트
+          const currentPath = window.location.pathname;
+          if (currentPath !== "/myoriadmin/sign-in" && currentPath.startsWith("/myoriadmin")) {
+            router.replace("/myoriadmin/sign-in");
           }
         }
         return response;
