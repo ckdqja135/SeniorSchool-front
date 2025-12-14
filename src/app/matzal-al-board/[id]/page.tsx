@@ -415,16 +415,16 @@ export default function MatzalAlBoardDetailPage() {
     e.preventDefault();
     
     try {
-      const response = await fetch('https://api.reviewhub.life/restaurant/comment', {
+      const response = await fetch('https://api.reviewhub.life/restaurant/comment/insert', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           boardIdx: parseInt(boardId),
-          commentContent: commentForm.content,
           writerId: commentForm.writer,
-          password: commentForm.password
+          writerPw: commentForm.password,
+          commentContent: commentForm.content
         }),
       });
 
@@ -454,16 +454,16 @@ export default function MatzalAlBoardDetailPage() {
     e.preventDefault();
     
     try {
-      const response = await fetch('https://api.reviewhub.life/restaurant/comment', {
+      const response = await fetch('https://api.reviewhub.life/restaurant/comment/insert', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           boardIdx: parseInt(boardId),
-          commentContent: replyForm.content,
           writerId: replyForm.writer,
-          password: replyForm.password,
+          writerPw: replyForm.password,
+          commentContent: replyForm.content,
           parentIdx: parentIdx
         }),
       });

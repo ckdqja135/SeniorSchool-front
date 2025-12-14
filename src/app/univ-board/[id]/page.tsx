@@ -394,7 +394,10 @@ export default function BoardDetailPage() {
     setError(null);
     
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
+      if (!backendURL) {
+        throw new Error('NEXT_PUBLIC_BASE_URL is not defined');
+      }
       const response = await fetch(`${backendURL}/board/detail?boardIdx=${boardId}`);
       
       if (!response.ok) {
@@ -414,7 +417,10 @@ export default function BoardDetailPage() {
 
   const fetchComments = async () => {
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
+      if (!backendURL) {
+        throw new Error('NEXT_PUBLIC_BASE_URL is not defined');
+      }
       const response = await fetch(`${backendURL}/comment?boardIdx=${boardId}`);
       
       if (response.ok) {
@@ -422,14 +428,40 @@ export default function BoardDetailPage() {
         
         // 데이터가 배열인지 확인하고 안전하게 설정
         if (Array.isArray(data)) {
-          setComments(data);
-          setTotalComments(data.length);
+          // 문자열로 온 숫자 필드를 숫자로 변환
+          let commentsData: Comment[] = data.map(comment => ({
+            ...comment,
+            commentIdx: typeof comment.commentIdx === 'string' ? parseInt(comment.commentIdx, 10) : comment.commentIdx,
+            boardIdx: typeof comment.boardIdx === 'string' ? parseInt(comment.boardIdx, 10) : comment.boardIdx,
+            commentLike: typeof comment.commentLike === 'string' ? parseInt(comment.commentLike, 10) : comment.commentLike,
+            commentDepth: typeof comment.commentDepth === 'string' ? parseInt(comment.commentDepth, 10) : comment.commentDepth,
+            commentPerent: typeof comment.commentPerent === 'string' ? parseInt(comment.commentPerent, 10) : comment.commentPerent,
+          }));
           
-          if (data.length > 0) {
-            // 초기 댓글 ID 설정 (최신순으로 2개)
-            const initialIds = pickNextIdsFromList(data, new Set(), commentsPerLoad);
+          // 계층 구조로 정리 (정렬은 나중에)
+          const organizedComments = organizeComments(commentsData);
+          
+          // 계층 구조로 정리된 모든 댓글을 평탄화 (최상위 + 대댓글 모두 포함)
+          const allFlattenedComments = organizedComments.flatMap(comment => [
+            comment,
+            ...(comment.replies || [])
+          ]);
+          
+          // 모든 댓글을 regDate 기준으로 최신순 정렬 (최신 댓글이 위, 오래된 댓글이 아래)
+          allFlattenedComments.sort((a, b) => {
+            const dateA = new Date(a.regDate || 0).getTime();
+            const dateB = new Date(b.regDate || 0).getTime();
+            return dateB - dateA; // 최신순 (내림차순)
+          });
+          
+          setComments(commentsData);
+          setTotalComments(commentsData.length);
+          
+          if (allFlattenedComments.length > 0) {
+            // 초기 댓글 로드 - 최신 댓글부터 보이도록 (최신순 정렬된 상태에서 처음 N개)
+            const initialIds = new Set(allFlattenedComments.slice(0, commentsPerLoad).map(comment => comment.commentIdx));
             setVisibleIds(initialIds);
-            setHasMoreComments(data.length > commentsPerLoad);
+            setHasMoreComments(allFlattenedComments.length > commentsPerLoad);
           } else {
             setVisibleIds(new Set());
             setHasMoreComments(false);
@@ -477,7 +509,10 @@ export default function BoardDetailPage() {
     e.preventDefault();
     
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
+      if (!backendURL) {
+        throw new Error('NEXT_PUBLIC_BASE_URL is not defined');
+      }
       const commentData = {
         commentWriter: commentForm.writer.trim(),
         commentPw: commentForm.password.trim(),
@@ -517,7 +552,10 @@ export default function BoardDetailPage() {
     if (!boardPost) return;
     
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
+      if (!backendURL) {
+        throw new Error('NEXT_PUBLIC_BASE_URL is not defined');
+      }
       const response = await fetch(`${backendURL}/board/correct`, {
         method: 'PUT',
         headers: {
@@ -550,7 +588,10 @@ export default function BoardDetailPage() {
     if (!boardPost) return;
     
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
+      if (!backendURL) {
+        throw new Error('NEXT_PUBLIC_BASE_URL is not defined');
+      }
       const response = await fetch(`${backendURL}/board/delete`, {
         method: 'DELETE',
         headers: {
@@ -595,7 +636,10 @@ export default function BoardDetailPage() {
     try {
       setIsLikeLoading(true); // 로딩 시작
       
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
+      if (!backendURL) {
+        throw new Error('NEXT_PUBLIC_BASE_URL is not defined');
+      }
       const parsedBoardId = parseInt(boardId);
       const requestBody = { 
         boardIdx: parsedBoardId,
@@ -636,7 +680,10 @@ export default function BoardDetailPage() {
   // 좋아요 수 조회
   const fetchLikeCount = async () => {
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
+      if (!backendURL) {
+        throw new Error('NEXT_PUBLIC_BASE_URL is not defined');
+      }
       const response = await fetch(`${backendURL}/board/like/${boardId}`);
       
       if (response.ok) {
@@ -660,7 +707,10 @@ export default function BoardDetailPage() {
     e.preventDefault();
     
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
+      if (!backendURL) {
+        throw new Error('NEXT_PUBLIC_BASE_URL is not defined');
+      }
       const editData = {
         commentIdx: editCommentForm.commentIdx,
         commentContent: editCommentForm.content.trim(),
@@ -694,7 +744,10 @@ export default function BoardDetailPage() {
   // 댓글 삭제
   const handleDeleteComment = async () => {
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
+      if (!backendURL) {
+        throw new Error('NEXT_PUBLIC_BASE_URL is not defined');
+      }
       const deleteData = {
         commentIdx: deleteCommentData.commentIdx,
         commentPw: deleteCommentData.password.trim()
@@ -732,25 +785,45 @@ export default function BoardDetailPage() {
     });
 
     const roots: Comment[] = [];
-    list.forEach(c => {
-      if (allowedIds && !allowedIds.has(c.commentIdx)) return;
-
+    // allowedIds가 있으면 필터링된 리스트를 사용하되, 원본 순서 유지
+    const filteredList = allowedIds 
+      ? list.filter(c => allowedIds.has(c.commentIdx))
+      : list;
+    
+    // 필터링된 리스트를 regDate 기준으로 정렬 (오래된 순)
+    const sortedList = [...filteredList].sort((a, b) => {
+      const dateA = new Date(a.regDate || 0).getTime();
+      const dateB = new Date(b.regDate || 0).getTime();
+      return dateA - dateB; // 오래된 순 (오름차순)
+    });
+    
+    sortedList.forEach(c => {
       const node = byId.get(c.commentIdx)!;
       const pid = c.commentPerent;
-      if (pid && allowedIds?.has(pid)) {
+      // allowedIds가 없으면 모든 댓글을 처리하거나, allowedIds가 있으면 부모가 visibleIds에 있는 경우에만 답글로 연결
+      if (pid && pid !== 0 && (!allowedIds || allowedIds.has(pid))) {
         const parent = byId.get(pid);
-        parent?.replies?.push(node);   // ✅ 항상 맵의 노드만 사용
+        if (parent) {
+          parent.replies?.push(node);   // 항상 맵의 노드만 사용
+        } else {
+          // 부모를 찾을 수 없으면 루트로 추가
+          roots.push(node);
+        }
       } else {
         roots.push(node);
       }
     });
 
-    // 정렬(선택)
-    const sortTree = (arr: Comment[]) => {
-      arr.sort((a, b) => a.commentIdx - b.commentIdx);
-      arr.forEach(n => n.replies && sortTree(n.replies));
+    // 각 댓글의 replies도 regDate 기준으로 오래된 순 정렬 (화면 표시 시 오래된 순)
+    const sortReplies = (arr: Comment[]) => {
+      arr.sort((a, b) => {
+        const dateA = new Date(a.regDate || 0).getTime();
+        const dateB = new Date(b.regDate || 0).getTime();
+        return dateA - dateB; // 오래된 순 (오름차순)
+      });
+      arr.forEach(n => n.replies && sortReplies(n.replies));
     };
-    sortTree(roots);
+    sortReplies(roots);
 
     return roots;
   };
@@ -770,9 +843,15 @@ export default function BoardDetailPage() {
     return next;
   };
 
-  // 보조 유틸: 리스트에서 직접 ID 선택
+  // 보조 유틸: 리스트에서 직접 ID 선택 (더보기 시 오래된 댓글부터 추가)
   const pickNextIdsFromList = (list: Comment[], currentIds: Set<number>, addCount: number) => {
-    const sorted = [...list].sort((a, b) => a.commentIdx - b.commentIdx); // commentIdx 순서대로 정렬
+    // regDate 기준으로 오래된 순 정렬 (오래된 댓글이 먼저, 최신 댓글이 아래)
+    // 더보기 버튼을 누를 때는 오래된 댓글부터 추가로 보여줌
+    const sorted = [...list].sort((a, b) => {
+      const dateA = new Date(a.regDate || 0).getTime();
+      const dateB = new Date(b.regDate || 0).getTime();
+      return dateA - dateB; // 오래된 순 (오름차순)
+    });
     const next = new Set(currentIds);
     for (const c of sorted) {
       if (next.size - currentIds.size >= addCount) break;
@@ -808,7 +887,10 @@ export default function BoardDetailPage() {
     try {
       setIsReportLoading(true);
       
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
+      if (!backendURL) {
+        throw new Error('NEXT_PUBLIC_BASE_URL is not defined');
+      }
       const reportData = {
         boardIdx: boardPost.boardIdx,
         serviceType: 'univ',
@@ -846,7 +928,10 @@ export default function BoardDetailPage() {
     e.preventDefault();
     
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
+      if (!backendURL) {
+        throw new Error('NEXT_PUBLIC_BASE_URL is not defined');
+      }
       const replyData = {
         commentWriter: replyForm.writer.trim(),
         commentPw: replyForm.password.trim(),

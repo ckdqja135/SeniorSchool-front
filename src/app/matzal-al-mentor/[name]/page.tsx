@@ -533,6 +533,13 @@ export default function RestaurantDetailPage() {
                       <div
                         key={board.boardIdx}
                         className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                        onClick={() => {
+                          // 식당 정보를 sessionStorage에 저장 (뒤로가기 시 사용)
+                          if (restaurant?.restaurantName) {
+                            sessionStorage.setItem('previousMatzalAlName', restaurant.restaurantName);
+                          }
+                          router.push(`/matzal-al-board/${board.boardIdx}`);
+                        }}
                       >
                         <h3 className="font-semibold text-gray-900 mb-2">{board.boardTitle}</h3>
                         <div className="flex justify-between items-center text-xs text-gray-500 mb-2">

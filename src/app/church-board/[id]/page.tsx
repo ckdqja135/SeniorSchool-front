@@ -149,11 +149,15 @@ const CommentItem = ({
           <form onSubmit={(e) => { e.preventDefault(); handleReplySubmit(comment.commentIdx); }} className="space-y-3">
             <textarea
               value={replyForm.content}
-              onChange={(e) => setReplyForm({ ...replyForm, content: e.target.value })}
+              onChange={(e) => {
+                if (e.target.value.length <= 500) {
+                  setReplyForm({ ...replyForm, content: e.target.value });
+                }
+              }}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
               rows={2}
-              maxLength={100}
-              placeholder="답글을 입력하세요..."
+              maxLength={500}
+              placeholder="답글을 입력하세요... (최대 500자)"
               required
             />
             
@@ -196,7 +200,7 @@ const CommentItem = ({
             </div>
             
             <p className="text-xs text-gray-500 text-right">
-              {replyForm.content.length}/100
+              {replyForm.content.length}/500
             </p>
           </form>
         </div>
@@ -338,7 +342,10 @@ export default function ChurchBoardDetailPage() {
         setIsLoading(true);
         setError(null);
         
-        const backendURL = 'https://api.reviewhub.life';
+        const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
+      if (!backendURL) {
+        throw new Error('NEXT_PUBLIC_BASE_URL is not defined');
+      }
         const response = await fetch(`${backendURL}/church/boards/detail?boardIdx=${boardIdx}`);
         
         if (!response.ok) {
@@ -396,7 +403,10 @@ export default function ChurchBoardDetailPage() {
         setIsCommentLoading(true);
         setCommentError(null);
         
-        const backendURL = 'https://api.reviewhub.life';
+        const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
+      if (!backendURL) {
+        throw new Error('NEXT_PUBLIC_BASE_URL is not defined');
+      }
         const response = await fetch(`${backendURL}/church/comment?boardIdx=${boardIdx}`);
         
         if (!response.ok) {
@@ -416,15 +426,23 @@ export default function ChurchBoardDetailPage() {
         }
         
         // 문자열로 온 숫자 필드를 숫자로 변환
-        commentsData = commentsData.map(comment => ({
-          ...comment,
-          commentIdx: typeof comment.commentIdx === 'string' ? parseInt(comment.commentIdx, 10) : comment.commentIdx,
-          boardIdx: typeof comment.boardIdx === 'string' ? parseInt(comment.boardIdx, 10) : comment.boardIdx,
-          commentLike: typeof comment.commentLike === 'string' ? parseInt(comment.commentLike, 10) : comment.commentLike,
-          commentDepth: typeof comment.commentDepth === 'string' ? parseInt(comment.commentDepth, 10) : comment.commentDepth,
-          commentParent: typeof comment.commentParent === 'string' ? parseInt(comment.commentParent, 10) : comment.commentParent,
-        }));
+        commentsData = commentsData.map(comment => {
+          // commentPerent (오타) 필드도 처리
+          const parentValue = (comment as any).commentPerent !== undefined 
+            ? (comment as any).commentPerent 
+            : comment.commentParent;
+          
+          return {
+            ...comment,
+            commentIdx: typeof comment.commentIdx === 'string' ? parseInt(comment.commentIdx, 10) : comment.commentIdx,
+            boardIdx: typeof comment.boardIdx === 'string' ? parseInt(comment.boardIdx, 10) : comment.boardIdx,
+            commentLike: typeof comment.commentLike === 'string' ? parseInt(comment.commentLike, 10) : comment.commentLike,
+            commentDepth: typeof comment.commentDepth === 'string' ? parseInt(comment.commentDepth, 10) : comment.commentDepth,
+            commentParent: typeof parentValue === 'string' ? parseInt(parentValue, 10) : (typeof parentValue === 'number' ? parentValue : 0),
+          };
+        });
         
+        // 계층 구조로 정리 (정렬은 나중에)
         const organizedComments = organizeComments(commentsData);
         setComments(organizedComments);
         setTotalComments(commentsData.length);
@@ -435,7 +453,14 @@ export default function ChurchBoardDetailPage() {
           ...(comment.replies || [])
         ]);
         
-        // 초기 댓글 로드 - 계층 구조로 정리된 댓글 기준
+        // 모든 댓글을 regDate 기준으로 최신순 정렬 (최신 댓글이 위, 오래된 댓글이 아래)
+        allFlattenedComments.sort((a, b) => {
+          const dateA = new Date(a.regDate || 0).getTime();
+          const dateB = new Date(b.regDate || 0).getTime();
+          return dateB - dateA; // 최신순 (내림차순)
+        });
+        
+        // 초기 댓글 로드 - 최신 댓글부터 보이도록 (최신순 정렬된 상태에서 처음 N개)
         const initialIds = new Set(allFlattenedComments.slice(0, commentsPerLoad).map(comment => comment.commentIdx));
         setVisibleIds(initialIds);
         setHasMoreComments(allFlattenedComments.length > commentsPerLoad);
@@ -479,6 +504,29 @@ export default function ChurchBoardDetailPage() {
       }
     });
 
+    // 최상위 댓글들을 regDate 기준으로 최신순 정렬 (표시 순서는 나중에 결정)
+    rootComments.sort((a, b) => {
+      const dateA = new Date(a.regDate || 0).getTime();
+      const dateB = new Date(b.regDate || 0).getTime();
+      return dateB - dateA; // 최신순 (내림차순)
+    });
+
+    // 각 댓글의 replies도 regDate 기준으로 최신순 정렬 (표시 순서는 나중에 결정)
+    const sortReplies = (comment: ChurchComment & { replies: ChurchComment[] }) => {
+      if (comment.replies && comment.replies.length > 0) {
+        comment.replies.sort((a, b) => {
+          const dateA = new Date(a.regDate || 0).getTime();
+          const dateB = new Date(b.regDate || 0).getTime();
+          return dateB - dateA; // 최신순 (내림차순)
+        });
+        comment.replies.forEach((reply) => {
+          const replyWithReplies = reply as ChurchComment & { replies: ChurchComment[] };
+          sortReplies(replyWithReplies);
+        });
+      }
+    };
+    rootComments.forEach(sortReplies);
+
     return rootComments;
   };
 
@@ -488,7 +536,10 @@ export default function ChurchBoardDetailPage() {
       setIsCommentLoading(true);
       setCommentError(null);
       
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
+      if (!backendURL) {
+        throw new Error('NEXT_PUBLIC_BASE_URL is not defined');
+      }
       const response = await fetch(`${backendURL}/church/comment?boardIdx=${boardIdx}`);
       
       if (!response.ok) {
@@ -508,15 +559,23 @@ export default function ChurchBoardDetailPage() {
       }
       
       // 문자열로 온 숫자 필드를 숫자로 변환
-      commentsData = commentsData.map(comment => ({
-        ...comment,
-        commentIdx: typeof comment.commentIdx === 'string' ? parseInt(comment.commentIdx, 10) : comment.commentIdx,
-        boardIdx: typeof comment.boardIdx === 'string' ? parseInt(comment.boardIdx, 10) : comment.boardIdx,
-        commentLike: typeof comment.commentLike === 'string' ? parseInt(comment.commentLike, 10) : comment.commentLike,
-        commentDepth: typeof comment.commentDepth === 'string' ? parseInt(comment.commentDepth, 10) : comment.commentDepth,
-        commentParent: typeof comment.commentParent === 'string' ? parseInt(comment.commentParent, 10) : comment.commentParent,
-      }));
+      commentsData = commentsData.map(comment => {
+        // commentPerent (오타) 필드도 처리
+        const parentValue = (comment as any).commentPerent !== undefined 
+          ? (comment as any).commentPerent 
+          : comment.commentParent;
+        
+        return {
+          ...comment,
+          commentIdx: typeof comment.commentIdx === 'string' ? parseInt(comment.commentIdx, 10) : comment.commentIdx,
+          boardIdx: typeof comment.boardIdx === 'string' ? parseInt(comment.boardIdx, 10) : comment.boardIdx,
+          commentLike: typeof comment.commentLike === 'string' ? parseInt(comment.commentLike, 10) : comment.commentLike,
+          commentDepth: typeof comment.commentDepth === 'string' ? parseInt(comment.commentDepth, 10) : comment.commentDepth,
+          commentParent: typeof parentValue === 'string' ? parseInt(parentValue, 10) : (typeof parentValue === 'number' ? parentValue : 0),
+        };
+      });
       
+      // 계층 구조로 정리 (정렬은 나중에)
       const organizedComments = organizeComments(commentsData);
       setComments(organizedComments);
       setTotalComments(commentsData.length);
@@ -527,7 +586,14 @@ export default function ChurchBoardDetailPage() {
         ...(comment.replies || [])
       ]);
       
-      // 초기 댓글 로드 - 계층 구조로 정리된 댓글 기준
+      // 모든 댓글을 regDate 기준으로 최신순 정렬 (최신 댓글이 위, 오래된 댓글이 아래)
+      allFlattenedComments.sort((a, b) => {
+        const dateA = new Date(a.regDate || 0).getTime();
+        const dateB = new Date(b.regDate || 0).getTime();
+        return dateB - dateA; // 최신순 (내림차순)
+      });
+      
+      // 초기 댓글 로드 - 최신 댓글부터 보이도록 (최신순 정렬된 상태에서 처음 N개)
       const initialIds = new Set(allFlattenedComments.slice(0, commentsPerLoad).map(comment => comment.commentIdx));
       setVisibleIds(initialIds);
       setHasMoreComments(allFlattenedComments.length > commentsPerLoad);
@@ -550,7 +616,10 @@ export default function ChurchBoardDetailPage() {
     }
     
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
+      if (!backendURL) {
+        throw new Error('NEXT_PUBLIC_BASE_URL is not defined');
+      }
       const response = await fetch(`${backendURL}/church/comment/insert`, {
         method: 'POST',
         headers: {
@@ -587,7 +656,10 @@ export default function ChurchBoardDetailPage() {
     }
     
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
+      if (!backendURL) {
+        throw new Error('NEXT_PUBLIC_BASE_URL is not defined');
+      }
       const response = await fetch(`${backendURL}/church/comment/insert`, {
         method: 'POST',
         headers: {
@@ -623,7 +695,10 @@ export default function ChurchBoardDetailPage() {
     
     try {
       setIsLikeLoading(true);
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
+      if (!backendURL) {
+        throw new Error('NEXT_PUBLIC_BASE_URL is not defined');
+      }
       const response = await fetch(`${backendURL}/church/boards/like`, {
         method: 'POST',
         headers: {
@@ -655,7 +730,10 @@ export default function ChurchBoardDetailPage() {
     e.preventDefault();
     
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
+      if (!backendURL) {
+        throw new Error('NEXT_PUBLIC_BASE_URL is not defined');
+      }
       const editData = {
         commentIdx: editCommentForm.commentIdx,
         commentContent: editCommentForm.content.trim(),
@@ -689,7 +767,10 @@ export default function ChurchBoardDetailPage() {
   // 댓글 삭제
   const handleDeleteComment = async () => {
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
+      if (!backendURL) {
+        throw new Error('NEXT_PUBLIC_BASE_URL is not defined');
+      }
       const deleteData = {
         commentIdx: deleteCommentData.commentIdx,
         commentPw: deleteCommentData.password.trim()
@@ -726,7 +807,10 @@ export default function ChurchBoardDetailPage() {
     if (!board) return;
     
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
+      if (!backendURL) {
+        throw new Error('NEXT_PUBLIC_BASE_URL is not defined');
+      }
       const response = await fetch(`${backendURL}/church/boards/report`, {
         method: 'POST',
         headers: {
@@ -758,7 +842,10 @@ export default function ChurchBoardDetailPage() {
     if (!board) return;
     
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
+      if (!backendURL) {
+        throw new Error('NEXT_PUBLIC_BASE_URL is not defined');
+      }
       const response = await fetch(`${backendURL}/church/boards/correct`, {
         method: 'PUT',
         headers: {
@@ -793,7 +880,10 @@ export default function ChurchBoardDetailPage() {
     if (!board) return;
     
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
+      if (!backendURL) {
+        throw new Error('NEXT_PUBLIC_BASE_URL is not defined');
+      }
       const response = await fetch(`${backendURL}/church/boards/delete`, {
         method: 'DELETE',
         headers: {
@@ -824,7 +914,16 @@ export default function ChurchBoardDetailPage() {
       ...(comment.replies || [])
     ]);
     
-    const nextComments = allComments.slice(visibleIds.size, visibleIds.size + commentsPerLoad);
+    // 모든 댓글을 regDate 기준으로 오래된 순 정렬 (더보기 시 오래된 댓글부터 추가)
+    const sortedByOldest = [...allComments].sort((a, b) => {
+      const dateA = new Date(a.regDate || 0).getTime();
+      const dateB = new Date(b.regDate || 0).getTime();
+      return dateA - dateB; // 오래된 순 (오름차순)
+    });
+    
+    // 아직 보이지 않은 댓글 중에서 오래된 순으로 N개 선택
+    const notVisibleComments = sortedByOldest.filter(comment => !visibleIds.has(comment.commentIdx));
+    const nextComments = notVisibleComments.slice(0, commentsPerLoad);
     const nextIds = nextComments.map(comment => comment.commentIdx);
     
     const newVisibleIds = new Set([...visibleIds, ...nextIds]);
@@ -1089,12 +1188,20 @@ export default function ChurchBoardDetailPage() {
             <div className="space-y-4">
               <textarea
                 value={commentForm.content}
-                onChange={(e) => setCommentForm(prev => ({ ...prev, content: e.target.value }))}
-                placeholder="댓글을 입력하세요..."
+                onChange={(e) => {
+                  if (e.target.value.length <= 500) {
+                    setCommentForm(prev => ({ ...prev, content: e.target.value }));
+                  }
+                }}
+                placeholder="댓글을 입력하세요... (최대 500자)"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 rows={4}
+                maxLength={500}
                 required
               />
+              <div className="text-right text-xs text-gray-500 mt-1">
+                {commentForm.content.length}/500
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <input
                   type="text"
@@ -1268,14 +1375,18 @@ export default function ChurchBoardDetailPage() {
                 </label>
                 <textarea
                   value={editCommentForm.content}
-                  onChange={(e) => setEditCommentForm({ ...editCommentForm, content: e.target.value })}
+                  onChange={(e) => {
+                    if (e.target.value.length <= 500) {
+                      setEditCommentForm({ ...editCommentForm, content: e.target.value });
+                    }
+                  }}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   rows={4}
-                  maxLength={100}
+                  maxLength={500}
                   required
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  {editCommentForm.content.length}/100
+                  {editCommentForm.content.length}/500
                 </p>
               </div>
               <div>
