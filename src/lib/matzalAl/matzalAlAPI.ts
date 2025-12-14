@@ -353,6 +353,7 @@ export const createRestaurantBoard = async (boardData: {
   restaurantIdx: number;
   boardID: string;
   boardPW: string;
+  boardRating?: number | null;
 }): Promise<boolean> => {
   try {
     const response = await fetch(`${BACKEND_URL}/restaurant/boards/insert`, {

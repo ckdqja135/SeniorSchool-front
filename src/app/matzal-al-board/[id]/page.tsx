@@ -20,6 +20,7 @@ interface MatzalAlBoard {
   like?: number;
   restaurantIdx: number;
   writerPw?: string;
+  boardRating?: number | null;
   restaurant?: {
     restaurantName: string;
     restaurantLocation: string;
@@ -313,8 +314,11 @@ export default function MatzalAlBoardDetailPage() {
   const [password, setPassword] = useState('');
   const [editForm, setEditForm] = useState({
     title: '',
-    content: ''
+    content: '',
+    rating: 0
   });
+  const [editRating, setEditRating] = useState(0);
+  const [hoveredEditRating, setHoveredEditRating] = useState<number | null>(null);
 
   // 메뉴 외부 클릭 시 닫기
   useEffect(() => {
@@ -351,13 +355,23 @@ export default function MatzalAlBoardDetailPage() {
         console.log('API 응답 데이터:', data);
         
         // API 응답이 직접 객체인 경우
+        let boardData = null;
         if (data.boardIdx) {
-          setBoardPost(data);
+          boardData = data;
         } else if (data.status === 200 && data.data) {
-          setBoardPost(data.data);
+          boardData = data.data;
         } else {
           throw new Error('게시글을 찾을 수 없습니다.');
         }
+        
+        // boardRating 문자열을 숫자로 변환
+        if (boardData && boardData.boardRating) {
+          boardData.boardRating = typeof boardData.boardRating === 'string' 
+            ? parseFloat(boardData.boardRating) 
+            : Number(boardData.boardRating);
+        }
+        
+        setBoardPost(boardData);
       } catch (err) {
         console.error('게시글 로딩 오류:', err);
         setError('게시글을 불러오는 중 오류가 발생했습니다.');
@@ -665,12 +679,55 @@ export default function MatzalAlBoardDetailPage() {
     }
   };
 
+  // 별점 정규화 함수
+  const normalizeRating = (value: any): number | null => {
+    if (value === null || value === undefined) return null;
+    const parsed = typeof value === 'string' ? parseFloat(value) : value;
+    if (typeof parsed !== 'number' || Number.isNaN(parsed) || parsed <= 0) return null;
+    return Math.min(parsed, 5);
+  };
+
+  // 별점 렌더링 함수
+  const renderStarRating = (score?: number | null, size: 'sm' | 'md' = 'md') => {
+    // null이거나 0이면 빈 별 5개 표시
+    const safeScore = score && score > 0 ? Math.max(0, Math.min(score, 5)) : 0;
+    const sizeClasses = size === 'sm'
+      ? { wrapper: 'w-4 h-4 text-xs', star: 'text-xs' }
+      : { wrapper: 'w-6 h-6 text-lg', star: 'text-lg' };
+
+    return (
+      <div className="flex items-center space-x-1">
+        {Array.from({ length: 5 }).map((_, idx) => {
+          const fillLevel = Math.min(Math.max(safeScore - idx, 0), 1);
+          return (
+            <div key={`star-${idx}`} className={`relative ${sizeClasses.wrapper}`}>
+              <span className={`absolute inset-0 text-gray-300 select-none ${sizeClasses.star}`}>★</span>
+              <span
+                className={`absolute inset-0 text-yellow-400 overflow-hidden select-none ${sizeClasses.star}`}
+                style={{ width: `${fillLevel * 100}%` }}
+              >
+                ★
+              </span>
+              <span className={`invisible ${sizeClasses.star}`}>★</span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const currentBoardRating = normalizeRating((boardPost as any)?.boardRating ?? boardPost?.boardRating);
+  const displayedEditRating = hoveredEditRating ?? editRating;
+
   // 게시글 수정
   const handleEditPost = () => {
+    const currentRating = normalizeRating(boardPost?.boardRating) || 0;
     setEditForm({
       title: boardPost?.boardTitle || '',
-      content: boardPost?.boardContent || ''
+      content: boardPost?.boardContent || '',
+      rating: currentRating
     });
+    setEditRating(currentRating);
     setShowEditModal(true);
     setShowPostMenu(false);
   };
@@ -690,7 +747,7 @@ export default function MatzalAlBoardDetailPage() {
     }
 
     try {
-      const response = await fetch('https://api.reviewhub.life/restaurant/board/correct', {
+      const response = await fetch('https://api.reviewhub.life/restaurant/boards/correct', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -699,7 +756,8 @@ export default function MatzalAlBoardDetailPage() {
           boardIdx: parseInt(boardId),
           boardTitle: editForm.title,
           boardContent: editForm.content,
-          boardPw: password
+          boardPw: password,
+          boardRating: editRating > 0 ? editRating : null
         }),
       });
 
@@ -893,7 +951,18 @@ export default function MatzalAlBoardDetailPage() {
         <div className="bg-white rounded-lg shadow-md p-3 sm:p-6 mb-6">
           {/* 게시글 제목과 액션 버튼 */}
           <div className="flex justify-between items-start mb-6">
-            <h1 className="text-2xl font-bold text-gray-900 flex-1">{boardPost.boardTitle}</h1>
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">{boardPost.boardTitle}</h1>
+              {/* 별점 표시 - null이어도 빈 별 5개 표시 */}
+              <div className="flex items-center space-x-2 mt-2">
+                {renderStarRating(boardPost.boardRating, 'md')}
+                <span className="text-sm text-gray-600">
+                  {boardPost.boardRating && boardPost.boardRating > 0
+                    ? `${boardPost.boardRating.toFixed(1)} / 5.0`
+                    : '평점 없음'}
+                </span>
+              </div>
+            </div>
             <div className="flex space-x-2 ml-4">
               <button
                 onClick={() => setShowReportModal(true)}
@@ -1315,6 +1384,52 @@ export default function MatzalAlBoardDetailPage() {
                 <p className="text-xs text-gray-500 mt-1">
                   {editForm.content.length}/700
                 </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">평점</label>
+                <div
+                  className="flex flex-col gap-2"
+                  onMouseLeave={() => setHoveredEditRating(null)}
+                >
+                  <div className="flex items-center space-x-2">
+                    {Array.from({ length: 5 }).map((_, idx) => {
+                      const fillLevel = Math.min(Math.max((displayedEditRating || 0) - idx, 0), 1);
+                      return (
+                        <div key={`edit-star-${idx}`} className="relative w-8 h-8 text-3xl leading-none cursor-pointer">
+                          <span className="absolute inset-0 text-gray-300 select-none">★</span>
+                          <span
+                            className="absolute inset-0 text-yellow-400 overflow-hidden select-none"
+                            style={{ width: `${fillLevel * 100}%` }}
+                          >
+                            ★
+                          </span>
+                          <span className="invisible">★</span>
+                          <div className="absolute inset-0 flex">
+                            <button
+                              type="button"
+                              className="w-1/2 h-full bg-transparent"
+                              aria-label={`${(idx + 0.5).toFixed(1)}점 선택`}
+                              onMouseEnter={() => setHoveredEditRating(idx + 0.5)}
+                              onFocus={() => setHoveredEditRating(idx + 0.5)}
+                              onClick={() => setEditRating(idx + 0.5)}
+                            />
+                            <button
+                              type="button"
+                              className="w-1/2 h-full bg-transparent"
+                              aria-label={`${(idx + 1).toFixed(1)}점 선택`}
+                              onMouseEnter={() => setHoveredEditRating(idx + 1)}
+                              onFocus={() => setHoveredEditRating(idx + 1)}
+                              onClick={() => setEditRating(idx + 1)}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    {editRating >= 0.5 ? `${editRating.toFixed(1)} / 5.0` : '필수는 아니지만 0.5 단위로 선택 가능합니다.'}
+                  </p>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">비밀번호</label>

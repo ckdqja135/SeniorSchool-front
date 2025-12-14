@@ -25,6 +25,8 @@ export interface Restaurant {
   restaurantMapIMG: string;
   restaurantStatus: number;
   restaurantViewCount: number;
+  averageRating?: number | null;
+  ratingCount?: number;
 }
 
 // 인기 맛잘알
@@ -49,6 +51,7 @@ export interface MatzalAlBoard {
   restaurant?: MatzalAl;
   boardID?: string;
   boardPW?: string;
+  boardRating?: number | null;
   // API 응답에 따라 추가 필드들
   id?: string;
   title?: string;

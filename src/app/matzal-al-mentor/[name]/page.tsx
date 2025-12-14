@@ -28,8 +28,10 @@ export default function RestaurantDetailPage() {
     boardTitle: '',
     boardContent: '',
     boardID: '',
-    boardPw: ''
+    boardPw: '',
+    boardRating: 0
   });
+  const [hoveredRating, setHoveredRating] = useState<number | null>(null);
   
   // 카카오맵 관련 상태
   const mapRef = useRef<HTMLDivElement>(null);
@@ -39,6 +41,7 @@ export default function RestaurantDetailPage() {
   // 중복 호출 방지를 위한 ref
   const lastFetchedRestaurantIdx = useRef<number | null>(null);
   const lastFetchedRestaurantKey = useRef<string | null>(null);
+  const lastFetchedBoardsParams = useRef<string | null>(null);
   
   // 페이징 관련 상태
   const [currentPage, setCurrentPage] = useState(1);
@@ -73,10 +76,7 @@ export default function RestaurantDetailPage() {
       
       if (restaurantData) {
         setRestaurant(restaurantData);
-        // 식당 정보가 로드되면 후기도 함께 로드
-        if (restaurantData.restaurantIdx) {
-          fetchRestaurantBoards(restaurantData.restaurantIdx);
-        }
+        // 식당 정보가 로드되면 후기도 함께 로드 (useEffect에서 처리하므로 여기서는 호출하지 않음)
       } else {
         setError('식당 정보를 찾을 수 없습니다.');
       }
@@ -89,33 +89,53 @@ export default function RestaurantDetailPage() {
   };
 
   // 식당 후기 목록 로드
-  const fetchRestaurantBoards = async (idx: number) => {
-    // 중복 호출 방지
-    if (lastFetchedRestaurantIdx.current === idx) return;
-    lastFetchedRestaurantIdx.current = idx;
+  const fetchRestaurantBoards = async (idx: number, forceRefresh = false) => {
+    const searchParams: any = { restaurantIdx: idx };
+    
+    // 검색 조건 추가
+    if (searchQuery.trim()) {
+      if (searchType === 'id') {
+        searchParams.id = searchQuery.trim();
+      } else if (searchType === 'title') {
+        searchParams.title = searchQuery.trim();
+      } else if (searchType === 'content') {
+        searchParams.content = searchQuery.trim();
+      }
+    }
+    
+    // 중복 호출 방지: 파라미터를 문자열로 변환하여 비교
+    const paramsKey = JSON.stringify({ idx, searchQuery, searchType, sortOrder });
+    if (!forceRefresh && lastFetchedBoardsParams.current === paramsKey) {
+      return;
+    }
+    lastFetchedBoardsParams.current = paramsKey;
 
     try {
       setIsBoardLoading(true);
       setBoardError(null);
       
-      const searchParams: any = { restaurantIdx: idx };
-      
-      // 검색 조건 추가
-      if (searchQuery.trim()) {
-        if (searchType === 'id') {
-          searchParams.id = searchQuery.trim();
-        } else if (searchType === 'title') {
-          searchParams.title = searchQuery.trim();
-        } else if (searchType === 'content') {
-          searchParams.content = searchQuery.trim();
-        }
-      }
-      
       const boardData = await getRestaurantBoards(searchParams);
       
       if (Array.isArray(boardData)) {
+        // boardRating 문자열을 숫자로 변환
+        const mappedBoards = boardData.map((board: any) => {
+          // boardRating이 존재하고 null이 아닌 경우에만 변환
+          if (board.boardRating !== null && board.boardRating !== undefined && board.boardRating !== '') {
+            board.boardRating = typeof board.boardRating === 'string' 
+              ? parseFloat(board.boardRating) 
+              : Number(board.boardRating);
+            // NaN 체크
+            if (isNaN(board.boardRating)) {
+              board.boardRating = null;
+            }
+          } else {
+            board.boardRating = null;
+          }
+          return board;
+        });
+        
         // 정렬 적용
-        const sortedBoards = [...boardData].sort((a, b) => {
+        const sortedBoards = [...mappedBoards].sort((a, b) => {
           const dateA = new Date(a.boardRegDate).getTime();
           const dateB = new Date(b.boardRegDate).getTime();
           return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
@@ -138,13 +158,12 @@ export default function RestaurantDetailPage() {
     fetchRestaurantDetail();
   }, [restaurantName, restaurantAddr]);
 
-  // 후기 목록 재로드 (검색어나 정렬 변경 시)
+  // 후기 목록 재로드 (식당 정보 로드 시 또는 검색어/정렬 변경 시)
   useEffect(() => {
     if (restaurant?.restaurantIdx) {
-      lastFetchedRestaurantIdx.current = null; // 캐시 무효화
       fetchRestaurantBoards(restaurant.restaurantIdx);
     }
-  }, [searchQuery, searchType, sortOrder, restaurant?.restaurantIdx]);
+  }, [restaurant?.restaurantIdx, searchQuery, searchType, sortOrder]);
 
   // 카카오맵 로드
   useEffect(() => {
@@ -257,6 +276,11 @@ export default function RestaurantDetailPage() {
       return;
     }
 
+    if (!writeForm.boardRating || writeForm.boardRating < 0.5) {
+      alert('별점을 선택해주세요. (0.5점 이상)');
+      return;
+    }
+
     setIsSubmitting(true);
     
     try {
@@ -265,7 +289,8 @@ export default function RestaurantDetailPage() {
         boardContent: writeForm.boardContent,
         restaurantIdx: restaurant.restaurantIdx,
         boardID: writeForm.boardID,
-        boardPW: writeForm.boardPw
+        boardPW: writeForm.boardPw,
+        boardRating: writeForm.boardRating > 0 ? writeForm.boardRating : null
       });
 
       if (success) {
@@ -275,12 +300,13 @@ export default function RestaurantDetailPage() {
           boardTitle: '',
           boardContent: '',
           boardID: '',
-          boardPw: ''
+          boardPw: '',
+          boardRating: 0
         });
+        setHoveredRating(null);
         
         // 후기 목록 새로고침
-        lastFetchedRestaurantIdx.current = null;
-        fetchRestaurantBoards(restaurant.restaurantIdx);
+        fetchRestaurantBoards(restaurant.restaurantIdx, true);
       } else {
         alert('후기 등록에 실패했습니다. 다시 시도해주세요.');
       }
@@ -311,6 +337,49 @@ export default function RestaurantDetailPage() {
     return `${diffInMonths}개월 전`;
   };
 
+  // 날짜 포맷팅 함수 (YYYY-MM-DD HH:mm:ss)
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  };
+
+  // 별점 렌더링 함수
+  const renderStarRating = (score?: number | null, size: 'sm' | 'md' | 'lg' = 'sm') => {
+    // null이거나 0이면 빈 별 5개 표시
+    const safeScore = score && score > 0 ? Math.max(0, Math.min(score, 5)) : 0;
+    const sizeClasses = size === 'sm'
+      ? { wrapper: 'w-4 h-4 text-xs', star: 'text-sm' }
+      : size === 'md'
+      ? { wrapper: 'w-5 h-5 text-base', star: 'text-base' }
+      : { wrapper: 'w-6 h-6 text-lg', star: 'text-lg' };
+
+    return (
+      <div className="flex items-center space-x-1">
+        {Array.from({ length: 5 }).map((_, idx) => {
+          const fillLevel = Math.min(Math.max(safeScore - idx, 0), 1);
+          return (
+            <div key={`star-${idx}`} className={`relative ${sizeClasses.wrapper}`}>
+              <span className={`absolute inset-0 text-gray-300 select-none ${sizeClasses.star}`}>★</span>
+              <span
+                className={`absolute inset-0 text-yellow-400 overflow-hidden select-none ${sizeClasses.star}`}
+                style={{ width: `${fillLevel * 100}%` }}
+              >
+                ★
+              </span>
+              <span className={`invisible ${sizeClasses.star}`}>★</span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+  
   // 페이지네이션된 후기 목록
   const paginatedBoards = boards.slice(
     (currentPage - 1) * itemsPerPage,
@@ -406,6 +475,31 @@ export default function RestaurantDetailPage() {
                 <div className="bg-orange-50 p-3 rounded-lg border border-orange-100 hover:shadow-md transition-all duration-200">
                   <span className="text-xs text-orange-700 font-bold uppercase tracking-wider mb-1 block">상태</span>
                   <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-900 leading-relaxed">운영중</p>
+                </div>
+                {/* 평균 평점 */}
+                <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-100 hover:shadow-md transition-all duration-200 col-span-2">
+                  <span className="text-xs text-yellow-700 font-bold uppercase tracking-wider mb-1 block">평균 평점</span>
+                  <div className="flex items-center gap-3">
+                    {restaurant.averageRating !== null && restaurant.averageRating !== undefined && restaurant.averageRating > 0 ? (
+                      <>
+                        {renderStarRating(restaurant.averageRating, 'lg')}
+                        <span className="text-lg font-bold text-gray-900">
+                          {restaurant.averageRating.toFixed(1)} / 5.0
+                        </span>
+                        <span className="text-sm text-gray-600 font-medium ml-auto">
+                          {restaurant.ratingCount || 0}개의 후기
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        {renderStarRating(null, 'lg')}
+                        <span className="text-lg font-bold text-gray-900">평점 없음</span>
+                        <span className="text-sm text-gray-600 font-medium ml-auto">
+                          {restaurant.ratingCount || 0}개의 후기
+                        </span>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -541,10 +635,21 @@ export default function RestaurantDetailPage() {
                           router.push(`/matzal-al-board/${board.boardIdx}`);
                         }}
                       >
+                        {/* 별점 표시 - null이어도 빈 별 5개 표시 */}
+                        <div className="flex items-center mb-2">
+                          <div className="flex items-center space-x-2">
+                            {renderStarRating(board.boardRating, 'sm')}
+                            <span className="text-xs font-semibold text-gray-600">
+                              {board.boardRating && board.boardRating > 0 
+                                ? `${Number(board.boardRating).toFixed(1)} / 5.0`
+                                : '평점 없음'}
+                            </span>
+                          </div>
+                        </div>
                         <h3 className="font-semibold text-gray-900 mb-2">{board.boardTitle}</h3>
                         <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
                           <span>작성자: {board.boardID || '익명'}</span>
-                          <span>{formatTimeAgo(board.boardRegDate)}</span>
+                          <span>{formatDateTime(board.boardRegDate)}</span>
                         </div>
                         <div className="flex justify-between items-center text-xs text-gray-400">
                           <span>조회수: {board.boardHits}</span>
@@ -644,107 +749,138 @@ export default function RestaurantDetailPage() {
       {/* 후기 작성 모달 */}
       {showWriteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            {/* 모달 헤더 */}
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">후기 작성</h2>
-                <button
-                  onClick={() => setShowWriteModal(false)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">
+                {restaurant?.restaurantName || '식당'}의 후기를 남겨주세요
+              </h3>
+              <button
+                onClick={() => setShowWriteModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ×
+              </button>
             </div>
+            <form onSubmit={handleWriteSubmit} className="space-y-4">
+              {/* 평점 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  회사 평점 <span className="text-red-500">*</span>
+                </label>
+                <div
+                  className="flex flex-col gap-2"
+                  onMouseLeave={() => setHoveredRating(null)}
+                >
+                  <div className="flex items-center space-x-2">
+                    {Array.from({ length: 5 }).map((_, idx) => {
+                      const displayRating = hoveredRating !== null ? hoveredRating : writeForm.boardRating;
+                      const fillLevel = Math.min(Math.max((displayRating || 0) - idx, 0), 1);
+                      return (
+                        <div key={`star-${idx}`} className="relative w-8 h-8 text-3xl leading-none cursor-pointer">
+                          <span className="absolute inset-0 text-gray-300 select-none">★</span>
+                          <span
+                            className="absolute inset-0 text-yellow-400 overflow-hidden select-none"
+                            style={{ width: `${fillLevel * 100}%` }}
+                          >
+                            ★
+                          </span>
+                          <span className="invisible">★</span>
+                          <div className="absolute inset-0 flex">
+                            <button
+                              type="button"
+                              className="w-1/2 h-full bg-transparent"
+                              aria-label={`${(idx + 0.5).toFixed(1)}점 선택`}
+                              onMouseEnter={() => setHoveredRating(idx + 0.5)}
+                              onFocus={() => setHoveredRating(idx + 0.5)}
+                              onClick={() => setWriteForm({...writeForm, boardRating: idx + 0.5})}
+                            />
+                            <button
+                              type="button"
+                              className="w-1/2 h-full bg-transparent"
+                              aria-label={`${(idx + 1).toFixed(1)}점 선택`}
+                              onMouseEnter={() => setHoveredRating(idx + 1)}
+                              onFocus={() => setHoveredRating(idx + 1)}
+                              onClick={() => setWriteForm({...writeForm, boardRating: idx + 1})}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    {writeForm.boardRating >= 0.5 ? `${writeForm.boardRating.toFixed(1)} / 5.0` : '0.5 단위로 평점을 선택해주세요.'}
+                  </p>
+                </div>
+              </div>
 
-            {/* 모달 폼 */}
-            <form onSubmit={handleWriteSubmit} className="p-6 space-y-4">
               {/* 제목 */}
               <div>
-                <label htmlFor="boardTitle" className="block text-sm font-medium text-gray-700 mb-2">
-                  제목 *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">제목</label>
                 <input
                   type="text"
-                  id="boardTitle"
                   value={writeForm.boardTitle}
                   onChange={(e) => setWriteForm({...writeForm, boardTitle: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="후기 제목을 입력하세요"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  maxLength={40}
                   required
                 />
               </div>
 
               {/* 내용 */}
               <div>
-                <label htmlFor="boardContent" className="block text-sm font-medium text-gray-700 mb-2">
-                  내용 *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">내용</label>
                 <textarea
-                  id="boardContent"
                   value={writeForm.boardContent}
                   onChange={(e) => setWriteForm({...writeForm, boardContent: e.target.value})}
-                  rows={6}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="후기 내용을 입력하세요"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  rows={4}
+                  maxLength={700}
                   required
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  다른 사람의 인격권을 침해하거나 명예를 훼손하게 하는 글은 삭제될 수 있습니다.
+                </p>
               </div>
 
-              {/* 작성자 ID */}
-              <div>
-                <label htmlFor="boardID" className="block text-sm font-medium text-gray-700 mb-2">
-                  작성자 ID *
-                </label>
-                <input
-                  type="text"
-                  id="boardID"
-                  value={writeForm.boardID}
-                  onChange={(e) => setWriteForm({...writeForm, boardID: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="작성자 ID를 입력하세요"
-                  required
-                />
+              {/* 작성자, 비밀번호 */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">작성자</label>
+                  <input
+                    type="text"
+                    value={writeForm.boardID}
+                    onChange={(e) => setWriteForm({...writeForm, boardID: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">비밀번호</label>
+                  <input
+                    type="password"
+                    value={writeForm.boardPw}
+                    onChange={(e) => setWriteForm({...writeForm, boardPw: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    required
+                  />
+                </div>
               </div>
 
-              {/* 비밀번호 */}
-              <div>
-                <label htmlFor="boardPw" className="block text-sm font-medium text-gray-700 mb-2">
-                  비밀번호 *
-                </label>
-                <input
-                  type="password"
-                  id="boardPw"
-                  value={writeForm.boardPw}
-                  onChange={(e) => setWriteForm({...writeForm, boardPw: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="비밀번호를 입력하세요"
-                  required
-                />
-              </div>
-
-              {/* 제출 버튼 */}
-              <div className="flex space-x-3 pt-4">
+              {/* 버튼 */}
+              <div className="flex justify-end space-x-3 pt-6">
                 <button
                   type="button"
                   onClick={() => setShowWriteModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-6 py-2.5 text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 font-medium"
                 >
-                  취소
+                  닫기
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors ${
-                    isSubmitting
-                      ? 'bg-blue-400 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700'
-                  }`}
+                  className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
-                  {isSubmitting ? '등록 중...' : '등록하기'}
+                  {isSubmitting ? '등록 중...' : '글쓰기'}
                 </button>
               </div>
             </form>
