@@ -14,6 +14,28 @@ const CommentItem = ({ comment, onEdit, onDelete, onReply }: {
   const [showMenu, setShowMenu] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   
+  // 햄버거 메뉴 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      // 햄버거 메뉴 버튼이나 드롭다운 메뉴 내부 클릭인지 확인
+      const isMenuButton = target.closest('button[class*="hover:text-gray-600"]');
+      const isDropdownMenu = target.closest('.absolute.right-0.mt-1');
+      
+      if (showMenu && !isMenuButton && !isDropdownMenu) {
+        setShowMenu(false);
+      }
+    };
+
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showMenu]);
+  
   const MAX_LENGTH = 500;
   const LINE_BREAK_LENGTH = 80; // 한 줄에 표시할 최대 글자수
   const content = comment.commentContent || '';
@@ -1127,18 +1149,18 @@ export default function CompanyBoardDetailPage() {
                             <textarea
                               value={replyForm.content}
                               onChange={(e) => {
-                                if (e.target.value.length <= 500) {
+                                if (e.target.value.length <= 200) {
                                   setReplyForm({...replyForm, content: e.target.value});
                                 }
                               }}
-                              placeholder="답글을 입력하세요... (최대 500자)"
+                              placeholder="답글을 입력하세요... (최대 200자)"
                               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
                               rows={3}
-                              maxLength={500}
+                              maxLength={200}
                               required
                             />
                             <div className="text-right text-xs text-gray-500 mt-1">
-                              {replyForm.content.length}/500
+                              {replyForm.content.length}/200
                             </div>
                             <div className="space-y-3">
                               <div className="flex space-x-1 sm:space-x-2">
@@ -1200,18 +1222,18 @@ export default function CompanyBoardDetailPage() {
                 <textarea
                   value={commentForm.content}
                   onChange={(e) => {
-                    if (e.target.value.length <= 500) {
+                    if (e.target.value.length <= 200) {
                       setCommentForm({...commentForm, content: e.target.value});
                     }
                   }}
-                  placeholder="댓글을 입력하세요... (최대 500자)"
+                  placeholder="댓글을 입력하세요... (최대 200자)"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                   rows={3}
-                  maxLength={500}
+                  maxLength={200}
                   required
                 />
                 <div className="text-right text-xs text-gray-500 mt-1">
-                  {commentForm.content.length}/500
+                  {commentForm.content.length}/200
                 </div>
               </div>
               <div className="space-y-3">

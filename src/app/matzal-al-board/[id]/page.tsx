@@ -176,12 +176,20 @@ const CommentItem = ({
           <form onSubmit={(e) => handleReplySubmit(e, comment.commentIdx)} className="space-y-3">
             <textarea
               value={replyForm.content}
-              onChange={(e) => setReplyForm({...replyForm, content: e.target.value})}
-              placeholder="답글을 입력하세요"
+              onChange={(e) => {
+                if (e.target.value.length <= 200) {
+                  setReplyForm({...replyForm, content: e.target.value});
+                }
+              }}
+              placeholder="답글을 입력하세요 (최대 200자)"
               className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               rows={3}
+              maxLength={200}
               required
             />
+            <div className="text-right text-xs text-gray-500 mt-1">
+              {replyForm.content.length}/200
+            </div>
             <div className="flex gap-2">
               <input
                 type="text"
@@ -1069,8 +1077,12 @@ export default function MatzalAlBoardDetailPage() {
               <div>
                 <textarea
                   value={commentForm.content}
-                  onChange={(e) => setCommentForm({...commentForm, content: e.target.value})}
-                  placeholder="댓글을 입력하세요..."
+                  onChange={(e) => {
+                    if (e.target.value.length <= 200) {
+                      setCommentForm({...commentForm, content: e.target.value});
+                    }
+                  }}
+                  placeholder="댓글을 입력하세요... (최대 200자)"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                   rows={3}
                   maxLength={200}
@@ -1185,11 +1197,19 @@ export default function MatzalAlBoardDetailPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">댓글 내용</label>
                   <textarea
                     value={editCommentForm.content}
-                    onChange={(e) => setEditCommentForm({...editCommentForm, content: e.target.value})}
+                    onChange={(e) => {
+                      if (e.target.value.length <= 200) {
+                        setEditCommentForm({...editCommentForm, content: e.target.value});
+                      }
+                    }}
                     className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     rows={3}
+                    maxLength={200}
                     required
                   />
+                  <div className="text-right text-xs text-gray-500 mt-1">
+                    {editCommentForm.content.length}/200
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">비밀번호</label>

@@ -1059,7 +1059,7 @@ export default function OutsourceBoardDetailPage() {
                 placeholder="댓글을 입력하세요..."
                 className="w-full p-4 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 resize-none"
                 rows={4}
-                maxLength={100}
+                maxLength={200}
               />
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-end">
                 <div className="flex-1">
@@ -1088,7 +1088,7 @@ export default function OutsourceBoardDetailPage() {
                 </button>
               </div>
               <div className="text-right text-sm text-gray-500">
-                {commentForm.content.length}/100
+                {commentForm.content.length}/200
               </div>
             </div>
           </div>

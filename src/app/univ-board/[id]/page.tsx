@@ -185,10 +185,14 @@ const CommentItem = ({
           <form onSubmit={handleReplySubmit} className="space-y-3">
             <textarea
               value={replyForm.content}
-              onChange={(e) => setReplyForm({ ...replyForm, content: e.target.value })}
+              onChange={(e) => {
+                if (e.target.value.length <= 200) {
+                  setReplyForm({ ...replyForm, content: e.target.value });
+                }
+              }}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm resize-none"
               rows={2}
-              maxLength={100}
+              maxLength={200}
               placeholder="답글을 입력하세요..."
               required
             />
@@ -232,7 +236,7 @@ const CommentItem = ({
             </div>
             
             <p className="text-xs text-gray-500 text-right">
-              {replyForm.content.length}/100
+              {replyForm.content.length}/200
             </p>
           </form>
         </div>
@@ -366,6 +370,28 @@ export default function BoardDetailPage() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [activeCommentMenu]);
+
+  // 게시글 드롭다운 메뉴 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      // 게시글 드롭다운 버튼이나 메뉴 내부 클릭인지 확인
+      const isDropdownButton = target.closest('button[class*="hover:bg-gray-100"]') && target.closest('.relative');
+      const isDropdownMenu = target.closest('.absolute.right-0.mt-2');
+      
+      if (showPasswordModal && !isDropdownButton && !isDropdownMenu) {
+        setShowPasswordModal(false);
+      }
+    };
+
+    if (showPasswordModal) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showPasswordModal]);
 
   // showReportModal 상태 변화 추적
   useEffect(() => {
@@ -1222,10 +1248,14 @@ export default function BoardDetailPage() {
                <textarea 
                  className="w-full md:flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm resize-none"
                  rows={2}
-                 maxLength={100}
+                 maxLength={200}
                  placeholder="댓글을 입력하세요..."
                  value={commentForm.content}
-                 onChange={(e) => setCommentForm({ ...commentForm, content: e.target.value })}
+                 onChange={(e) => {
+                   if (e.target.value.length <= 200) {
+                     setCommentForm({ ...commentForm, content: e.target.value });
+                   }
+                 }}
                  required
                />
                
@@ -1260,7 +1290,7 @@ export default function BoardDetailPage() {
                </div>
                 </form>
              <p className="text-xs text-gray-500 mt-1 text-right">
-               {commentForm.content.length}/100
+               {commentForm.content.length}/200
              </p>
             </div>
           </div>
@@ -1425,14 +1455,18 @@ export default function BoardDetailPage() {
                  </label>
                  <textarea
                    value={editCommentForm.content}
-                   onChange={(e) => setEditCommentForm({ ...editCommentForm, content: e.target.value })}
+                   onChange={(e) => {
+                     if (e.target.value.length <= 200) {
+                       setEditCommentForm({ ...editCommentForm, content: e.target.value });
+                     }
+                   }}
                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                    rows={4}
-                   maxLength={100}
+                   maxLength={200}
                    required
                  />
                  <p className="text-xs text-gray-500 mt-1">
-                   {editCommentForm.content.length}/100
+                   {editCommentForm.content.length}/200
                  </p>
                </div>
                <div>

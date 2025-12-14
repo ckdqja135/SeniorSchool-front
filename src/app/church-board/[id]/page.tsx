@@ -150,14 +150,14 @@ const CommentItem = ({
             <textarea
               value={replyForm.content}
               onChange={(e) => {
-                if (e.target.value.length <= 500) {
+                if (e.target.value.length <= 200) {
                   setReplyForm({ ...replyForm, content: e.target.value });
                 }
               }}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
               rows={2}
-              maxLength={500}
-              placeholder="답글을 입력하세요... (최대 500자)"
+              maxLength={200}
+              placeholder="답글을 입력하세요... (최대 200자)"
               required
             />
             
@@ -200,7 +200,7 @@ const CommentItem = ({
             </div>
             
             <p className="text-xs text-gray-500 text-right">
-              {replyForm.content.length}/500
+              {replyForm.content.length}/200
             </p>
           </form>
         </div>
@@ -1189,18 +1189,18 @@ export default function ChurchBoardDetailPage() {
               <textarea
                 value={commentForm.content}
                 onChange={(e) => {
-                  if (e.target.value.length <= 500) {
+                  if (e.target.value.length <= 200) {
                     setCommentForm(prev => ({ ...prev, content: e.target.value }));
                   }
                 }}
-                placeholder="댓글을 입력하세요... (최대 500자)"
+                placeholder="댓글을 입력하세요... (최대 200자)"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 rows={4}
-                maxLength={500}
+                maxLength={200}
                 required
               />
               <div className="text-right text-xs text-gray-500 mt-1">
-                {commentForm.content.length}/500
+                {commentForm.content.length}/200
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <input
@@ -1376,17 +1376,17 @@ export default function ChurchBoardDetailPage() {
                 <textarea
                   value={editCommentForm.content}
                   onChange={(e) => {
-                    if (e.target.value.length <= 500) {
+                    if (e.target.value.length <= 200) {
                       setEditCommentForm({ ...editCommentForm, content: e.target.value });
                     }
                   }}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   rows={4}
-                  maxLength={500}
+                  maxLength={200}
                   required
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  {editCommentForm.content.length}/500
+                  {editCommentForm.content.length}/200
                 </p>
               </div>
               <div>
