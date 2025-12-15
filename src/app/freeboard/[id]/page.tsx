@@ -231,7 +231,9 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
       
       // 로컬 상태 업데이트
       if (post) {
-        const newLikeCount = isLiked ? post.boardLike - 1 : post.boardLike + 1;
+        // 문자열 연결 버그 방지: 숫자로 확실하게 변환
+        const currentLikes = Number(post.boardLike) || 0;
+        const newLikeCount = isLiked ? Math.max(0, currentLikes - 1) : currentLikes + 1;
         setPost({
           ...post,
           boardLike: newLikeCount
