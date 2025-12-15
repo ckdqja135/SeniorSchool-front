@@ -287,7 +287,9 @@ export default function CompanyBoardDetailPage() {
         // API가 직접 게시글 데이터를 반환하는 경우
         if (data && data.boardIdx) {
           setBoard(data);
-          setLikeCount(data.boardLike);
+          // 문자열 연결 버그 방지: 숫자로 확실하게 변환
+          const parsedLikeCount = Number(data.boardLike) || 0;
+          setLikeCount(parsedLikeCount);
           
           // 회사 정보 가져오기
           if (data.compIdx) {
@@ -456,9 +458,10 @@ export default function CompanyBoardDetailPage() {
         
         // HTTP 응답이 성공적이면 상태 업데이트
         setIsLiked(newLikeStatus);
-        // 좋아요 수 업데이트 (새로운 상태 기준으로)
+        // 좋아요 수 업데이트 (문자열 연결 버그 방지: 숫자로 확실하게 변환)
         setLikeCount(prev => {
-          const newCount = newLikeStatus ? prev + 1 : prev - 1;
+          const currentCount = Number(prev) || 0;
+          const newCount = newLikeStatus ? currentCount + 1 : Math.max(0, currentCount - 1);
           return newCount;
         });
       } else {
