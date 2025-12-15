@@ -38,7 +38,8 @@ interface Comment {
   commentLike: number;
   commentDepth: number;
   writerId: string;
-  commentPerent: number;
+  commentParent: number;
+  commentPerent?: number; // 오타 필드 (하위 호환성)
   commentContent: string;
   regDate?: string;
   modDate?: string;
@@ -106,7 +107,7 @@ const CommentItem = ({
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="relative flex items-center gap-2">
           <button
             onClick={() => setActiveCommentMenu(activeCommentMenu === comment.commentIdx ? null : comment.commentIdx)}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -116,14 +117,15 @@ const CommentItem = ({
             </svg>
           </button>
           {activeCommentMenu === comment.commentIdx && (
-            <div className="absolute right-0 mt-8 w-32 bg-white rounded-md shadow-lg z-10 border border-gray-200">
+            <div className="absolute right-0 top-full mt-1 w-32 bg-white rounded-md shadow-lg z-50 border border-gray-200">
               <div className="py-1">
                 <button
                   onClick={() => {
                     setEditCommentForm({
                       commentIdx: comment.commentIdx,
                       content: comment.commentContent,
-                      password: ''
+                      password: '',
+                      writerId: comment.writerId
                     });
                     setShowEditCommentModal(true);
                     setActiveCommentMenu(null);
@@ -151,7 +153,7 @@ const CommentItem = ({
         </div>
       </div>
       
-      <div className="text-gray-800 mb-3 whitespace-pre-wrap">
+      <div className="text-gray-800 mb-3 whitespace-pre-wrap" style={{ wordBreak: 'break-all', overflowWrap: 'break-word', maxWidth: '100%' }}>
         {comment.commentContent}
       </div>
       
@@ -194,15 +196,15 @@ const CommentItem = ({
             <div className="flex gap-2">
               <input
                 type="text"
-                value={replyForm.writerId}
-                onChange={(e) => setReplyForm({...replyForm, writerId: e.target.value})}
+                value={replyForm.writerId || ''}
+                onChange={(e) => setReplyForm({...replyForm, writerId: e.target.value, writer: e.target.value})}
                 placeholder="작성자"
                 className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
               <input
                 type="password"
-                value={replyForm.password}
+                value={replyForm.password || ''}
                 onChange={(e) => setReplyForm({...replyForm, password: e.target.value})}
                 placeholder="비밀번호"
                 className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -275,12 +277,14 @@ export default function MatzalAlBoardDetailPage() {
   const [editCommentForm, setEditCommentForm] = useState({
     commentIdx: 0,
     content: '',
-    password: ''
+    password: '',
+    writerId: ''
   });
   
   const [replyForm, setReplyForm] = useState({
     content: '',
     writer: '',
+    writerId: '',
     password: '',
     parentIdx: 0
   });
@@ -386,27 +390,49 @@ export default function MatzalAlBoardDetailPage() {
   }, [boardId]);
 
   // 댓글 가져오기
-  useEffect(() => {
-    const fetchComments = async () => {
-      try {
-        const response = await fetch(`https://api.reviewhub.life/restaurant/comment?boardIdx=${boardId}`);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (Array.isArray(data)) {
-          setComments(data);
-        } else if (data.data && Array.isArray(data.data)) {
-          setComments(data.data);
-        }
-      } catch (err) {
-        console.error('댓글 로딩 오류:', err);
+  const fetchComments = async () => {
+    try {
+      const response = await fetch(`https://api.reviewhub.life/restaurant/comment?boardIdx=${boardId}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    };
+      
+      const data = await response.json();
+      
+      let commentsData: Comment[] = [];
+      if (Array.isArray(data)) {
+        commentsData = data;
+      } else if (data.RestaurantComments && Array.isArray(data.RestaurantComments)) {
+        commentsData = data.RestaurantComments;
+      } else if (data.data && Array.isArray(data.data)) {
+        commentsData = data.data;
+      }
+      
+      // 문자열로 온 숫자 필드를 숫자로 변환
+      commentsData = commentsData.map(comment => {
+        const parentId = (comment as any).commentParent !== undefined 
+          ? (comment as any).commentParent 
+          : (comment as any).commentPerent;
+        
+        return {
+          ...comment,
+          commentIdx: typeof comment.commentIdx === 'string' ? parseInt(comment.commentIdx, 10) : comment.commentIdx,
+          boardIdx: typeof comment.boardIdx === 'string' ? parseInt(comment.boardIdx, 10) : (comment.boardIdx || parseInt(boardId)),
+          commentLike: typeof comment.commentLike === 'string' ? parseInt(comment.commentLike, 10) : (comment.commentLike || 0),
+          commentDepth: typeof comment.commentDepth === 'string' ? parseInt(comment.commentDepth, 10) : (comment.commentDepth || 0),
+          commentParent: typeof parentId === 'string' ? parseInt(parentId, 10) : (typeof parentId === 'number' ? parentId : 0),
+          commentPerent: typeof parentId === 'string' ? parseInt(parentId, 10) : (typeof parentId === 'number' ? parentId : 0),
+        };
+      });
+      
+      setComments(commentsData);
+    } catch (err) {
+      console.error('댓글 로딩 오류:', err);
+    }
+  };
 
+  useEffect(() => {
     if (boardId) {
       fetchComments();
     }
@@ -446,22 +472,33 @@ export default function MatzalAlBoardDetailPage() {
           boardIdx: parseInt(boardId),
           writerId: commentForm.writer,
           writerPw: commentForm.password,
-          commentContent: commentForm.content
+          commentContent: commentForm.content,
+          commentDepth: 0
         }),
       });
 
       if (response.ok) {
+        const responseData = await response.json();
         setCommentForm({ content: '', writer: '', password: '' });
-        // 댓글 목록 새로고침
-        const commentsResponse = await fetch(`https://api.reviewhub.life/restaurant/comment?boardIdx=${boardId}`);
-        if (commentsResponse.ok) {
-          const commentsData = await commentsResponse.json();
-          if (Array.isArray(commentsData)) {
-            setComments(commentsData);
-          } else if (commentsData.data && Array.isArray(commentsData.data)) {
-            setComments(commentsData.data);
-          }
+        
+        // API 응답이 배열이면 바로 사용, 아니면 댓글 목록 새로고침
+        if (Array.isArray(responseData)) {
+          // 문자열로 온 숫자 필드를 숫자로 변환
+          const commentsData = responseData.map((comment: any) => ({
+            ...comment,
+            commentIdx: typeof comment.commentIdx === 'string' ? parseInt(comment.commentIdx, 10) : comment.commentIdx,
+            boardIdx: typeof comment.boardIdx === 'string' ? parseInt(comment.boardIdx, 10) : comment.boardIdx,
+            commentLike: typeof comment.commentLike === 'string' ? parseInt(comment.commentLike, 10) : comment.commentLike,
+            commentDepth: typeof comment.commentDepth === 'string' ? parseInt(comment.commentDepth, 10) : comment.commentDepth,
+            commentPerent: typeof comment.commentPerent === 'string' ? parseInt(comment.commentPerent, 10) : (comment.commentPerent || 0),
+            commentParent: typeof comment.commentParent === 'string' ? parseInt(comment.commentParent, 10) : (comment.commentParent || 0),
+          }));
+          setComments(commentsData);
+        } else {
+          // 댓글 목록 새로고침
+          await fetchComments();
         }
+        alert('댓글이 작성되었습니다.');
       } else {
         alert('댓글 작성에 실패했습니다.');
       }
@@ -483,28 +520,24 @@ export default function MatzalAlBoardDetailPage() {
         },
         body: JSON.stringify({
           boardIdx: parseInt(boardId),
-          writerId: replyForm.writer,
+          writerId: replyForm.writerId || replyForm.writer,
           writerPw: replyForm.password,
           commentContent: replyForm.content,
-          parentIdx: parentIdx
+          commentParent: parentIdx,
+          commentDepth: 1
         }),
       });
 
       if (response.ok) {
-        setReplyForm({ content: '', writer: '', password: '', parentIdx: 0 });
+        setReplyForm({ content: '', writer: '', writerId: '', password: '', parentIdx: 0 });
         setShowReplyInput(null);
-        // 댓글 목록 새로고침
-        const commentsResponse = await fetch(`https://api.reviewhub.life/restaurant/comment?boardIdx=${boardId}`);
-        if (commentsResponse.ok) {
-          const commentsData = await commentsResponse.json();
-          if (Array.isArray(commentsData)) {
-            setComments(commentsData);
-          } else if (commentsData.data && Array.isArray(commentsData.data)) {
-            setComments(commentsData.data);
-          }
-        }
+        
+        // 댓글 목록 새로고침 (API 응답에 계층 구조 정보가 없을 수 있으므로)
+        await fetchComments();
+        alert('답글이 작성되었습니다.');
       } else {
-        alert('답글 작성에 실패했습니다.');
+        const errorData = await response.json().catch(() => ({}));
+        alert(errorData.message || '답글 작성에 실패했습니다.');
       }
     } catch (err) {
       console.error('답글 작성 오류:', err);
@@ -586,7 +619,8 @@ export default function MatzalAlBoardDetailPage() {
     setEditCommentForm({
       commentIdx: comment.commentIdx,
       content: comment.commentContent,
-      password: ''
+      password: '',
+      writerId: comment.writerId
     });
     setShowEditCommentModal(true);
   };
@@ -596,32 +630,25 @@ export default function MatzalAlBoardDetailPage() {
     e.preventDefault();
     
     try {
-      const response = await fetch('https://api.reviewhub.life/restaurant/comment', {
+      const response = await fetch('https://api.reviewhub.life/restaurant/comment/modify', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           commentIdx: editCommentForm.commentIdx,
+          commentWriter: editCommentForm.writerId,
           commentContent: editCommentForm.content,
-          password: editCommentForm.password
+          commentPw: editCommentForm.password
         }),
       });
 
       if (response.ok) {
         alert('댓글이 수정되었습니다.');
         setShowEditCommentModal(false);
-        setEditCommentForm({ commentIdx: 0, content: '', password: '' });
+        setEditCommentForm({ commentIdx: 0, content: '', password: '', writerId: '' });
         // 댓글 목록 새로고침
-        const commentsResponse = await fetch(`https://api.reviewhub.life/restaurant/comment?boardIdx=${boardId}`);
-        if (commentsResponse.ok) {
-          const commentsData = await commentsResponse.json();
-          if (Array.isArray(commentsData)) {
-            setComments(commentsData);
-          } else if (commentsData.data && Array.isArray(commentsData.data)) {
-            setComments(commentsData.data);
-          }
-        }
+        await fetchComments();
       } else {
         alert('댓글 수정에 실패했습니다.');
       }
@@ -645,14 +672,14 @@ export default function MatzalAlBoardDetailPage() {
     e.preventDefault();
     
     try {
-      const response = await fetch('https://api.reviewhub.life/restaurant/comment', {
+      const response = await fetch('https://api.reviewhub.life/restaurant/comment/delete', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           commentIdx: deleteCommentData.commentIdx,
-          password: deleteCommentData.password
+          commentPw: deleteCommentData.password
         }),
       });
 
@@ -661,15 +688,7 @@ export default function MatzalAlBoardDetailPage() {
         setShowDeleteCommentModal(false);
         setDeleteCommentData({ commentIdx: 0, password: '' });
         // 댓글 목록 새로고침
-        const commentsResponse = await fetch(`https://api.reviewhub.life/restaurant/comment?boardIdx=${boardId}`);
-        if (commentsResponse.ok) {
-          const commentsData = await commentsResponse.json();
-          if (Array.isArray(commentsData)) {
-            setComments(commentsData);
-          } else if (commentsData.data && Array.isArray(commentsData.data)) {
-            setComments(commentsData.data);
-          }
-        }
+        await fetchComments();
       } else {
         alert('댓글 삭제에 실패했습니다.');
       }
@@ -826,29 +845,84 @@ export default function MatzalAlBoardDetailPage() {
 
   // 댓글을 계층 구조로 변환
   const organizedComments = useMemo(() => {
+    // 먼저 댓글을 regDate 기준으로 정렬 (최신순)
+    const sortedComments = [...comments].sort((a, b) => {
+      const dateA = new Date(a.regDate || 0).getTime();
+      const dateB = new Date(b.regDate || 0).getTime();
+      return dateB - dateA; // 최신순
+    });
+
     const commentMap = new Map<number, Comment & { replies: Comment[] }>();
     const rootComments: (Comment & { replies: Comment[] })[] = [];
 
     // 모든 댓글을 맵에 추가
-    comments.forEach(comment => {
+    sortedComments.forEach(comment => {
       commentMap.set(comment.commentIdx, { ...comment, replies: [] });
     });
 
     // 댓글을 계층 구조로 정리
-    comments.forEach(comment => {
+    sortedComments.forEach(comment => {
       const commentWithReplies = commentMap.get(comment.commentIdx)!;
       
-      if (comment.commentPerent === 0) {
-        // 최상위 댓글
+      // commentParent 필드 사용 (commentDepth도 함께 확인)
+      const parentId = comment.commentParent || 0;
+      const depth = comment.commentDepth || 0;
+      
+      if (depth === 0) {
+        // 최상위 댓글 (commentDepth가 0)
         rootComments.push(commentWithReplies);
-      } else {
-        // 답글
-        const parent = commentMap.get(comment.commentPerent);
+      } else if (parentId > 0) {
+        // 답글 (commentParent가 0이 아님)
+        const parent = commentMap.get(parentId);
         if (parent) {
           parent.replies.push(commentWithReplies);
+        } else {
+          // 부모를 찾을 수 없으면 가장 최근의 최상위 댓글을 부모로 연결
+          const latestRoot = rootComments[rootComments.length - 1];
+          if (latestRoot) {
+            latestRoot.replies.push(commentWithReplies);
+          } else {
+            // 루트 댓글이 없으면 루트로 처리
+            rootComments.push(commentWithReplies);
+          }
+        }
+      } else if (depth > 0 && parentId === 0) {
+        // commentDepth가 1 이상인데 commentParent가 0인 경우
+        // 가장 최근의 최상위 댓글을 부모로 연결
+        const latestRoot = rootComments[rootComments.length - 1];
+        if (latestRoot) {
+          latestRoot.replies.push(commentWithReplies);
+        } else {
+          // 루트 댓글이 없으면 루트로 처리
+          rootComments.push(commentWithReplies);
         }
       }
     });
+
+    // 루트 댓글과 답글들을 regDate 기준으로 정렬
+    rootComments.sort((a, b) => {
+      const dateA = new Date(a.regDate || 0).getTime();
+      const dateB = new Date(b.regDate || 0).getTime();
+      return dateB - dateA; // 최신순
+    });
+
+    // 각 댓글의 답글들도 정렬
+    const sortReplies = (comment: Comment & { replies: Comment[] }) => {
+      if (comment.replies && comment.replies.length > 0) {
+        comment.replies.sort((a, b) => {
+          const dateA = new Date(a.regDate || 0).getTime();
+          const dateB = new Date(b.regDate || 0).getTime();
+          return dateB - dateA; // 최신순
+        });
+        comment.replies.forEach((reply) => {
+          const replyWithReplies = commentMap.get(reply.commentIdx);
+          if (replyWithReplies) {
+            sortReplies(replyWithReplies);
+          }
+        });
+      }
+    };
+    rootComments.forEach(sortReplies);
 
     return rootComments;
   }, [comments]);
@@ -1056,86 +1130,32 @@ export default function MatzalAlBoardDetailPage() {
             
           {/* 댓글 목록 */}
           <div className="space-y-3 mb-6">
-            {comments.length === 0 ? (
+            {organizedComments.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <div className="text-4xl mb-2">💬</div>
                 <p>아직 댓글이 없습니다.</p>
                 <p className="text-sm">첫 번째 댓글을 작성해보세요!</p>
               </div>
             ) : (
-              comments.map((comment) => (
-                <div key={comment.commentIdx} className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4 shadow-sm">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <span className="font-medium text-gray-900 text-sm">{comment.writerId || (comment as any).commentWriter}</span>
-                        <span className="text-gray-400 text-xs">•</span>
-                        <span className="text-gray-500 text-xs">
-                          {comment.regDate ? 
-                            new Date(comment.regDate).toLocaleDateString('ko-KR', {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            }) : 
-                            '날짜 정보 없음'
-                          }
-                        </span>
-                      </div>
-                      <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{comment.commentContent}</p>
-                    </div>
-                    <div className="relative">
-                      <button
-                        onClick={() => setActiveCommentMenu(activeCommentMenu === comment.commentIdx ? null : comment.commentIdx)}
-                        className="text-gray-400 hover:text-gray-600 p-1"
-                      >
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                        </svg>
-                      </button>
-                      {activeCommentMenu === comment.commentIdx && (
-                        <div className="absolute right-0 mt-1 w-32 bg-white rounded-md shadow-lg z-10 border border-gray-200">
-                          <button
-                            onClick={() => {
-                              handleEditComment(comment);
-                              setActiveCommentMenu(null);
-                            }}
-                            className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          >
-                            수정
-                          </button>
-                          <button
-                            onClick={() => {
-                              handleDeleteComment(comment);
-                              setActiveCommentMenu(null);
-                            }}
-                            className="block w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-gray-100"
-                          >
-                            삭제
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="mt-3 flex space-x-4">
-                    <button
-                      onClick={() => {
-                        setReplyForm({
-                          content: '',
-                          writer: '',
-                          password: '',
-                          parentIdx: comment.commentIdx
-                        });
-                        setShowReplyInput(comment.commentIdx);
-                      }}
-                      className="text-xs text-blue-600 hover:text-blue-800"
-                    >
-                      답글
-                    </button>
-                  </div>
-                </div>
+              organizedComments.map((comment) => (
+                <CommentItem
+                  key={comment.commentIdx}
+                  comment={comment}
+                  level={0}
+                  setReplyForm={setReplyForm}
+                  setShowReplyInput={setShowReplyInput}
+                  showReplyInput={showReplyInput}
+                  setEditCommentForm={setEditCommentForm}
+                  setShowEditCommentModal={setShowEditCommentModal}
+                  setDeleteCommentData={setDeleteCommentData}
+                  setShowDeleteCommentModal={setShowDeleteCommentModal}
+                  setActiveCommentMenu={setActiveCommentMenu}
+                  activeCommentMenu={activeCommentMenu}
+                  showEditCommentModal={showEditCommentModal}
+                  showDeleteCommentModal={showDeleteCommentModal}
+                  handleReplySubmit={handleReplySubmit}
+                  replyForm={replyForm}
+                />
               ))
             )}
           </div>

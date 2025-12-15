@@ -111,7 +111,7 @@ const CommentItem = ({
           </div>
         )}
       </div>
-      <p className={`text-gray-700 leading-relaxed mb-3 ${normalizedLevel > 0 ? 'ml-6' : ''}`}>
+      <p className={`text-gray-700 leading-relaxed mb-3 ${normalizedLevel > 0 ? 'ml-6' : ''}`} style={{ wordBreak: 'break-all', overflowWrap: 'break-word', maxWidth: '100%' }}>
         {comment.commentContent}
       </p>
       

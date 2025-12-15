@@ -395,7 +395,7 @@ export default function ChurchBoardDetailPage() {
         
         if (boardData) {
           setBoard(boardData);
-          setLikeCount(boardData.boardLike || 0);
+          setLikeCount(typeof boardData.boardLike === 'string' ? parseInt(boardData.boardLike, 10) : (boardData.boardLike || 0));
           setEditForm({
             title: boardData.boardTitle,
             content: boardData.boardContent
@@ -712,7 +712,12 @@ export default function ChurchBoardDetailPage() {
 
   // 좋아요 토글 핸들러
   const handleLikeToggle = async () => {
-    if (!board || isLikeLoading) return;
+    if (!board || isLikeLoading) {
+      console.log('좋아요 클릭 무시 - isLikeLoading:', isLikeLoading);
+      return;
+    }
+    
+    console.log('좋아요 클릭 시작 - 현재 likeCount:', likeCount, 'typeof:', typeof likeCount);
     
     try {
       setIsLikeLoading(true);
@@ -720,26 +725,52 @@ export default function ChurchBoardDetailPage() {
       if (!backendURL) {
         throw new Error('NEXT_PUBLIC_BASE_URL is not defined');
       }
+      
+      // 상태를 먼저 토글 (UI 즉시 반응)
+      const newIsLiked = !isLiked;
+      setIsLiked(newIsLiked);
+      
+      // 좋아요 수 즉시 업데이트 (숫자로 확실하게 변환)
+      setLikeCount(prev => {
+        const currentCount = Number(prev) || 0;
+        const newCount = newIsLiked ? currentCount + 1 : currentCount - 1;
+        console.log('좋아요 수 업데이트:', currentCount, '->', newCount);
+        return newCount;
+      });
+      
+      // 좋아요 API 호출 (백그라운드)
       const response = await fetch(`${backendURL}/church/boards/like`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          boardIdx: board.boardIdx,
-          isLiked: !isLiked
+          boardIdx: Number(board.boardIdx),
+          isLiked: newIsLiked
         }),
       });
       
-      if (response.ok) {
-        setIsLiked(!isLiked);
-        setLikeCount(prev => isLiked ? prev - 1 : prev + 1);
-      } else {
-        const errorData = await response.json();
+      console.log('좋아요 API 응답:', response.ok, response.status);
+      
+      if (!response.ok) {
+        // API 실패 시 상태 되돌리기
+        setIsLiked(!newIsLiked);
+        setLikeCount(prev => {
+          const currentCount = Number(prev) || 0;
+          return newIsLiked ? currentCount - 1 : currentCount + 1;
+        });
+        
+        const errorData = await response.json().catch(() => ({}));
         alert(errorData.message || '좋아요 처리에 실패했습니다.');
       }
     } catch (error) {
       console.error('좋아요 토글 오류:', error);
+      // 에러 발생 시에도 상태 되돌리기
+      setIsLiked(!isLiked);
+      setLikeCount(prev => {
+        const currentCount = Number(prev) || 0;
+        return isLiked ? currentCount + 1 : currentCount - 1;
+      });
       alert('좋아요 처리 중 오류가 발생했습니다.');
     } finally {
       setIsLikeLoading(false);

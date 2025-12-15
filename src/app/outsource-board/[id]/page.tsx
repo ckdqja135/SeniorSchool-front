@@ -146,11 +146,19 @@ const CommentItem = ({
           <div className="space-y-3">
             <textarea
               value={replyForm.content}
-              onChange={(e) => setReplyForm({...replyForm, content: e.target.value})}
-              placeholder="답글을 입력하세요..."
+              onChange={(e) => {
+                if (e.target.value.length <= 200) {
+                  setReplyForm({...replyForm, content: e.target.value});
+                }
+              }}
+              placeholder="답글을 입력하세요... (최대 200자)"
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 resize-none"
               rows={3}
+              maxLength={200}
             />
+            <div className="text-right text-xs text-gray-500">
+              {replyForm.content.length}/200
+            </div>
             <div className="flex flex-col sm:flex-row gap-2">
               <input
                 type="text"
