@@ -333,17 +333,13 @@ export default function CompanyBoardDetailPage() {
   const fetchComments = useCallback(async (forceRefresh = false) => {
     if (!boardId) return;
 
-    console.log('fetchComments 호출:', { forceRefresh, hasFetchedComments: hasFetchedComments.current, boardId }); // 디버깅용
-
     // 강제 새로고침이 아닌 경우 중복 호출 방지
     if (!forceRefresh && hasFetchedComments.current) {
-      console.log('중복 호출 방지로 인해 API 호출 건너뜀'); // 디버깅용
       return;
     }
 
     try {
       const backendURL = 'https://api.reviewhub.life';
-      console.log('댓글 조회 API 호출:', `${backendURL}/comp/comment?boardIdx=${boardId}`); // 디버깅용
       const response = await fetch(`${backendURL}/comp/comment?boardIdx=${boardId}`);
 
       if (!response.ok) {
@@ -351,26 +347,23 @@ export default function CompanyBoardDetailPage() {
       }
 
       const data = await response.json();
-      console.log('댓글 조회 API 응답:', data); // 디버깅용
       
       // API가 배열을 직접 반환하는 경우
+      let commentsData: CompanyComment[] = [];
       if (Array.isArray(data)) {
-        console.log('배열 형태 응답 처리:', data.length, '개 댓글'); // 디버깅용
-        setAllComments(data);
-        setTotalComments(data.length);
-        setVisibleComments(data.slice(0, commentsPerLoad));
-        setHasMoreComments(data.length > commentsPerLoad);
+        commentsData = data;
       } else if (data.status === 200 && data.data) {
-        console.log('객체 형태 응답 처리:', data.data.length, '개 댓글'); // 디버깅용
-        setAllComments(data.data);
-        setTotalComments(data.data.length);
-        setVisibleComments(data.data.slice(0, commentsPerLoad));
-        setHasMoreComments(data.data.length > commentsPerLoad);
-      } else {
-        console.log('댓글 데이터 없음'); // 디버깅용
-        setAllComments([]);
-        setVisibleComments([]);
+        commentsData = data.data;
       }
+      
+      // API는 위로 갈수록 과거, 아래로 갈수록 최근 순서로 뿌려주므로
+      // 화면에서는 반대로 표시해야 함 (위로 갈수록 최근, 아래로 갈수록 과거)
+      const reversedComments = [...commentsData].reverse();
+      
+      setAllComments(reversedComments);
+      setTotalComments(reversedComments.length);
+      setVisibleComments(reversedComments.slice(0, commentsPerLoad));
+      setHasMoreComments(reversedComments.length > commentsPerLoad);
     } catch (error) {
       console.error('댓글 로딩 오류:', error);
       setAllComments([]);
@@ -399,7 +392,6 @@ export default function CompanyBoardDetailPage() {
     // 중복 호출 방지
     if (hasFetchedComments.current || !boardId) return;
     
-    console.log('useEffect에서 fetchComments 호출'); // 디버깅용
     fetchComments().then(() => {
       hasFetchedComments.current = true;
     });
@@ -418,15 +410,12 @@ export default function CompanyBoardDetailPage() {
 
         if (response.ok) {
           const data = await response.json();
-          console.log('좋아요 상태 응답:', data); // 디버깅용
           if (data.status === 200) {
             // API 응답 구조에 따라 다르게 처리
             const likeStatus = data.isLiked !== undefined ? data.isLiked : (data.data && data.data.isLiked);
-            console.log('설정할 좋아요 상태:', likeStatus);
             setIsLiked(likeStatus || false);
           }
         } else {
-          console.log('좋아요 상태 확인 실패:', response.status);
           // 실패 시 기본값으로 설정
           setIsLiked(false);
         }
@@ -444,25 +433,15 @@ export default function CompanyBoardDetailPage() {
   const handleLikeToggle = async () => {
     if (isLikeLoading) return;
     
-    console.log('현재 좋아요 상태:', isLiked, '좋아요 수:', likeCount); // 디버깅용
-    
     setIsLikeLoading(true);
     try {
       const backendURL = 'https://api.reviewhub.life';
       const newLikeStatus = !isLiked; // 새로운 상태 미리 계산
       
-      console.log('새로운 좋아요 상태로 변경:', newLikeStatus); // 디버깅용
-      
       const requestBody = {
         boardIdx: parseInt(boardId),
         isLiked: newLikeStatus
       };
-      
-      // 혹시 다른 필드명을 사용하는지 확인
-      console.log('boardId:', boardId, 'parsed:', parseInt(boardId));
-      console.log('newLikeStatus:', newLikeStatus);
-      
-      console.log('좋아요 API 요청:', requestBody); // 디버깅용
       
       const response = await fetch(`${backendURL}/comp/board/like`, {
         method: 'POST',
@@ -474,22 +453,16 @@ export default function CompanyBoardDetailPage() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('좋아요 토글 응답:', data); // 디버깅용
         
-        // HTTP 응답이 성공적이면 상태 업데이트 (status 필드 체크 제거)
-        console.log('API 성공, 상태 업데이트 중...');
-        // 상태 업데이트
+        // HTTP 응답이 성공적이면 상태 업데이트
         setIsLiked(newLikeStatus);
         // 좋아요 수 업데이트 (새로운 상태 기준으로)
         setLikeCount(prev => {
           const newCount = newLikeStatus ? prev + 1 : prev - 1;
-          console.log('좋아요 수 변경:', prev, '->', newCount); // 디버깅용
           return newCount;
         });
       } else {
-        console.log('HTTP 응답 실패:', response.status);
         const errorText = await response.text();
-        console.log('오류 응답 내용:', errorText);
         alert(`좋아요 처리 중 오류가 발생했습니다. (HTTP ${response.status})`);
       }
     } catch (error) {
@@ -529,7 +502,6 @@ export default function CompanyBoardDetailPage() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('댓글 작성 응답:', data); // 디버깅용
         
         // API 응답이 성공적이면 댓글 목록 새로고침
         if (data.success === true || data.status === 200 || response.status === 200) {
@@ -540,6 +512,7 @@ export default function CompanyBoardDetailPage() {
             password: ''
           });
           // 댓글 목록 새로고침
+          hasFetchedComments.current = false;
           await fetchComments(true);
         } else {
           throw new Error(data.message || '댓글 작성에 실패했습니다.');
@@ -583,7 +556,6 @@ export default function CompanyBoardDetailPage() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('답글 작성 응답:', data); // 디버깅용
         
         // API 응답이 성공적이면 답글 목록 새로고침
         if (data.success === true || data.status === 200 || response.status === 200) {
@@ -596,6 +568,7 @@ export default function CompanyBoardDetailPage() {
           });
           setShowReplyInput(null);
           // 댓글 목록 새로고침
+          hasFetchedComments.current = false;
           await fetchComments(true);
         } else {
           throw new Error(data.message || '답글 작성에 실패했습니다.');
@@ -635,7 +608,6 @@ export default function CompanyBoardDetailPage() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('댓글 수정 응답:', data); // 디버깅용
         
         if (data.success === true || data.status === 200 || response.status === 200) {
           alert('댓글이 수정되었습니다.');
@@ -646,6 +618,7 @@ export default function CompanyBoardDetailPage() {
             password: ''
           });
           // 댓글 목록 새로고침
+          hasFetchedComments.current = false;
           await fetchComments(true);
         } else {
           throw new Error(data.message || '댓글 수정에 실패했습니다.');
@@ -682,7 +655,6 @@ export default function CompanyBoardDetailPage() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('댓글 삭제 응답:', data); // 디버깅용
         
         if (data.success === true || data.status === 200 || response.status === 200) {
           alert('댓글이 삭제되었습니다.');
@@ -692,6 +664,7 @@ export default function CompanyBoardDetailPage() {
             password: ''
           });
           // 댓글 목록 새로고침
+          hasFetchedComments.current = false;
           await fetchComments(true);
         } else {
           throw new Error(data.message || '댓글 삭제에 실패했습니다.');
@@ -726,7 +699,6 @@ export default function CompanyBoardDetailPage() {
 
   // 답글 작성
   const handleReply = (comment: CompanyComment) => {
-    console.log('답글 버튼 클릭:', comment.commentIdx, comment.commentDepth); // 디버깅용
     setReplyForm({
       content: '',
       writer: '',
@@ -734,7 +706,6 @@ export default function CompanyBoardDetailPage() {
       parentIdx: comment.commentIdx
     });
     setShowReplyInput(comment.commentIdx);
-    console.log('showReplyInput 설정:', comment.commentIdx); // 디버깅용
   };
 
   // 신고 처리
@@ -747,12 +718,6 @@ export default function CompanyBoardDetailPage() {
 
     setIsReportLoading(true);
     try {
-      console.log('신고 API 호출 시작:', {
-        boardIdx: boardId,
-        reportReason: reportForm.reportReason,
-        reporterId: reportForm.reporterId
-      });
-
       const response = await fetch('https://api.reviewhub.life/admin/report/createReport', {
         method: 'POST',
         headers: {
@@ -765,18 +730,14 @@ export default function CompanyBoardDetailPage() {
           reportType: 'company' // 회사 게시판 신고임을 명시
         })
       });
-
-      console.log('신고 API 응답 상태:', response.status);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('신고 API 응답 데이터:', data);
         alert('신고가 성공적으로 접수되었습니다.');
         setShowReportModal(false);
         setReportForm({ reportReason: '', reporterId: '' });
       } else {
         const errorData = await response.json();
-        console.error('신고 API 오류:', errorData);
         alert(`신고 접수에 실패했습니다: ${errorData.message || '알 수 없는 오류'}`);
       }
     } catch (error) {
@@ -867,7 +828,6 @@ export default function CompanyBoardDetailPage() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('게시글 수정 응답:', data); // 디버깅용
         
         // API 응답이 성공적이면 상태 업데이트
         if (data.success === true) {
@@ -911,7 +871,6 @@ export default function CompanyBoardDetailPage() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('게시글 삭제 응답:', data); // 디버깅용
         
         // API 응답이 성공적이면 상태 업데이트
         if (data.success === true) {
