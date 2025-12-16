@@ -609,7 +609,7 @@ export default function ChurchDetailPage() {
                 <div className="bg-purple-50 p-3 rounded-lg border border-purple-100 hover:shadow-md transition-all duration-200">
                   <span className="text-xs text-purple-700 font-bold uppercase tracking-wider mb-1 block">설립</span>
                   <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-900 leading-relaxed">
-                    {church.churchEstablished ? `${church.churchEstablished}년` : '정보 없음'}
+                    {church.churchEstablished ? `${church.churchEstablished}` : '정보 없음'}
                   </p>
                 </div>
                 <div className="bg-orange-50 p-3 rounded-lg border border-orange-100 hover:shadow-md transition-all duration-200">
