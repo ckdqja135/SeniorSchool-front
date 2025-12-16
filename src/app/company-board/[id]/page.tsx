@@ -721,7 +721,8 @@ export default function CompanyBoardDetailPage() {
 
     setIsReportLoading(true);
     try {
-      const response = await fetch('https://api.reviewhub.life/admin/report/createReport', {
+      const backendURL = 'https://api.reviewhub.life';
+      const response = await fetch(`${backendURL}/report`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

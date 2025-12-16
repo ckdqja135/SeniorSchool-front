@@ -702,12 +702,12 @@ export default function OutsourceBoardDetailPage() {
       const backendURL = 'https://api.reviewhub.life';
       const reportData = {
         boardIdx: board.boardIdx,
-        serviceType: 'outsource',
         reportReason: reportForm.reportReason.trim(),
-        reporterId: reportForm.reporterId.trim()
+        reporterId: reportForm.reporterId.trim(),
+        reportType: 'outsource' // 외주 게시판 신고임을 명시
       };
 
-      const response = await fetch(`${backendURL}/admin/report/createReport`, {
+      const response = await fetch(`${backendURL}/report`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -661,13 +661,14 @@ export default function InterviewDetailPage() {
 
     setIsReportLoading(true);
     try {
-      const response = await fetch('https://api.reviewhub.life/admin/report/createReport', {
+      const backendURL = 'https://api.reviewhub.life';
+      const response = await fetch(`${backendURL}/report`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          interviewIdx: parseInt(interviewIdx),
+          boardIdx: parseInt(interviewIdx), // boardIdx로 통일
           reportReason: reportForm.reportReason,
           reporterId: reportForm.reporterId,
           reportType: 'interview'

@@ -856,27 +856,34 @@ export default function ChurchBoardDetailPage() {
   const handleReportSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!board) return;
+    if (!board || !reportForm.reportReason.trim() || !reportForm.reporterId.trim()) {
+      alert('모든 필드를 입력해주세요.');
+      return;
+    }
     
+    setIsReportLoading(true);
     try {
       const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       if (!backendURL) {
         throw new Error('NEXT_PUBLIC_BASE_URL is not defined');
       }
-      const response = await fetch(`${backendURL}/church/boards/report`, {
+      const response = await fetch(`${backendURL}/report`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           boardIdx: board.boardIdx,
-          reportReason: '부적절한 내용'
+          reportReason: reportForm.reportReason.trim(),
+          reporterId: reportForm.reporterId.trim(),
+          reportType: 'church' // 교회 게시판 신고임을 명시
         }),
       });
       
       if (response.ok) {
         alert('신고가 접수되었습니다.');
         setShowReportModal(false);
+        setReportForm({ reportReason: '', reporterId: '' });
       } else {
         const errorData = await response.json();
         alert(errorData.message || '신고 접수에 실패했습니다.');
@@ -884,6 +891,8 @@ export default function ChurchBoardDetailPage() {
     } catch (error) {
       console.error('신고 접수 오류:', error);
       alert('신고 접수 중 오류가 발생했습니다.');
+    } finally {
+      setIsReportLoading(false);
     }
   };
 

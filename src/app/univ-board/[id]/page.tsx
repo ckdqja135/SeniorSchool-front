@@ -919,12 +919,12 @@ export default function BoardDetailPage() {
       }
       const reportData = {
         boardIdx: boardPost.boardIdx,
-        serviceType: 'univ',
         reportReason: reportForm.reportReason.trim(),
-        reporterId: reportForm.reporterId.trim()
+        reporterId: reportForm.reporterId.trim(),
+        reportType: 'univ' // 학교 게시판 신고임을 명시
       };
 
-      const response = await fetch(`${backendURL}/admin/report/createReport`, {
+      const response = await fetch(`${backendURL}/report`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
