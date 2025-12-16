@@ -138,7 +138,6 @@ const CommentItem = ({
           </svg>
           답글
         </button>
-        <span className="text-xs text-gray-400">좋아요 {comment.commentLike}</span>
       </div>
 
       {showReplyInput === comment.commentIdx && (
