@@ -356,12 +356,32 @@ export const createRestaurantBoard = async (boardData: {
   boardRating?: number | null;
 }): Promise<boolean> => {
   try {
+    // 한국 시간으로 작성 시간 설정 (Asia/Seoul 시간대)
+    const now = new Date();
+    // 한국 시간대(UTC+9)로 변환
+    const koreaTimeOffset = 9 * 60; // 한국은 UTC+9 (분 단위)
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60 * 1000);
+    const koreaTime = new Date(utc + (koreaTimeOffset * 60 * 1000));
+    
+    const year = koreaTime.getFullYear();
+    const month = String(koreaTime.getMonth() + 1).padStart(2, '0');
+    const day = String(koreaTime.getDate()).padStart(2, '0');
+    const hours = String(koreaTime.getHours()).padStart(2, '0');
+    const minutes = String(koreaTime.getMinutes()).padStart(2, '0');
+    const seconds = String(koreaTime.getSeconds()).padStart(2, '0');
+    const boardRegDate = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+
+    const requestData = {
+      ...boardData,
+      boardRegDate: boardRegDate
+    };
+
     const response = await fetch(`${BACKEND_URL}/restaurant/boards/insert`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(boardData),
+      body: JSON.stringify(requestData),
     });
 
     if (!response.ok) {

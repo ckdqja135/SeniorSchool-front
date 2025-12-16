@@ -356,7 +356,7 @@ export default function MatzalAlBoardDetailPage() {
         }
         
         const data = await response.json();
-        console.log('API 응답 데이터:', data);
+      
         
         // API 응답이 직접 객체인 경우
         let boardData = null;
@@ -373,6 +373,11 @@ export default function MatzalAlBoardDetailPage() {
           boardData.boardRating = typeof boardData.boardRating === 'string' 
             ? parseFloat(boardData.boardRating) 
             : Number(boardData.boardRating);
+        }
+        
+        // boardLike 문자열을 숫자로 변환 (문자열 연결 버그 방지)
+        if (boardData && boardData.boardLike !== undefined) {
+          boardData.boardLike = Number(boardData.boardLike) || 0;
         }
         
         setBoardPost(boardData);
@@ -552,23 +557,28 @@ export default function MatzalAlBoardDetailPage() {
     try {
       setIsLikeLoading(true);
       
-      const response = await fetch('https://api.reviewhub.life/restaurant/like', {
+      const newLikeStatus = !isLiked;
+      
+      const response = await fetch('https://api.reviewhub.life/restaurant/boards/like', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           boardIdx: parseInt(boardId),
-          isLike: !isLiked
+          isLiked: newLikeStatus
         }),
       });
 
       if (response.ok) {
-        setIsLiked(!isLiked);
+        setIsLiked(newLikeStatus);
         if (boardPost) {
+          // 문자열 연결 버그 방지: 숫자로 확실하게 변환
+          const currentLikes = Number(boardPost.boardLike) || 0;
+          const newLikeCount = newLikeStatus ? currentLikes + 1 : Math.max(0, currentLikes - 1);
           setBoardPost({
             ...boardPost,
-            boardLike: isLiked ? (boardPost.boardLike || 0) - 1 : (boardPost.boardLike || 0) + 1
+            boardLike: newLikeCount
           });
         }
       }
@@ -780,9 +790,7 @@ export default function MatzalAlBoardDetailPage() {
         }),
       });
 
-      console.log('게시글 수정 API 응답 상태:', response.status);
       const responseData = await response.json();
-      console.log('게시글 수정 API 응답 데이터:', responseData);
 
       if (response.ok) {
         if (responseData.success === true || responseData.status === 200) {
@@ -823,9 +831,7 @@ export default function MatzalAlBoardDetailPage() {
         }),
       });
 
-      console.log('게시글 삭제 API 응답 상태:', response.status);
       const responseData = await response.json();
-      console.log('게시글 삭제 API 응답 데이터:', responseData);
 
       if (response.ok) {
         if (responseData.success === true || responseData.status === 200) {
