@@ -89,12 +89,13 @@ export default function CompanyDetailPage() {
       <div className="flex items-center space-x-1">
         {Array.from({ length: 5 }).map((_, idx) => {
           const fillLevel = Math.min(Math.max(safeScore - idx, 0), 1);
+          const fillPercent = Math.min(100, Math.max(0, fillLevel * 100 - 2));
           return (
             <div key={`star-${idx}`} className={`relative ${sizeClasses.wrapper}`}>
               <span className={`absolute inset-0 text-gray-300 select-none ${sizeClasses.star}`}>★</span>
               <span
                 className={`absolute inset-0 text-yellow-400 overflow-hidden select-none ${sizeClasses.star}`}
-                style={{ width: `${fillLevel * 100}%` }}
+                style={{ width: `${fillPercent}%` }}
               >
                 ★
               </span>

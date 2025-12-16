@@ -723,17 +723,19 @@ export default function MatzalAlBoardDetailPage() {
       <div className="flex items-center space-x-1">
         {Array.from({ length: 5 }).map((_, idx) => {
           const fillLevel = Math.min(Math.max(safeScore - idx, 0), 1);
+          // 살짝 덜 채워 보이도록 2% 감산 (0~100 범위 클램프)
+          const fillPercent = Math.min(100, Math.max(0, fillLevel * 100 - 12));
           return (
-            <div key={`star-${idx}`} className={`relative ${sizeClasses.wrapper}`}>
-              <span className={`absolute inset-0 text-gray-300 select-none ${sizeClasses.star}`}>★</span>
+            <span key={`star-${idx}`} className={`relative inline-block leading-none align-middle ${sizeClasses.wrapper}`} aria-hidden="true">
+              <span className={`absolute inset-0 block text-gray-300 leading-none select-none ${sizeClasses.star}`}>★</span>
               <span
-                className={`absolute inset-0 text-yellow-400 overflow-hidden select-none ${sizeClasses.star}`}
-                style={{ width: `${fillLevel * 100}%` }}
+                className="absolute inset-0 block overflow-hidden"
+                style={{ width: `${fillPercent}%` }}
               >
-                ★
+                <span className={`absolute inset-0 block text-yellow-400 leading-none select-none ${sizeClasses.star}`}>★</span>
               </span>
               <span className={`invisible ${sizeClasses.star}`}>★</span>
-            </div>
+            </span>
           );
         })}
       </div>
@@ -1429,17 +1431,18 @@ export default function MatzalAlBoardDetailPage() {
                   <div className="flex items-center space-x-2">
                     {Array.from({ length: 5 }).map((_, idx) => {
                       const fillLevel = Math.min(Math.max((displayedEditRating || 0) - idx, 0), 1);
+                      const fillPercent = Math.min(100, Math.max(0, fillLevel * 100 - 12));
                       return (
-                        <div key={`edit-star-${idx}`} className="relative w-8 h-8 text-3xl leading-none cursor-pointer">
-                          <span className="absolute inset-0 text-gray-300 select-none">★</span>
+                        <span key={`edit-star-${idx}`} className="relative inline-block w-8 h-8 cursor-pointer leading-none align-middle">
+                          <span className="absolute inset-0 block text-3xl leading-none select-none pointer-events-none text-gray-300">★</span>
                           <span
-                            className="absolute inset-0 text-yellow-400 overflow-hidden select-none"
-                            style={{ width: `${fillLevel * 100}%` }}
+                            className="absolute inset-0 block overflow-hidden pointer-events-none"
+                            style={{ width: `${fillPercent}%` }}
                           >
-                            ★
+                            <span className="absolute inset-0 block text-3xl leading-none select-none text-yellow-400">★</span>
                           </span>
-                          <span className="invisible">★</span>
-                          <div className="absolute inset-0 flex">
+                          <span className="opacity-0 text-3xl leading-none select-none">★</span>
+                          <span className="absolute inset-0 flex">
                             <button
                               type="button"
                               className="w-1/2 h-full bg-transparent"
@@ -1456,8 +1459,8 @@ export default function MatzalAlBoardDetailPage() {
                               onFocus={() => setHoveredEditRating(idx + 1)}
                               onClick={() => setEditRating(idx + 1)}
                             />
-                          </div>
-                        </div>
+                          </span>
+                        </span>
                       );
                     })}
                   </div>
