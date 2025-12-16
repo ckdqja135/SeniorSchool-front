@@ -90,6 +90,14 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
   const [editBoardId, setEditBoardId] = useState('');
   const [newTag, setNewTag] = useState('');
 
+  // 신고 관련 상태
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportForm, setReportForm] = useState({
+    reportReason: '',
+    reporterId: ''
+  });
+  const [isReportLoading, setIsReportLoading] = useState(false);
+
   // 시간 포맷팅 함수
   const formatTimeAgo = (dateString: string) => {
     const now = new Date();
@@ -582,6 +590,47 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
     router.push('/freeboard');
   };
 
+  // 신고하기 핸들러
+  const handleReportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!post || !reportForm.reportReason.trim() || !reportForm.reporterId.trim()) {
+      alert('모든 필드를 입력해주세요.');
+      return;
+    }
+    
+    setIsReportLoading(true);
+    try {
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL || 'https://api.reviewhub.life';
+      const response = await fetch(`${backendURL}/report`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          boardIdx: parseInt(params.id),
+          reportReason: reportForm.reportReason.trim(),
+          reporterId: reportForm.reporterId.trim(),
+          serviceType: 'freeboard' // 자유게시판 신고임을 명시
+        }),
+      });
+      
+      if (response.ok) {
+        alert('신고가 접수되었습니다.');
+        setShowReportModal(false);
+        setReportForm({ reportReason: '', reporterId: '' });
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || '신고 접수에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('신고 접수 오류:', error);
+      alert('신고 접수 중 오류가 발생했습니다.');
+    } finally {
+      setIsReportLoading(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -652,8 +701,16 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                   <span className="text-xs sm:text-sm text-gray-500">{formatTimeAgo(post.boardRegDate)}</span>
                 </div>
                 
-                {/* 햄버거 메뉴 */}
-                <div className="relative board-menu">
+                {/* 신고 버튼과 햄버거 메뉴 */}
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setShowReportModal(true)}
+                    className="px-2 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-lg transition-colors font-medium"
+                  >
+                    <span className="hidden sm:inline">신고하기</span>
+                    <span className="sm:hidden">신고</span>
+                  </button>
+                  <div className="relative board-menu">
                   <button
                     onClick={toggleBoardMenu}
                     className="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
@@ -686,6 +743,7 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                       </button>
                     </div>
                   )}
+                  </div>
                 </div>
               </div>
 
@@ -1226,6 +1284,86 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 신고 모달 */}
+      {showReportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="text-center mb-6">
+              <div className="text-red-600 text-6xl mb-4">🚨</div>
+              <h3 className="text-xl font-bold text-gray-800">후기 신고하기</h3>
+              <p className="text-gray-600 mt-2">부적절한 내용을 신고해주세요</p>
+            </div>
+            
+            <form onSubmit={handleReportSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  후기 고유 ID
+                </label>
+                <input
+                  type="text"
+                  value={params.id}
+                  disabled
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  신고 사유 <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={reportForm.reportReason}
+                  onChange={(e) => setReportForm({ ...reportForm, reportReason: e.target.value })}
+                  placeholder="신고 사유를 입력해주세요..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  rows={3}
+                  maxLength={200}
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1 text-right">
+                  {reportForm.reportReason.length}/200
+                </p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  신고자 ID <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={reportForm.reporterId}
+                  onChange={(e) => setReportForm({ ...reportForm, reporterId: e.target.value })}
+                  placeholder="신고자 ID를 입력하세요"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  maxLength={20}
+                  required
+                />
+              </div>
+              
+              <div className="flex space-x-3 justify-center pt-4">
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setShowReportModal(false);
+                    setReportForm({ reportReason: '', reporterId: '' });
+                  }}
+                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                >
+                  취소
+                </button>
+                <button 
+                  type="submit"
+                  disabled={isReportLoading}
+                  className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isReportLoading ? '신고 중...' : '신고하기'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

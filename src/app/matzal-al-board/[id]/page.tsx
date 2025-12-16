@@ -1219,59 +1219,73 @@ export default function MatzalAlBoardDetailPage() {
       {/* 신고 모달 */}
       {showReportModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-            <div className="p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">게시글 신고</h2>
-              <form onSubmit={handleReportSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">신고 사유</label>
-                  <select
-                    value={reportForm.reportReason}
-                    onChange={(e) => setReportForm({...reportForm, reportReason: e.target.value})}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  >
-                    <option value="">신고 사유를 선택하세요</option>
-                    <option value="spam">스팸/광고</option>
-                    <option value="inappropriate">부적절한 내용</option>
-                    <option value="harassment">괴롭힘/욕설</option>
-                    <option value="fake">허위 정보</option>
-                    <option value="other">기타</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">신고자 ID</label>
-                  <input
-                    type="text"
-                    value={reportForm.reporterId}
-                    onChange={(e) => setReportForm({...reportForm, reporterId: e.target.value})}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="신고자 ID를 입력하세요"
-                    required
-                  />
-                </div>
-                <div className="flex space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowReportModal(false)}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    취소
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isReportLoading}
-                    className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors ${
-                      isReportLoading
-                        ? 'bg-gray-400 cursor-not-allowed'
-                        : 'bg-red-600 hover:bg-red-700'
-                    }`}
-                  >
-                    {isReportLoading ? '신고 중...' : '신고하기'}
-                  </button>
-                </div>
-              </form>
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="text-center mb-6">
+              <div className="text-red-600 text-6xl mb-4">🚨</div>
+              <h3 className="text-xl font-bold text-gray-800">후기 신고하기</h3>
+              <p className="text-gray-600 mt-2">부적절한 내용을 신고해주세요</p>
             </div>
+            <form onSubmit={handleReportSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">후기 고유 ID</label>
+                <input
+                  type="text"
+                  value={boardId}
+                  disabled
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  신고 사유 <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={reportForm.reportReason}
+                  onChange={(e) => setReportForm({...reportForm, reportReason: e.target.value})}
+                  placeholder="신고 사유를 입력해주세요..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  rows={3}
+                  maxLength={200}
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1 text-right">
+                  {reportForm.reportReason.length}/200
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  신고자 ID <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={reportForm.reporterId}
+                  onChange={(e) => setReportForm({...reportForm, reporterId: e.target.value})}
+                  placeholder="신고자 ID를 입력하세요"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  maxLength={20}
+                  required
+                />
+              </div>
+              <div className="flex space-x-3 justify-center pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowReportModal(false);
+                    setReportForm({ reportReason: '', reporterId: '' });
+                  }}
+                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  disabled={isReportLoading}
+                  className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isReportLoading ? '신고 중...' : '신고하기'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
