@@ -974,7 +974,7 @@ export default function CompanyBoardDetailPage() {
                 onClick={() => setShowReportModal(true)}
                 className="px-3 py-1 text-sm text-red-600 border border-red-300 rounded-md hover:bg-red-50 transition-colors"
               >
-                ▲ 신고하기
+                ⚠️ 신고하기
               </button>
               <div className="relative post-menu-container">
                 <button
@@ -1052,7 +1052,7 @@ export default function CompanyBoardDetailPage() {
             {currentBoardRating ? (
               <div className="flex items-center space-x-3">
                 {renderStarRating(currentBoardRating, 'md')}
-                <span className="text-base font-semibold text-gray-900">
+                <span className="text-base font-semibold text-gray-900 leading-none pt-2">
                   {currentBoardRating.toFixed(1)} / 5.0
                 </span>
               </div>

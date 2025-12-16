@@ -144,11 +144,24 @@ export default function FreeBoardPage() {
       const targetState = !isCurrentlyLiked;
       console.log('[handleLike]', { postIdx, isCurrentlyLiked, targetState, tType: typeof targetState });
       
+      // 현재 게시글의 좋아요 수 저장 (숫자로 변환)
+      const currentPost = posts.find(p => p.boardIdx === postIdx);
+      const currentLikeCount = Number(currentPost?.boardLike) || 0;
+      
       // API 호출 - 변경 후 상태(목표 상태)를 전달
-      await likeFreeboardPost(
+      const response = await likeFreeboardPost(
         postIdx,
         (() => { console.log('[call arg] targetState=', targetState); return !!targetState; })()
       );
+      
+      // API 응답에서 업데이트된 좋아요 수 확인 (숫자로 변환)
+      const rawUpdatedLikeCount = response?.data?.boardLike ?? 
+                                   response?.boardLike ?? 
+                                   response?.data?.likeCount ?? 
+                                   response?.likeCount ?? 
+                                   response?.likes ?? 
+                                   null;
+      const updatedLikeCount = rawUpdatedLikeCount !== null ? Number(rawUpdatedLikeCount) : null;
       
       // 로컬 상태 업데이트
       setPostLikes(prev => {
@@ -166,9 +179,11 @@ export default function FreeBoardPage() {
         post.boardIdx === postIdx 
           ? { 
               ...post, 
-              boardLike: isCurrentlyLiked 
-                ? Math.max(0, post.boardLike - 1)
-                : post.boardLike + 1 
+              boardLike: updatedLikeCount !== null 
+                ? updatedLikeCount 
+                : (isCurrentlyLiked 
+                    ? Math.max(0, currentLikeCount - 1)
+                    : currentLikeCount + 1)
             }
           : post
       ));

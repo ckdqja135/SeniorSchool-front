@@ -994,7 +994,7 @@ export default function CompanyDetailPage() {
                     {averageRating ? (
                       <div className="flex items-center gap-3">
                         {renderStarRating(averageRating, 'lg')}
-                        <span className="text-lg font-bold text-gray-900">{averageRating.toFixed(1)} / 5.0</span>
+                        <span className="text-lg font-bold text-gray-900 leading-none pt-2">{averageRating.toFixed(1)} / 5.0</span>
                       </div>
                     ) : (
                       <p className="text-sm text-gray-500">아직 평점이 없습니다. 첫 후기를 작성해보세요!</p>
@@ -1406,7 +1406,7 @@ export default function CompanyDetailPage() {
                               return ratingValue ? (
                                 <div className="flex items-center space-x-2">
                                   {renderStarRating(ratingValue, 'sm')}
-                                  <span className="text-xs font-semibold text-gray-600">
+                                  <span className="text-xs font-semibold text-gray-600 leading-none pt-2">
                                     {ratingValue.toFixed(1)} / 5.0
                                   </span>
                                 </div>

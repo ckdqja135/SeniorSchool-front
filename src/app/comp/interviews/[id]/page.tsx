@@ -884,7 +884,7 @@ export default function InterviewDetailPage() {
                 onClick={() => setShowReportModal(true)}
                 className="px-3 py-1 text-sm text-red-600 border border-red-300 rounded-md hover:bg-red-50 transition-colors"
               >
-                ▲ 신고하기
+                ⚠️ 신고하기
               </button>
               <div className="relative post-menu-container">
                 <button

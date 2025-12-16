@@ -989,11 +989,8 @@ export default function OutsourceBoardDetailPage() {
                 onClick={() => setShowReportModal(true)}
                 className="px-2 sm:px-4 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-lg transition-colors text-xs sm:text-sm font-medium cursor-pointer"
               >
-                <svg className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-                <span className="hidden sm:inline">신고하기</span>
-                <span className="sm:hidden">신고</span>
+                <span className="hidden sm:inline">⚠️ 신고하기</span>
+                <span className="sm:hidden">⚠️ 신고</span>
               </button>
               
               {/* 설정 드롭다운 */}
@@ -1020,7 +1017,7 @@ export default function OutsourceBoardDetailPage() {
                     }}
                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                   >
-                    수정하기
+                    수정
                   </button>
                   <button
                     onClick={() => {

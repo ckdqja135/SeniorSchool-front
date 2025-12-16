@@ -707,8 +707,8 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                     onClick={() => setShowReportModal(true)}
                     className="px-2 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-lg transition-colors font-medium"
                   >
-                    <span className="hidden sm:inline">신고하기</span>
-                    <span className="sm:hidden">신고</span>
+                    <span className="hidden sm:inline">⚠️ 신고하기</span>
+                    <span className="sm:hidden">⚠️ 신고</span>
                   </button>
                   <div className="relative board-menu">
                   <button

@@ -1045,7 +1045,7 @@ export default function MatzalAlBoardDetailPage() {
                 onClick={() => setShowReportModal(true)}
                 className="px-3 py-1 text-sm text-red-600 border border-red-300 rounded-md hover:bg-red-50 transition-colors"
               >
-                ▲ 신고하기
+                ⚠️ 신고하기
               </button>
               <div className="relative post-menu-container">
                 <button
@@ -1339,7 +1339,7 @@ export default function MatzalAlBoardDetailPage() {
                     type="submit"
                     className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
-                    수정하기
+                    수정
                   </button>
                 </div>
               </form>
