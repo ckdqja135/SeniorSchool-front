@@ -704,7 +704,7 @@ export default function OutsourceBoardDetailPage() {
         boardIdx: board.boardIdx,
         reportReason: reportForm.reportReason.trim(),
         reporterId: reportForm.reporterId.trim(),
-        reportType: 'outsource' // 외주 게시판 신고임을 명시
+        serviceType: 'outsource' // 외주 게시판 신고임을 명시
       };
 
       const response = await fetch(`${backendURL}/report`, {

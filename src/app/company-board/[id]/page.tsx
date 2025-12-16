@@ -731,7 +731,7 @@ export default function CompanyBoardDetailPage() {
           boardIdx: parseInt(boardId),
           reportReason: reportForm.reportReason,
           reporterId: reportForm.reporterId,
-          reportType: 'company' // 회사 게시판 신고임을 명시
+          serviceType: 'company' // 회사 게시판 신고임을 명시
         })
       });
       

@@ -921,7 +921,7 @@ export default function BoardDetailPage() {
         boardIdx: boardPost.boardIdx,
         reportReason: reportForm.reportReason.trim(),
         reporterId: reportForm.reporterId.trim(),
-        reportType: 'univ' // 학교 게시판 신고임을 명시
+        serviceType: 'univ' // 학교 게시판 신고임을 명시
       };
 
       const response = await fetch(`${backendURL}/report`, {

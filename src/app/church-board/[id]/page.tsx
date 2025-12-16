@@ -876,7 +876,7 @@ export default function ChurchBoardDetailPage() {
           boardIdx: board.boardIdx,
           reportReason: reportForm.reportReason.trim(),
           reporterId: reportForm.reporterId.trim(),
-          reportType: 'church' // 교회 게시판 신고임을 명시
+          serviceType: 'church' // 교회 게시판 신고임을 명시
         }),
       });
       

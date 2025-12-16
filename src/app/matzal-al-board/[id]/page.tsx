@@ -600,7 +600,7 @@ export default function MatzalAlBoardDetailPage() {
           boardIdx: parseInt(boardId),
           reportReason: reportForm.reportReason,
           reporterId: reportForm.reporterId,
-          reportType: 'restaurant' // 맛잘알 게시판 신고임을 명시
+          serviceType: 'restaurant' // 맛잘알 게시판 신고임을 명시
         }),
       });
 

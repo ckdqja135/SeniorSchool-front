@@ -671,7 +671,7 @@ export default function InterviewDetailPage() {
           boardIdx: parseInt(interviewIdx), // boardIdx로 통일
           reportReason: reportForm.reportReason,
           reporterId: reportForm.reporterId,
-          reportType: 'interview'
+          serviceType: 'interview'
         })
       });
       
