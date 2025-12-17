@@ -960,13 +960,48 @@ export default function OutsourceBoardDetailPage() {
         <div className="mb-6">
           <button
             onClick={() => {
-              if (board?.outsourceIdx) {
-                router.push(`/outsource-mentor/${board.outsourceIdx}`);
-              } else if (board?.outsourceName) {
-                router.push(`/outsource-mentor/${encodeURIComponent(board.outsourceName)}`);
-              } else {
-                router.back();
+              // sessionStorage에서 외주업체 이름 가져오기
+              const previousOutsourceName = sessionStorage.getItem('previousOutsourceName');
+              
+              // 외주업체 이름 찾기 (우선순위 순)
+              let targetName = null;
+              
+              // 1. outsourceInfo에서 outsourceName 확인
+              if (outsourceInfo?.outsourceName) {
+                targetName = outsourceInfo.outsourceName;
               }
+              
+              // 2. board.outsource 객체에서 outsourceName 확인
+              if (!targetName && board && 'outsource' in board) {
+                const outsource = (board as any).outsource;
+                if (outsource?.outsourceName) {
+                  targetName = outsource.outsourceName;
+                }
+              }
+              
+              // 3. board.outsourceName 확인
+              if (!targetName && board?.outsourceName) {
+                targetName = board.outsourceName;
+              }
+              
+              // 4. sessionStorage에서 가져온 이름 확인
+              if (!targetName && previousOutsourceName) {
+                targetName = previousOutsourceName;
+              }
+              
+              // 외주업체 이름이 있으면 해당 상세 페이지로 이동
+              if (targetName) {
+                router.push(`/outsource-mentor/${encodeURIComponent(targetName)}`);
+              } else if (board?.outsourceIdx) {
+                // 이름이 없고 idx만 있으면 idx로 이동
+                router.push(`/outsource-mentor/${board.outsourceIdx}`);
+              } else {
+                // 둘 다 없으면 외주 오빠 메인으로 이동
+                router.push('/outsource-mentor');
+              }
+              
+              // sessionStorage 정리
+              sessionStorage.removeItem('previousOutsourceName');
             }}
             className="flex items-center text-gray-600 hover:text-gray-800 transition-colors"
           >

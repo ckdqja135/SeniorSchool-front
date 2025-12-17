@@ -303,6 +303,13 @@ export default function HomePage() {
         router.push(`/company-board/${post.boardIdx}`);
         break;
       case 'outsource':
+        // 외주업체 정보를 sessionStorage에 저장 (뒤로가기 시 사용)
+        if ((post as any).outsourceName) {
+          sessionStorage.setItem('previousOutsourceName', (post as any).outsourceName);
+        }
+        if ((post as any).outsource?.outsourceName) {
+          sessionStorage.setItem('previousOutsourceName', (post as any).outsource.outsourceName);
+        }
         router.push(`/outsource-board/${post.boardIdx}`);
         break;
       case 'restaurant':
@@ -978,6 +985,13 @@ export default function HomePage() {
                         className="p-2 rounded hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
                         onClick={(e) => {
                           e.stopPropagation();
+                          // 외주업체 정보를 sessionStorage에 저장 (뒤로가기 시 사용)
+                          if ((board as any).outsourceName) {
+                            sessionStorage.setItem('previousOutsourceName', (board as any).outsourceName);
+                          }
+                          if ((board as any).outsource?.outsourceName) {
+                            sessionStorage.setItem('previousOutsourceName', (board as any).outsource.outsourceName);
+                          }
                           router.push(`/outsource-board/${board.boardIdx}`);
                         }}
                       >

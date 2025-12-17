@@ -990,11 +990,11 @@ export default function MatzalAlBoardDetailPage() {
               // boardPost에 restaurant 정보가 있으면 해당 페이지로 이동
               let targetName = null;
               
-              // restaurant 객체에서 matzalAlName 확인 (타입에 정의되지 않은 필드일 수 있음)
+              // restaurant 객체에서 restaurantName 확인
               if (boardPost && 'restaurant' in boardPost) {
                 const restaurant = boardPost.restaurant as any;
-                if (restaurant?.matzalAlName) {
-                  targetName = restaurant.matzalAlName;
+                if (restaurant?.restaurantName) {
+                  targetName = restaurant.restaurantName;
                 }
               }
               
