@@ -1070,10 +1070,14 @@ export default function BoardDetailPage() {
                 onClick={() => {
                   toggleReportModal();
                 }}
-                className="px-2 sm:px-4 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-lg transition-colors text-xs sm:text-sm font-medium cursor-pointer"
+                className="px-2 sm:px-4 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-lg transition-colors text-xs sm:text-sm font-medium cursor-pointer flex items-center gap-1.5"
               >
-                <span className="hidden sm:inline">⚠️ 신고하기</span>
-                <span className="sm:hidden">⚠️ 신고</span>
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2L2 22h20L12 2z" fill="#EF4444" stroke="#DC2626" strokeWidth="1.5"/>
+                  <path d="M12 9v4M12 17h.01" stroke="#CA8A04" strokeWidth="3" strokeLinecap="round"/>
+                </svg>
+                <span className="hidden sm:inline">신고하기</span>
+                <span className="sm:hidden">신고</span>
               </button>
               
               {/* 설정 드롭다운 */}

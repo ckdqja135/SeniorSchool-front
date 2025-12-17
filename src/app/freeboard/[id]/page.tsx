@@ -705,10 +705,14 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => setShowReportModal(true)}
-                    className="px-2 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-lg transition-colors font-medium"
+                    className="px-2 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-lg transition-colors font-medium flex items-center gap-1.5"
                   >
-                    <span className="hidden sm:inline">⚠️ 신고하기</span>
-                    <span className="sm:hidden">⚠️ 신고</span>
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
+                      <path d="M12 2L2 22h20L12 2z" fill="#EF4444" stroke="#DC2626" strokeWidth="1.5"/>
+                      <path d="M12 9v4M12 17h.01" stroke="#CA8A04" strokeWidth="3" strokeLinecap="round"/>
+                    </svg>
+                    <span className="hidden sm:inline">신고하기</span>
+                    <span className="sm:hidden">신고</span>
                   </button>
                   <div className="relative board-menu">
                   <button

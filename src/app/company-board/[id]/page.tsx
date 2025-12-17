@@ -972,9 +972,13 @@ export default function CompanyBoardDetailPage() {
             <div className="flex space-x-2 ml-4">
               <button
                 onClick={() => setShowReportModal(true)}
-                className="px-3 py-1 text-sm text-red-600 border border-red-300 rounded-md hover:bg-red-50 transition-colors"
+                className="px-3 py-1 text-sm text-red-600 border border-red-300 rounded-md hover:bg-red-50 transition-colors flex items-center gap-1.5"
               >
-                ⚠️ 신고하기
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2L2 22h20L12 2z" fill="#EF4444" stroke="#DC2626" strokeWidth="1.5"/>
+                  <path d="M12 9v4M12 17h.01" stroke="#CA8A04" strokeWidth="3" strokeLinecap="round"/>
+                </svg>
+                신고하기
               </button>
               <div className="relative post-menu-container">
                 <button
