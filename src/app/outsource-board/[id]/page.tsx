@@ -1025,8 +1025,9 @@ export default function OutsourceBoardDetailPage() {
                 className="px-2 sm:px-4 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-lg transition-colors text-xs sm:text-sm font-medium cursor-pointer flex items-center gap-1.5"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
-                  {/* 둥근 모서리 빨간색 테두리 삼각형 */}
-                  <path d="M12 2L2 22h20L12 2z" fill="white" stroke="#EF4444" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round"/>
+                  {/* 모서리가 둥근 삼각형 */}
+                  <path d="M12 3.5 C12 3.5, 13 4, 14 6 L21 20 C21.5 21, 21.5 21.5, 21 21.5 L3 21.5 C2.5 21.5, 2.5 21, 3 20 L10 6 C11 4, 12 3.5, 12 3.5 Z" 
+                        fill="white" stroke="#EF4444" strokeWidth="2" strokeLinejoin="round"/>
                   {/* 빨간색 느낌표 */}
                   <g fill="#EF4444">
                     <rect x="11" y="10" width="2" height="6" rx="1"/>

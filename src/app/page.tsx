@@ -373,18 +373,21 @@ export default function HomePage() {
           label: '맛잘알 오빠',
           color: 'blue',
           icon: (
-            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg className="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              {/* 포크 */}
+              <path d="M7 2c.55 0 1 .45 1 1v6.2c0 .66.54 1.2 1.2 1.2H10v10.6c0 .55-.45 1-1 1s-1-.45-1-1V10.4H6.8c-.66 0-1.2-.54-1.2-1.2V3c0-.55.45-1 1-1s1 .45 1 1v3h.8V3c0-.55.45-1 1-1s1 .45 1 1v3h.8V3c0-.55.45-1 1-1s1 .45 1 1v6.2c0 1.77-1.43 3.2-3.2 3.2H11v8.8c0 .55-.45 1-1 1s-1-.45-1-1V12.4H9.2c-1.77 0-3.2-1.43-3.2-3.2V3c0-.55.45-1 1-1z" />
+              {/* 숟가락 */}
+              <path d="M17.5 2c1.93 0 3.5 1.57 3.5 3.5c0 1.7-1.2 3.12-2.8 3.43V21c0 .55-.45 1-1 1s-1-.45-1-1V8.93C14.7 8.62 13.5 7.2 13.5 5.5C13.5 3.57 15.07 2 17 2h.5zm-.5 2c-.83 0-1.5.67-1.5 1.5S16.17 7 17 7s1.5-.67 1.5-1.5S17.83 4 17 4z" />
             </svg>
           )
         };
       case 'outsource':
         return {
           label: '외주 오빠',
-          color: 'orange',
+          color: 'yellow',
           icon: (
-            <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            <svg className="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
             </svg>
           )
         };
@@ -549,6 +552,7 @@ export default function HomePage() {
                       red: 'bg-red-100 text-red-600',
                       blue: 'bg-blue-100 text-blue-600',
                       orange: 'bg-orange-100 text-orange-600',
+                      yellow: 'bg-yellow-100 text-yellow-600',
                       indigo: 'bg-indigo-100 text-indigo-600',
                       gray: 'bg-gray-100 text-gray-600'
                     };
@@ -728,7 +732,7 @@ export default function HomePage() {
                         <div className="flex items-start space-x-2">
                           <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
                             <svg className="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                             </svg>
                           </div>
                           <div className="flex-1 min-w-0">
@@ -860,7 +864,7 @@ export default function HomePage() {
                     <h2 className="text-lg font-bold text-gray-900 group-hover:text-purple-600 transition-colors duration-300">회사 오빠</h2>
                     <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center group-hover:animate-pulse group-hover:bg-purple-200 transition-all duration-300">
                       <svg className="w-5 h-5 text-purple-600 group-hover:text-purple-700 transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                       </svg>
                     </div>
                   </div>
@@ -889,7 +893,7 @@ export default function HomePage() {
                         <div className="flex items-start space-x-2">
                           <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
                             <svg className="w-3 h-3 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                             </svg>
                           </div>
                           <div className="flex-1 min-w-0">
@@ -1044,8 +1048,11 @@ export default function HomePage() {
                 <Link href="/matzal-al-mentor" className="flex items-center justify-between group">
                   <h2 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors duration-200">맛잘알 오빠</h2>
                   <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors duration-200">
-                    <svg className="w-5 h-5 text-blue-600 group-hover:text-blue-700 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <svg className="w-5 h-5 text-blue-600 group-hover:text-blue-700 transition-colors duration-200" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      {/* 포크 */}
+                      <path d="M7 2c.55 0 1 .45 1 1v6.2c0 .66.54 1.2 1.2 1.2H10v10.6c0 .55-.45 1-1 1s-1-.45-1-1V10.4H6.8c-.66 0-1.2-.54-1.2-1.2V3c0-.55.45-1 1-1s1 .45 1 1v3h.8V3c0-.55.45-1 1-1s1 .45 1 1v3h.8V3c0-.55.45-1 1-1s1 .45 1 1v6.2c0 1.77-1.43 3.2-3.2 3.2H11v8.8c0 .55-.45 1-1 1s-1-.45-1-1V12.4H9.2c-1.77 0-3.2-1.43-3.2-3.2V3c0-.55.45-1 1-1z" />
+                      {/* 숟가락 */}
+                      <path d="M17.5 2c1.93 0 3.5 1.57 3.5 3.5c0 1.7-1.2 3.12-2.8 3.43V21c0 .55-.45 1-1 1s-1-.45-1-1V8.93C14.7 8.62 13.5 7.2 13.5 5.5C13.5 3.57 15.07 2 17 2h.5zm-.5 2c-.83 0-1.5.67-1.5 1.5S16.17 7 17 7s1.5-.67 1.5-1.5S17.83 4 17 4z" />
                     </svg>
                   </div>
                 </Link>
@@ -1085,8 +1092,11 @@ export default function HomePage() {
                     >
                       <div className="flex items-start space-x-2">
                         <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                          <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          <svg className="w-3 h-3 text-blue-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            {/* 포크 */}
+                            <path d="M7 2c.55 0 1 .45 1 1v6.2c0 .66.54 1.2 1.2 1.2H10v10.6c0 .55-.45 1-1 1s-1-.45-1-1V10.4H6.8c-.66 0-1.2-.54-1.2-1.2V3c0-.55.45-1 1-1s1 .45 1 1v3h.8V3c0-.55.45-1 1-1s1 .45 1 1v3h.8V3c0-.55.45-1 1-1s1 .45 1 1v6.2c0 1.77-1.43 3.2-3.2 3.2H11v8.8c0 .55-.45 1-1 1s-1-.45-1-1V12.4H9.2c-1.77 0-3.2-1.43-3.2-3.2V3c0-.55.45-1 1-1z" />
+                            {/* 숟가락 */}
+                            <path d="M17.5 2c1.93 0 3.5 1.57 3.5 3.5c0 1.7-1.2 3.12-2.8 3.43V21c0 .55-.45 1-1 1s-1-.45-1-1V8.93C14.7 8.62 13.5 7.2 13.5 5.5C13.5 3.57 15.07 2 17 2h.5zm-.5 2c-.83 0-1.5.67-1.5 1.5S16.17 7 17 7s1.5-.67 1.5-1.5S17.83 4 17 4z" />
                           </svg>
                         </div>
                         <div className="flex-1 min-w-0">
