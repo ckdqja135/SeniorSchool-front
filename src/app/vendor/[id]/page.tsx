@@ -39,6 +39,7 @@ async function getVendor(id: string): Promise<DevVendor | BaseVendor | null> {
             frontend: 3,
             backend: 2,
             ai: 1,
+            mobile: 0,
             designer: 1,
             pm: 1,
             devops: 1,
