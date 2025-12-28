@@ -638,9 +638,9 @@ export default function SchoolPage() {
                                  }`}
                                >
                                  <div className="flex items-center space-x-1.5">
-                                   <div className={`w-4 h-4 rounded-full flex items-center justify-center text-white font-bold text-xs ${
-                                     index < 3 ? 'bg-gradient-to-r from-yellow-400 to-orange-500' : 'bg-gradient-to-r from-gray-400 to-gray-600'
-                                   }`}>
+                                  <div className={`w-4 h-4 rounded-full flex items-center justify-center text-white font-bold text-xs ${
+                                    index < 3 ? 'bg-gradient-to-r from-green-400 to-green-500' : 'bg-gradient-to-r from-gray-400 to-gray-600'
+                                  }`}>
                                      {index + 1}
                                    </div>
                                    <div className="flex-1 min-w-0">
