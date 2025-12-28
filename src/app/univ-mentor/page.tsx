@@ -569,27 +569,39 @@ export default function SchoolPage() {
          </div>
        </div>
 
-                                                                                                                               {/* 검색창 밑 컨텐츠 */}
-                         <div className="bg-white py-6">
-               <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* 인기 대학교 섹션 */}
-                    <div className="relative">
-                                             {/* 대학교 추가 요청 버튼 - 섹션 왼쪽 바깥쪽 */}
-                       <div className="absolute -left-48 top-0">
-                                                 <button
-                           type="button"
-                           onClick={() => setShowRequestModal(true)}
-                           className="flex items-center space-x-2 px-3 py-1.5 rounded-lg transition-all duration-300 bg-green-100 text-green-600 hover:bg-green-200"
-                         >
-                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                           </svg>
-                           <span className="text-sm">대학교 추가 요청</span>
-                         </button>
-                      </div>
-                      
-                      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+      {/* 대학교 추가 요청 CTA 배너 - 검색창 바로 아래 */}
+      <div className="bg-gradient-to-r from-green-400 via-green-500 to-green-600 py-6 shadow-lg">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex-1 text-center md:text-left">
+              <h3 className="text-xl md:text-2xl font-bold text-white mb-1">
+                대학교를 추가하고 싶으신가요?
+              </h3>
+              <p className="text-green-50 text-sm md:text-base">
+                지금 요청하고 더 많은 학생들에게 도움을 주세요
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowRequestModal(true)}
+              className="flex items-center space-x-2 px-6 py-3 bg-white text-green-600 font-semibold rounded-lg shadow-lg hover:bg-green-50 transition-all duration-300 hover:scale-105 hover:shadow-xl whitespace-nowrap"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              <span>대학교 추가 요청</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 검색창 밑 컨텐츠 */}
+      <div className="bg-white py-6">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* 인기 대학교 섹션 */}
+            <div className="relative">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200">
                         <div className="p-3 border-b border-gray-200">
                           <div className="flex items-center justify-between">
                             <h2 className="text-base font-bold text-gray-900">인기 대학교 TOP 10</h2>

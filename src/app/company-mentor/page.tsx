@@ -574,26 +574,38 @@ export default function CompanyMentorPage() {
         </div>
       </div>
 
+      {/* 회사 추가 요청 CTA 배너 - 검색창 바로 아래 */}
+      <div className="bg-gradient-to-r from-purple-400 via-purple-500 to-purple-600 py-6 shadow-lg">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex-1 text-center md:text-left">
+              <h3 className="text-xl md:text-2xl font-bold text-white mb-1">
+                회사를 추가하고 싶으신가요?
+              </h3>
+              <p className="text-purple-50 text-sm md:text-base">
+                지금 요청하고 더 많은 정보를 공유해보세요
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowRequestModal(true)}
+              className="flex items-center space-x-2 px-6 py-3 bg-white text-purple-600 font-semibold rounded-lg shadow-lg hover:bg-purple-50 transition-all duration-300 hover:scale-105 hover:shadow-xl whitespace-nowrap"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              <span>회사 추가 요청</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* 검색창 밑 컨텐츠 */}
       <div className="bg-white py-6">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* 인기 회사 섹션 */}
             <div className="relative">
-              {/* 회사 추가 요청 버튼 - 섹션 왼쪽 바깥쪽 */}
-              <div className="absolute -left-48 top-0">
-                <button
-                  type="button"
-                  onClick={() => setShowRequestModal(true)}
-                  className="flex items-center space-x-2 px-3 py-1.5 rounded-lg transition-all duration-300 bg-purple-100 text-purple-600 hover:bg-purple-200"
-                >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  <span className="text-sm">회사 추가 요청</span>
-                </button>
-              </div>
-              
               <div className="bg-white rounded-lg shadow-sm border border-gray-200">
                 <div className="p-3 border-b border-gray-200">
                   <div className="flex items-center justify-between">
