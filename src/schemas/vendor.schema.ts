@@ -22,6 +22,7 @@ export const teamCompositionSchema = z
         frontend: z.number().int().min(0).max(50).default(0),
         backend: z.number().int().min(0).max(50).default(0),
         ai: z.number().int().min(0).max(50).default(0),
+        mobile: z.number().int().min(0).max(50).default(0),
         designer: z.number().int().min(0).max(50).default(0),
         pm: z.number().int().min(0).max(50).default(0),
         devops: z.number().int().min(0).max(50).default(0),
@@ -35,6 +36,7 @@ export const teamCompositionSchema = z
                 data.frontend +
                 data.backend +
                 data.ai +
+                data.mobile +
                 data.designer +
                 data.pm +
                 data.devops +

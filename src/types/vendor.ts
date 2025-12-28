@@ -39,6 +39,8 @@ export interface TeamComposition {
     backend: number;
     /** AI/데이터 엔지니어 수 (0~50) */
     ai: number;
+    /** 모바일 개발자 수 (0~50) */
+    mobile: number;
     /** 디자이너 수 (0~50) */
     designer: number;
     /** PM/기획자 수 (0~50) */

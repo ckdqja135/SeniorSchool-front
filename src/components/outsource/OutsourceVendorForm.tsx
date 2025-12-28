@@ -6,8 +6,7 @@ import { vendorFormSchema, VendorFormInput } from '@/schemas/vendor.schema';
 import { VendorCategory } from '@/types/vendor';
 import BasicInfoSection from './sections/BasicInfoSection';
 import BudgetSection from './sections/BudgetSection';
-import DevStacksSection from './sections/DevStacksSection';
-import TeamCompositionSection from './sections/TeamCompositionSection';
+import DevTeamSection from './sections/DevTeamSection';
 import GovSupportSection from './sections/GovSupportSection';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -37,6 +36,7 @@ export default function OutsourceVendorForm({
                 frontend: 0,
                 backend: 0,
                 ai: 0,
+                mobile: 0,
                 designer: 0,
                 pm: 0,
                 devops: 0,
@@ -150,17 +150,10 @@ export default function OutsourceVendorForm({
                     </div>
                 )}
 
-                {/* 개발 스택 섹션 (개발 분야 전용) */}
+                {/* 개발 스택 및 팀 구성 섹션 (개발 분야 전용) */}
                 {isDevelopment && (
                     <div className="p-6 bg-white border rounded-lg shadow-sm">
-                        <DevStacksSection form={form as any} />
-                    </div>
-                )}
-
-                {/* 팀 구성 섹션 (개발 분야 전용) */}
-                {isDevelopment && (
-                    <div className="p-6 bg-white border rounded-lg shadow-sm">
-                        <TeamCompositionSection form={form as any} />
+                        <DevTeamSection form={form as any} />
                     </div>
                 )}
 
