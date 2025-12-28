@@ -886,7 +886,7 @@ export default function SchoolPage() {
                      <button
                        type="submit"
                        disabled={isSearching}
-                       className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2 min-w-[100px] justify-center"
+                       className="px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center space-x-2 min-w-[100px] justify-center"
                      >
                        {isSearching ? (
                          <>
