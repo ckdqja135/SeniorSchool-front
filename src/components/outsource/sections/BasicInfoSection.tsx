@@ -29,6 +29,21 @@ export default function BasicInfoSection({ form }: BasicInfoSectionProps) {
     const category = watch('category');
     const customCategory = watch('customCategory') || '';
     const [isKakaoLoaded, setIsKakaoLoaded] = useState(false);
+    
+    // serviceTypes를 문자열로 표시하기 위한 state
+    const serviceTypesArray = watch('serviceTypes') as string[] | undefined;
+    const [serviceTypesDisplay, setServiceTypesDisplay] = useState(
+        Array.isArray(serviceTypesArray) ? serviceTypesArray.join(', ') : ''
+    );
+    
+    // serviceTypes가 변경될 때 display 값 업데이트
+    useEffect(() => {
+        if (Array.isArray(serviceTypesArray)) {
+            setServiceTypesDisplay(serviceTypesArray.join(', '));
+        } else {
+            setServiceTypesDisplay('');
+        }
+    }, [serviceTypesArray]);
 
     // 카카오 주소 API 스크립트 로드
     useEffect(() => {
@@ -160,13 +175,32 @@ export default function BasicInfoSection({ form }: BasicInfoSectionProps) {
                 </label>
                 <input
                     type="text"
-                    {...register('serviceTypes')}
+                    value={serviceTypesDisplay}
+                    onChange={(e) => {
+                        const value = e.target.value;
+                        setServiceTypesDisplay(value);
+                        
+                        // 입력값을 배열로 변환하여 폼에 저장
+                        if (value.trim() === '') {
+                            setValue('serviceTypes', undefined, { shouldValidate: true });
+                        } else {
+                            const serviceTypesArray = value
+                                .split(',')
+                                .map((item: string) => item.trim())
+                                .filter((item: string) => item.length > 0)
+                                .slice(0, 5);
+                            setValue('serviceTypes', serviceTypesArray, { shouldValidate: true });
+                        }
+                    }}
                     className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="쉼표(,)로 구분하여 입력 (예: 웹사이트 제작, 관리자 페이지, 랜딩 페이지)"
                 />
                 <p className="text-sm text-gray-500 mt-1">
                     각 항목은 2~30자, 최대 5개까지 입력 가능합니다.
                 </p>
+                {errors.serviceTypes && (
+                    <p className="text-sm text-red-500 mt-1">{errors.serviceTypes.message?.toString()}</p>
+                )}
             </div>
 
             {/* 소개 상세 설명 */}

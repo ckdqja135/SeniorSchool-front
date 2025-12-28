@@ -10,6 +10,7 @@ import DevTeamSection from './sections/DevTeamSection';
 import GovSupportSection from './sections/GovSupportSection';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { getApiBaseUrl } from '@/lib/api/config';
 
 interface OutsourceVendorFormProps {
     initialData?: Partial<VendorFormInput>;
@@ -64,32 +65,71 @@ export default function OutsourceVendorForm({
         setSubmitError(null);
 
         try {
+            // serviceTypes를 문자열에서 배열로 변환 (쉼표로 구분)
+            let processedData = { ...data };
+            if (typeof processedData.serviceTypes === 'string' && processedData.serviceTypes.trim()) {
+                processedData.serviceTypes = processedData.serviceTypes
+                    .split(',')
+                    .map((item: string) => item.trim())
+                    .filter((item: string) => item.length > 0)
+                    .slice(0, 5); // 최대 5개로 제한
+            } else if (!processedData.serviceTypes) {
+                delete processedData.serviceTypes;
+            }
+
+            // 개발 분야가 아닐 때는 개발 관련 필드 제거
+            if (processedData.category !== 'DEVELOPMENT') {
+                delete processedData.devInfo;
+                delete processedData.team;
+                delete processedData.govSupport;
+                delete processedData.minBudget;
+                delete processedData.avgBudget;
+                delete processedData.maxBudget;
+                delete processedData.avgBudgetRange;
+            } else {
+                // 개발 분야일 때는 techStackSummary가 필수인지 확인
+                if (!processedData.devInfo?.techStackSummary || processedData.devInfo.techStackSummary.length === 0) {
+                    throw new Error('개발 분야는 주요 기술스택을 최소 1개 이상 입력해야 합니다.');
+                }
+            }
+
+            // 기타 분야가 아닐 때는 customCategory 제거
+            if (processedData.category !== 'OTHER') {
+                delete processedData.customCategory;
+            }
+
             // API 엔드포인트로 데이터 전송
-            // TODO: 실제 API 엔드포인트로 교체 필요
-            const apiUrl =
-                mode === 'create'
-                    ? '/api/vendors'
-                    : `/api/vendors/${initialData?.id}`;
-            const method = mode === 'create' ? 'POST' : 'PUT';
+            const BASE_URL = getApiBaseUrl();
+            const apiUrl = `${BASE_URL}/outsource/requests`;
 
             const response = await fetch(apiUrl, {
-                method,
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(data),
+                body: JSON.stringify(processedData),
             });
 
+            const responseData = await response.json();
+
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || '저장 중 오류가 발생했습니다.');
+                // 에러 응답 처리
+                if (response.status === 409) {
+                    throw new Error(responseData.message || '이미 동일한 외주업체에 대한 요청이 처리 대기중입니다.');
+                } else if (response.status === 400) {
+                    throw new Error(responseData.error || responseData.message || '입력 정보를 확인해주세요.');
+                } else {
+                    throw new Error(responseData.error || responseData.message || '요청 처리 중 오류가 발생했습니다.');
+                }
             }
 
-            const result = await response.json();
-            console.log('Vendor saved:', result);
-
-            // 성공 시 리스트 페이지로 리다이렉트
-            router.push('/outsource-mentor');
+            // 성공 응답
+            if (responseData.success) {
+                alert('외주업체 추가 요청이 성공적으로 등록되었습니다.\n관리자 승인 후 게시됩니다.');
+                router.push('/outsource-mentor');
+            } else {
+                throw new Error(responseData.message || '요청 처리 중 오류가 발생했습니다.');
+            }
         } catch (error) {
             console.error('Submit error:', error);
             setSubmitError(
