@@ -181,7 +181,23 @@ export default function SchoolPage() {
       const data = await response.json();
       
       if (data.status === 200 && data.data) {
-        setPopularBoards(data.data);
+        // API 응답 구조에 맞게 데이터 변환 (university 객체 생성)
+        const transformedData: PopularBoard[] = data.data.map((item: any) => ({
+          boardIdx: typeof item.boardIdx === 'string' ? parseInt(item.boardIdx) : item.boardIdx,
+          boardTitle: item.boardTitle || '',
+          boardContent: item.boardContent || '',
+          boardRegDate: item.boardRegDate || '',
+          boardLike: typeof item.boardLike === 'string' ? parseInt(item.boardLike) : item.boardLike,
+          boardHits: typeof item.boardHits === 'string' ? parseInt(item.boardHits) : item.boardHits,
+          boardID: item.boardID || '',
+          university: {
+            univName: item.univName || '',
+            univLocate: item.univLocate || '',
+            univType: item.univType || '',
+            univCampos: item.univCampos || ''
+          }
+        }));
+        setPopularBoards(transformedData);
       }
     } catch (error) {
       console.error('인기 후기 로딩 오류:', error);

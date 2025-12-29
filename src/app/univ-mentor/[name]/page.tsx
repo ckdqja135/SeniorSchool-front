@@ -657,8 +657,8 @@ export default function SchoolPage() {
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-2xl font-bold text-gray-800 mb-6 tracking-wide">대학교 정보</h2>
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-green-50 p-3 rounded-lg border border-green-100 hover:shadow-md transition-all duration-200">
-                  <span className="text-xs text-green-700 font-bold uppercase tracking-wider mb-1 block">위치</span>
+                <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 hover:shadow-md transition-all duration-200">
+                  <span className="text-xs text-blue-700 font-bold uppercase tracking-wider mb-1 block">위치</span>
                   <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-900 leading-relaxed">{university.univLocate}</p>
                 </div>
                 <div className="bg-green-50 p-3 rounded-lg border border-green-100 hover:shadow-md transition-all duration-200">

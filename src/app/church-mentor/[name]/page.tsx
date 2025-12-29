@@ -613,7 +613,7 @@ export default function ChurchDetailPage() {
                   </p>
                 </div>
                 <div className="bg-orange-50 p-3 rounded-lg border border-orange-100 hover:shadow-md transition-all duration-200">
-                  <span className="text-xs text-orange-700 font-bold uppercase tracking-wider mb-1 block">총장</span>
+                  <span className="text-xs text-orange-700 font-bold uppercase tracking-wider mb-1 block">담임목사</span>
                   <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-900 leading-relaxed">{church.churchPastor}</p>
                 </div>
               </div>
