@@ -127,7 +127,21 @@ export default function HomePage() {
         const result: ApiResponse = await response.json();
         
         if (result.status === 200 && result.data) {
-          setRecentPosts(result.data);
+          // API 응답 구조에 맞게 데이터 변환 (university 객체 생성)
+          const transformedData: BoardPost[] = result.data.map((item: any) => ({
+            ...item,
+            boardIdx: typeof item.boardIdx === 'string' ? parseInt(item.boardIdx) : item.boardIdx,
+            univIdx: typeof item.univIdx === 'string' ? parseInt(item.univIdx) : item.univIdx,
+            boardLike: typeof item.boardLike === 'string' ? parseInt(item.boardLike) : item.boardLike,
+            boardHits: typeof item.boardHits === 'string' ? parseInt(item.boardHits) : item.boardHits,
+            university: {
+              univName: item.univName || '',
+              univLocate: item.univLocate || '',
+              univType: item.univType || '',
+              univCampos: item.univCampos || ''
+            }
+          }));
+          setRecentPosts(transformedData);
         } else {
           throw new Error('데이터를 불러오는데 실패했습니다.');
         }
