@@ -119,6 +119,8 @@ export interface BaseVendor {
     id?: string;
     /** 업체명/브랜드명 (2~50자, 특수문자 제한) */
     name: string;
+    /** 대표자명 (2~30자) */
+    outsourceCEO: string;
     /** 한 줄 소개 (5~80자) */
     tagline: string;
     /** 분야(대분류) */

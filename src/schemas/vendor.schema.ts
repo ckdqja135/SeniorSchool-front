@@ -117,6 +117,14 @@ const baseVendorObjectSchema = z.object({
             /^[a-zA-Z0-9가-힣\s\-_.&()]+$/,
             '업체명에 허용되지 않는 특수문자가 포함되어 있습니다.'
         ),
+    outsourceCEO: z
+        .string()
+        .min(2, '대표자명은 최소 2자 이상이어야 합니다.')
+        .max(30, '대표자명은 최대 30자까지 입력 가능합니다.')
+        .regex(
+            /^[가-힣a-zA-Z\s]+$/,
+            '대표자명은 한글, 영문, 공백만 입력 가능합니다.'
+        ),
     tagline: z
         .string()
         .min(5, '한 줄 소개는 최소 5자 이상이어야 합니다.')
@@ -140,7 +148,6 @@ const baseVendorObjectSchema = z.object({
     mainPortfolioUrl: z.string().url().optional().or(z.literal('')),
     websiteUrl: z.string().url().optional().or(z.literal('')),
     region: z.string().max(50).optional(),
-    timezone: z.string().max(50).optional(),
     contactEmail: z.string().email('유효한 이메일 주소를 입력해주세요.'),
     contactChannel: z.string().max(100).optional(),
     isPublic: z.boolean(),

@@ -8,7 +8,7 @@ import BasicInfoSection from './sections/BasicInfoSection';
 import BudgetSection from './sections/BudgetSection';
 import DevTeamSection from './sections/DevTeamSection';
 import GovSupportSection from './sections/GovSupportSection';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getApiBaseUrl } from '@/lib/api/config';
 
@@ -29,6 +29,7 @@ export default function OutsourceVendorForm({
         resolver: zodResolver(vendorFormSchema) as any,
         defaultValues: (initialData || {
             name: '',
+            outsourceCEO: '',
             tagline: '',
             category: '' as any,
             contactEmail: '',
@@ -54,11 +55,32 @@ export default function OutsourceVendorForm({
     const {
         handleSubmit,
         watch,
+        setValue,
+        getValues,
         formState: { errors },
     } = form;
 
     const category = watch('category');
     const isDevelopment = category === VendorCategory.DEVELOPMENT;
+
+    // category 변경 시 devInfo 처리
+    useEffect(() => {
+        if (category === VendorCategory.DEVELOPMENT) {
+            const currentDevInfo = getValues('devInfo');
+            // devInfo가 없거나 techStackSummary가 없을 때만 초기화
+            if (!currentDevInfo || !Array.isArray(currentDevInfo?.techStackSummary)) {
+                setValue('devInfo', {
+                    techStackSummary: [],
+                }, { shouldValidate: false });
+            }
+        } else if (category && category !== '' && category !== VendorCategory.DEVELOPMENT) {
+            // 개발 분야가 아닐 때 devInfo 제거 (validation 에러 방지)
+            const currentDevInfo = getValues('devInfo');
+            if (currentDevInfo !== undefined) {
+                setValue('devInfo', undefined, { shouldValidate: false });
+            }
+        }
+    }, [category, setValue, getValues]);
 
     const onSubmit = async (data: any) => {
         setIsSubmitting(true);
@@ -165,14 +187,29 @@ export default function OutsourceVendorForm({
             {Object.keys(errors).length > 0 && (
                 <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                     <p className="text-sm font-medium text-yellow-800 mb-2">
-                        ⚠️ 입력 내용을 확인해주세요:
+                        입력 내용을 확인해주세요:
                     </p>
                     <ul className="text-sm text-yellow-700 list-disc list-inside">
-                        {Object.entries(errors).map(([key, error]) => (
-                            <li key={key}>
-                                {key}: {error?.message?.toString() || '유효하지 않은 값'}
-                            </li>
-                        ))}
+                        {Object.entries(errors).map(([key, error]) => {
+                            // 에러 메시지 추출
+                            const errorMessage = 
+                                error && typeof error === 'object' && 'message' in error
+                                    ? (error as { message?: string | { message?: string } }).message
+                                    : undefined;
+                            
+                            const messageText = 
+                                typeof errorMessage === 'string'
+                                    ? errorMessage
+                                    : errorMessage && typeof errorMessage === 'object' && 'message' in errorMessage
+                                    ? String(errorMessage.message)
+                                    : '유효하지 않은 값';
+                            
+                            return (
+                                <li key={key}>
+                                    {key}: {messageText}
+                                </li>
+                            );
+                        })}
                     </ul>
                 </div>
             )}

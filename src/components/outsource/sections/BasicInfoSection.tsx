@@ -26,6 +26,7 @@ export default function BasicInfoSection({ form }: BasicInfoSectionProps) {
 
     const tagline = watch('tagline') || '';
     const name = watch('name') || '';
+    const outsourceCEO = watch('outsourceCEO') || '';
     const category = watch('category');
     const customCategory = watch('customCategory') || '';
     const [isKakaoLoaded, setIsKakaoLoaded] = useState(false);
@@ -35,15 +36,16 @@ export default function BasicInfoSection({ form }: BasicInfoSectionProps) {
     const [serviceTypesDisplay, setServiceTypesDisplay] = useState(
         Array.isArray(serviceTypesArray) ? serviceTypesArray.join(', ') : ''
     );
+    const [isServiceTypesInputFocused, setIsServiceTypesInputFocused] = useState(false);
     
-    // serviceTypes가 변경될 때 display 값 업데이트
+    // serviceTypes가 변경될 때 display 값 업데이트 (입력 중이 아닐 때만)
     useEffect(() => {
-        if (Array.isArray(serviceTypesArray)) {
+        if (!isServiceTypesInputFocused && Array.isArray(serviceTypesArray)) {
             setServiceTypesDisplay(serviceTypesArray.join(', '));
-        } else {
+        } else if (!isServiceTypesInputFocused && !serviceTypesArray) {
             setServiceTypesDisplay('');
         }
-    }, [serviceTypesArray]);
+    }, [serviceTypesArray, isServiceTypesInputFocused]);
 
     // 카카오 주소 API 스크립트 로드
     useEffect(() => {
@@ -105,6 +107,23 @@ export default function BasicInfoSection({ form }: BasicInfoSectionProps) {
                 <div className="flex justify-between mt-1">
                     <p className="text-sm text-red-500">{errors.name?.message}</p>
                     <p className="text-sm text-gray-500">{name.length}/50</p>
+                </div>
+            </div>
+
+            {/* 대표자명 */}
+            <div>
+                <label className="block text-sm font-medium mb-2">
+                    대표자명 <span className="text-red-500">*</span>
+                </label>
+                <input
+                    type="text"
+                    {...register('outsourceCEO')}
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="예: 홍길동"
+                />
+                <div className="flex justify-between mt-1">
+                    <p className="text-sm text-red-500">{errors.outsourceCEO?.message}</p>
+                    <p className="text-sm text-gray-500">{outsourceCEO.length}/30</p>
                 </div>
             </div>
 
@@ -176,6 +195,8 @@ export default function BasicInfoSection({ form }: BasicInfoSectionProps) {
                 <input
                     type="text"
                     value={serviceTypesDisplay}
+                    onFocus={() => setIsServiceTypesInputFocused(true)}
+                    onBlur={() => setIsServiceTypesInputFocused(false)}
                     onChange={(e) => {
                         const value = e.target.value;
                         setServiceTypesDisplay(value);
