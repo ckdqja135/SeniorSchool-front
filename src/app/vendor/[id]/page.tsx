@@ -21,6 +21,7 @@ async function getVendor(id: string): Promise<DevVendor | BaseVendor | null> {
     const mockVendor: DevVendor = {
         id: '1',
         name: '코드몽키랩',
+        outsourceCEO: '홍길동',
         tagline: '스타트업 특화 웹/앱 개발 전문 팀',
         category: VendorCategory.DEVELOPMENT,
         description: '10년차 시니어 개발자들이 직접 참여하는 풀스택 개발 팀입니다. B2B SaaS, 핀테크, 헬스케어 도메인에 특화되어 있으며, Next.js + TypeScript 기반의 현대적인 웹 애플리케이션 개발을 주로 수행합니다.',
