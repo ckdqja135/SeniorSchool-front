@@ -1,6 +1,19 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+} from "chart.js";
+import { Bar } from "react-chartjs-2";
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, Filler);
 
 interface DashboardOverview {
   totalPosts: number;
@@ -329,112 +342,106 @@ const AdminMainPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 월별 통계 차트 */}
         <div className="bg-white rounded-lg shadow p-6 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
-          <h3 className="text-lg font-semibold text-gray-800 mb-4 gradient-text">월별 통계</h3>
-          <div className="h-64 flex items-end justify-center gap-3 px-8 relative">
-            {/* Y축 라벨 */}
-            <div className="absolute left-4 top-0 h-full flex flex-col justify-between text-xs text-gray-400 pr-2">
-              <span>{Math.ceil(maxCompanies / 4 * 4)}</span>
-              <span>{Math.ceil(maxCompanies / 4 * 3)}</span>
-              <span>{Math.ceil(maxCompanies / 4 * 2)}</span>
-              <span>{Math.ceil(maxCompanies / 4 * 1)}</span>
-              <span>0</span>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800">월별 통계</h3>
+              <p className="text-sm text-gray-500 mt-1">게시글 및 업체 등록 추이</p>
             </div>
-            
-            {/* 그리드 라인 */}
-            <div className="absolute left-12 right-8 top-0 h-full flex flex-col justify-between">
-              {[0, 1, 2, 3, 4].map((i) => (
-                <div 
-                  key={i} 
-                  className="border-t border-gray-100 chart-grid-line" 
-                  style={{ '--grid-index': i } as React.CSSProperties}
-                ></div>
-              ))}
-            </div>
-            
-            {monthlyData.map((data, index) => (
-              <div key={index} className="w-16 flex flex-col items-center relative group">
-                {/* 게시글 수 차트 - 더 얇게 */}
-                <div className="w-full bg-gradient-to-b from-green-50 to-green-100 rounded-t-md relative group/post">
-                  <div 
-                    className="bg-gradient-to-t from-green-600 to-green-500 rounded-t-md transition-all duration-500 ease-out hover:from-green-700 hover:to-green-600 hover:shadow-lg"
-                    style={{ 
-                      height: `${Math.max((data.postCount / maxPosts) * 120, 4)}px`,
-                      animationDelay: `${index * 100}ms`
-                    }}
-                  ></div>
-                  
-                  {/* 호버 툴팁 */}
-                  <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover/post:opacity-100 transition-all duration-300 pointer-events-none z-10 shadow-lg">
-                    <span className="font-semibold">{data.postCount}개</span> 게시글
-                    {/* 툴팁 화살표 */}
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
-                  </div>
-                </div>
-                
-                {/* 업체 수 차트 - 더 얇게 */}
-                <div className="w-full bg-gradient-to-b from-yellow-50 to-yellow-100 rounded-t-md relative group/school mt-1">
-                  <div 
-                    className="bg-gradient-to-t from-yellow-600 to-yellow-500 rounded-t-md transition-all duration-500 ease-out hover:from-yellow-700 hover:to-yellow-600 hover:shadow-lg"
-                    style={{ 
-                      height: `${Math.max((data.companyCount / maxCompanies) * 80, 4)}px`,
-                      animationDelay: `${index * 100 + 50}ms`
-                    }}
-                  ></div>
-                  
-                  {/* 호버 툴팁 */}
-                  <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover/school:opacity-100 transition-all duration-300 pointer-events-none z-10 shadow-lg">
-                    <span className="font-semibold">{data.companyCount}건</span> 업체
-                    {/* 툴팁 화살표 */}
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
-                  </div>
-                </div>
-                
-                {/* 월 라벨 */}
-                <span className="text-xs text-gray-600 mt-2 text-center group-hover:text-gray-800 transition-colors whitespace-nowrap">
-                  {data.month}
-                </span>
-                
-                {/* 월별 총계 표시 */}
-                <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="bg-white border border-gray-200 rounded-lg px-2 py-1 shadow-lg text-xs text-gray-700 whitespace-nowrap">
-                    총 {data.postCount + data.companyCount}
-                  </div>
-                </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-indigo-500"></div>
+                <span className="text-xs text-gray-600">게시글</span>
               </div>
-            ))}
-          </div>
-          
-          {/* 차트 범례 - 더 예쁘게 */}
-          <div className="flex items-center justify-center gap-8 mt-8">
-            <div className="flex items-center gap-3">
-              <div className="w-5 h-5 bg-gradient-to-r from-green-500 to-green-600 rounded-lg shadow-md"></div>
-              <div className="flex flex-col">
-                <span className="text-sm font-semibold text-gray-800">게시글</span>
-                <span className="text-xs text-gray-500">월별 작성 수</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-5 h-5 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-lg shadow-md"></div>
-              <div className="flex flex-col">
-                <span className="text-sm font-semibold text-gray-800">업체</span>
-                <span className="text-xs text-gray-500">월별 등록 수</span>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+                <span className="text-xs text-gray-600">업체</span>
               </div>
             </div>
           </div>
-          
+          <div className="h-72">
+            {monthlyLoading ? (
+              <div className="flex items-center justify-center h-full text-gray-400">로딩 중...</div>
+            ) : (
+              <Bar
+                data={{
+                  labels: [...monthlyData].reverse().map(d => {
+                    const parts = d.month.split("-");
+                    return parts.length === 2 ? `${parseInt(parts[1])}월` : d.month;
+                  }),
+                  datasets: [
+                    {
+                      label: "게시글",
+                      data: [...monthlyData].reverse().map(d => d.postCount),
+                      backgroundColor: "rgba(99, 102, 241, 0.8)",
+                      hoverBackgroundColor: "rgba(99, 102, 241, 1)",
+                      borderRadius: 6,
+                      borderSkipped: false,
+                      barPercentage: 0.6,
+                      categoryPercentage: 0.7,
+                    },
+                    {
+                      label: "업체",
+                      data: [...monthlyData].reverse().map(d => d.companyCount),
+                      backgroundColor: "rgba(16, 185, 129, 0.8)",
+                      hoverBackgroundColor: "rgba(16, 185, 129, 1)",
+                      borderRadius: 6,
+                      borderSkipped: false,
+                      barPercentage: 0.6,
+                      categoryPercentage: 0.7,
+                    },
+                  ],
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  interaction: {
+                    mode: "index",
+                    intersect: false,
+                  },
+                  plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                      backgroundColor: "rgba(17, 24, 39, 0.9)",
+                      titleFont: { size: 13, weight: "bold" },
+                      bodyFont: { size: 12 },
+                      padding: 12,
+                      cornerRadius: 8,
+                      boxPadding: 4,
+                      callbacks: {
+                        label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y}건`,
+                      },
+                    },
+                  },
+                  scales: {
+                    x: {
+                      grid: { display: false },
+                      ticks: { color: "#9ca3af", font: { size: 12 } },
+                      border: { display: false },
+                    },
+                    y: {
+                      grid: { color: "rgba(243, 244, 246, 1)" },
+                      ticks: { color: "#9ca3af", font: { size: 11 }, stepSize: Math.ceil(Math.max(maxPosts, maxCompanies) / 5) },
+                      border: { display: false },
+                      beginAtZero: true,
+                    },
+                  },
+                }}
+              />
+            )}
+          </div>
           {/* 차트 하단 통계 요약 */}
           <div className="mt-6 pt-4 border-t border-gray-100">
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
-                <div className="text-2xl font-bold text-green-600">{monthlyLoading ? "..." : monthlyData[0]?.postCount || 0}</div>
+                <div className="text-2xl font-bold text-indigo-600">{monthlyLoading ? "..." : monthlyData[0]?.postCount || 0}</div>
                 <div className="text-xs text-gray-500">이번 달 게시글</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-yellow-600">{monthlyLoading ? "..." : monthlyData[0]?.companyCount || 0}</div>
+                <div className="text-2xl font-bold text-emerald-600">{monthlyLoading ? "..." : monthlyData[0]?.companyCount || 0}</div>
                 <div className="text-xs text-gray-500">이번 달 업체</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-blue-600">{monthlyLoading ? "..." : (monthlyData[0]?.postCount || 0) + (monthlyData[0]?.companyCount || 0)}</div>
+                <div className="text-2xl font-bold text-gray-700">{monthlyLoading ? "..." : (monthlyData[0]?.postCount || 0) + (monthlyData[0]?.companyCount || 0)}</div>
                 <div className="text-xs text-gray-500">총 활동</div>
               </div>
             </div>
