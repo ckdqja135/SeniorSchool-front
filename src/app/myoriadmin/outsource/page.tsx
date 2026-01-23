@@ -202,7 +202,7 @@ const OutsourceManagementPage = () => {
     try {
       const accessToken = localStorage.getItem("accessToken");
 
-      const response = await fetch(`https://api.reviewhub.life/admin/outsource/outsource/${selectedOutsources[0]}`, {
+      const response = await fetch(`https://api.reviewhub.life/admin/outsource/${selectedOutsources[0]}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
@@ -297,7 +297,7 @@ const OutsourceManagementPage = () => {
         }
       });
 
-      const response = await fetch(`https://api.reviewhub.life/admin/outsource/outsource/${editingOutsource.outsourceIdx}`, {
+      const response = await fetch(`https://api.reviewhub.life/admin/outsource/${editingOutsource.outsourceIdx}`, {
         method: "PUT",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
@@ -327,7 +327,7 @@ const OutsourceManagementPage = () => {
     try {
       const accessToken = localStorage.getItem("accessToken");
 
-      const response = await fetch(`https://api.reviewhub.life/admin/outsource/outsource/${selectedOutsource.outsourceIdx}`, {
+      const response = await fetch(`https://api.reviewhub.life/admin/outsource/${selectedOutsource.outsourceIdx}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
