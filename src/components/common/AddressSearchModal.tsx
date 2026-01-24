@@ -26,38 +26,35 @@ const AddressSearchModal: React.FC<AddressSearchModalProps> = ({
   const [error, setError] = useState("");
   const [searched, setSearched] = useState(false);
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (!query.trim()) return;
-
-    if (typeof naver === "undefined" || !naver.maps || !naver.maps.Service) {
-      setError("네이버 지도 SDK가 로드되지 않았습니다. 페이지를 새로고침해주세요.");
-      return;
-    }
 
     setLoading(true);
     setError("");
     setSearched(true);
 
-    naver.maps.Service.geocode(
-      { query: query.trim() },
-      (status, response) => {
-        setLoading(false);
-        if (status !== naver.maps.Service.Status.OK) {
-          console.error("Geocode error status:", status);
-          setError("주소 검색에 실패했습니다. 다시 시도해주세요.");
-          setResults([]);
-          return;
-        }
-
-        const addresses = response.v2.addresses;
-        if (!addresses || addresses.length === 0) {
-          setResults([]);
-          return;
-        }
-
-        setResults(addresses);
+    try {
+      const response = await fetch(`/api/geocode?query=${encodeURIComponent(query.trim())}`);
+      
+      if (!response.ok) {
+        throw new Error("주소 검색에 실패했습니다.");
       }
-    );
+
+      const data = await response.json();
+      
+      if (!data.addresses || data.addresses.length === 0) {
+        setResults([]);
+        return;
+      }
+
+      setResults(data.addresses);
+    } catch (err) {
+      console.error("Geocode error:", err);
+      setError("주소 검색 중 오류가 발생했습니다. 다시 시도해주세요.");
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSelect = (addr: naver.maps.Service.GeocodeAddress) => {
