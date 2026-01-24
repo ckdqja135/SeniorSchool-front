@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import AddressSearchModal, { AddressResult } from "@/components/common/AddressSearchModal";
 
 interface UnivData {
   univIdx: number;
@@ -45,6 +46,8 @@ const SchoolManagementPage = () => {
   const [loading, setLoading] = useState(true);
   const [editingSchool, setEditingSchool] = useState<UnivData | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [addressMode, setAddressMode] = useState<"add" | "edit">("add");
   const hasFetchedSchools = useRef(false);
 
   // 새 학교 데이터 폼
@@ -271,6 +274,30 @@ const SchoolManagementPage = () => {
       // 변경사항 확인
       const isChanged = JSON.stringify(updatedSchool) !== JSON.stringify(selectedSchool);
       setHasChanges(isChanged);
+    }
+  };
+
+  // 주소 검색 결과 처리
+  const handleAddressSelect = (result: AddressResult) => {
+    if (addressMode === "add") {
+      setNewSchool({
+        ...newSchool,
+        univAddr: result.roadAddress,
+        univLateX: result.latitude,
+        univLateY: result.longitude,
+      });
+    } else if (addressMode === "edit" && editingSchool) {
+      const updated = {
+        ...editingSchool,
+        univAddr: result.roadAddress,
+        univLateX: result.latitude,
+        univLateY: result.longitude,
+      };
+      setEditingSchool(updated);
+      if (selectedSchool) {
+        const isChanged = JSON.stringify(updated) !== JSON.stringify(selectedSchool);
+        setHasChanges(isChanged);
+      }
     }
   };
 
@@ -641,8 +668,8 @@ const SchoolManagementPage = () => {
                   <input
                     type="number"
                     value={newSchool.univLateX}
-                    onChange={(e) => setNewSchool({...newSchool, univLateX: parseFloat(e.target.value)})}
-                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
+                    readOnly
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50/80 text-gray-700"
                     step="any"
                   />
                 </div>
@@ -651,8 +678,8 @@ const SchoolManagementPage = () => {
                   <input
                     type="number"
                     value={newSchool.univLateY}
-                    onChange={(e) => setNewSchool({...newSchool, univLateY: parseFloat(e.target.value)})}
-                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
+                    readOnly
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50/80 text-gray-700"
                     step="any"
                   />
                 </div>
@@ -677,12 +704,21 @@ const SchoolManagementPage = () => {
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 mb-1.5">주소</label>
-                <input
-                  type="text"
-                  value={newSchool.univAddr}
-                  onChange={(e) => setNewSchool({...newSchool, univAddr: e.target.value})}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newSchool.univAddr}
+                    onChange={(e) => setNewSchool({...newSchool, univAddr: e.target.value})}
+                    className="flex-1 px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => { setAddressMode("add"); setShowAddressModal(true); }}
+                    className="shrink-0 px-3 py-2.5 text-xs font-medium text-indigo-700 bg-indigo-50 rounded-xl hover:bg-indigo-100 transition-colors"
+                  >
+                    주소 검색
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 mb-1.5">이미지 URL</label>
@@ -845,12 +881,9 @@ const SchoolManagementPage = () => {
                   <input
                     type="number"
                     value={isEditMode ? editingSchool?.univLateX || 0 : selectedSchool.univLateX}
-                    onChange={(e) => handleEditChange("univLateX", parseFloat(e.target.value))}
-                    readOnly={!isEditMode}
+                    readOnly
                     step="any"
-                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
-                      isEditMode ? "bg-white border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
-                    }`}
+                    className="w-full px-3.5 py-2.5 border rounded-xl text-sm bg-gray-50/80 border-gray-100 text-gray-700"
                   />
                 </div>
                 <div>
@@ -858,12 +891,9 @@ const SchoolManagementPage = () => {
                   <input
                     type="number"
                     value={isEditMode ? editingSchool?.univLateY || 0 : selectedSchool.univLateY}
-                    onChange={(e) => handleEditChange("univLateY", parseFloat(e.target.value))}
-                    readOnly={!isEditMode}
+                    readOnly
                     step="any"
-                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
-                      isEditMode ? "bg-white border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
-                    }`}
+                    className="w-full px-3.5 py-2.5 border rounded-xl text-sm bg-gray-50/80 border-gray-100 text-gray-700"
                   />
                 </div>
                 <div>
@@ -892,15 +922,26 @@ const SchoolManagementPage = () => {
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">주소</label>
-                  <input
-                    type="text"
-                    value={isEditMode ? editingSchool?.univAddr || "" : selectedSchool.univAddr}
-                    onChange={(e) => handleEditChange("univAddr", e.target.value)}
-                    readOnly={!isEditMode}
-                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
-                      isEditMode ? "bg-white border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
-                    }`}
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={isEditMode ? editingSchool?.univAddr || "" : selectedSchool.univAddr}
+                      onChange={(e) => handleEditChange("univAddr", e.target.value)}
+                      readOnly={!isEditMode}
+                      className={`flex-1 px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
+                        isEditMode ? "bg-white border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
+                      }`}
+                    />
+                    {isEditMode && (
+                      <button
+                        type="button"
+                        onClick={() => { setAddressMode("edit"); setShowAddressModal(true); }}
+                        className="shrink-0 px-3 py-2.5 text-xs font-medium text-indigo-700 bg-indigo-50 rounded-xl hover:bg-indigo-100 transition-colors"
+                      >
+                        주소 검색
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">이미지 URL</label>
@@ -1050,6 +1091,13 @@ const SchoolManagementPage = () => {
           </div>
         </div>
       )}
+
+      {/* 주소 검색 모달 */}
+      <AddressSearchModal
+        isOpen={showAddressModal}
+        onClose={() => setShowAddressModal(false)}
+        onSelect={handleAddressSelect}
+      />
     </div>
   );
 };

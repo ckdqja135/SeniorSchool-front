@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import AddressSearchModal, { AddressResult } from "@/components/common/AddressSearchModal";
 
 interface RestaurantData {
   restaurantIdx: number;
@@ -68,6 +69,8 @@ const RestaurantManagementPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [editingRestaurant, setEditingRestaurant] = useState<RestaurantData | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [addressMode, setAddressMode] = useState<"add" | "edit">("add");
   const hasFetched = useRef(false);
 
   const [newRestaurant, setNewRestaurant] = useState({
@@ -327,6 +330,32 @@ const RestaurantManagementPage: React.FC = () => {
       setEditingRestaurant(updated);
       const changed = JSON.stringify(updated) !== JSON.stringify(selectedRestaurant);
       setHasChanges(changed);
+    }
+  };
+
+  // 주소 검색 결과 처리
+  const handleAddressSelect = (result: AddressResult) => {
+    if (addressMode === "add") {
+      setNewRestaurant({
+        ...newRestaurant,
+        restaurantAddr: result.roadAddress,
+        restaurantLotAddr: result.jibunAddress,
+        restaurantLatX: result.latitude,
+        restaurantLatY: result.longitude,
+      });
+    } else if (addressMode === "edit" && editingRestaurant) {
+      const updated = {
+        ...editingRestaurant,
+        restaurantAddr: result.roadAddress,
+        restaurantLotAddr: result.jibunAddress,
+        restaurantLatX: result.latitude,
+        restaurantLatY: result.longitude,
+      };
+      setEditingRestaurant(updated);
+      if (selectedRestaurant) {
+        const isChanged = JSON.stringify(updated) !== JSON.stringify(selectedRestaurant);
+        setHasChanges(isChanged);
+      }
     }
   };
 
@@ -656,8 +685,8 @@ const RestaurantManagementPage: React.FC = () => {
                   <input
                     type="number"
                     value={newRestaurant.restaurantLatX}
-                    onChange={(e) => setNewRestaurant({ ...newRestaurant, restaurantLatX: parseFloat(e.target.value) })}
-                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
+                    readOnly
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50/80 text-gray-700"
                     step="any"
                   />
                 </div>
@@ -666,8 +695,8 @@ const RestaurantManagementPage: React.FC = () => {
                   <input
                     type="number"
                     value={newRestaurant.restaurantLatY}
-                    onChange={(e) => setNewRestaurant({ ...newRestaurant, restaurantLatY: parseFloat(e.target.value) })}
-                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
+                    readOnly
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50/80 text-gray-700"
                     step="any"
                   />
                 </div>
@@ -681,25 +710,32 @@ const RestaurantManagementPage: React.FC = () => {
                   className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">지번</label>
-                  <input
-                    type="text"
-                    value={newRestaurant.restaurantLotAddr}
-                    onChange={(e) => setNewRestaurant({ ...newRestaurant, restaurantLotAddr: e.target.value })}
-                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">주소</label>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5">주소</label>
+                <div className="flex gap-2">
                   <input
                     type="text"
                     value={newRestaurant.restaurantAddr}
                     onChange={(e) => setNewRestaurant({ ...newRestaurant, restaurantAddr: e.target.value })}
-                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
+                    className="flex-1 px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
                   />
+                  <button
+                    type="button"
+                    onClick={() => { setAddressMode("add"); setShowAddressModal(true); }}
+                    className="shrink-0 px-3 py-2.5 text-xs font-medium text-purple-700 bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors"
+                  >
+                    주소 검색
+                  </button>
                 </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5">지번</label>
+                <input
+                  type="text"
+                  value={newRestaurant.restaurantLotAddr}
+                  onChange={(e) => setNewRestaurant({ ...newRestaurant, restaurantLotAddr: e.target.value })}
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
+                />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 mb-1.5">지도 이미지 URL</label>
@@ -834,11 +870,11 @@ const RestaurantManagementPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">위도</label>
-                  <input type="number" value={isEditMode ? editingRestaurant?.restaurantLatX || 0 : selectedRestaurant.restaurantLatX} onChange={(e) => handleEditChange("restaurantLatX", parseFloat(e.target.value))} readOnly={!isEditMode} step="any" className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"}`} />
+                  <input type="number" value={isEditMode ? editingRestaurant?.restaurantLatX || 0 : selectedRestaurant.restaurantLatX} readOnly step="any" className="w-full px-3.5 py-2.5 border rounded-xl text-sm bg-gray-50/80 border-gray-100 text-gray-700" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">경도</label>
-                  <input type="number" value={isEditMode ? editingRestaurant?.restaurantLatY || 0 : selectedRestaurant.restaurantLatY} onChange={(e) => handleEditChange("restaurantLatY", parseFloat(e.target.value))} readOnly={!isEditMode} step="any" className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"}`} />
+                  <input type="number" value={isEditMode ? editingRestaurant?.restaurantLatY || 0 : selectedRestaurant.restaurantLatY} readOnly step="any" className="w-full px-3.5 py-2.5 border rounded-xl text-sm bg-gray-50/80 border-gray-100 text-gray-700" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">웹사이트 URL</label>
@@ -850,7 +886,18 @@ const RestaurantManagementPage: React.FC = () => {
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">주소</label>
-                  <input type="text" value={isEditMode ? editingRestaurant?.restaurantAddr || "" : selectedRestaurant.restaurantAddr} onChange={(e) => handleEditChange("restaurantAddr", e.target.value)} readOnly={!isEditMode} className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"}`} />
+                  <div className="flex gap-2">
+                    <input type="text" value={isEditMode ? editingRestaurant?.restaurantAddr || "" : selectedRestaurant.restaurantAddr} onChange={(e) => handleEditChange("restaurantAddr", e.target.value)} readOnly={!isEditMode} className={`flex-1 px-3.5 py-2.5 border rounded-xl text-sm transition-all ${isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"}`} />
+                    {isEditMode && (
+                      <button
+                        type="button"
+                        onClick={() => { setAddressMode("edit"); setShowAddressModal(true); }}
+                        className="shrink-0 px-3 py-2.5 text-xs font-medium text-purple-700 bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors"
+                      >
+                        주소 검색
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">지도 이미지 URL</label>
@@ -1016,6 +1063,13 @@ const RestaurantManagementPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* 주소 검색 모달 */}
+      <AddressSearchModal
+        isOpen={showAddressModal}
+        onClose={() => setShowAddressModal(false)}
+        onSelect={handleAddressSelect}
+      />
     </div>
   );
 };

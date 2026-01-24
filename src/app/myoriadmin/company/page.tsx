@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import AddressSearchModal, { AddressResult } from "@/components/common/AddressSearchModal";
 
 interface CompanyData {
   compIdx: number;
@@ -55,6 +56,8 @@ const CompanyManagementPage = () => {
   const [loading, setLoading] = useState(true);
   const [editingCompany, setEditingCompany] = useState<CompanyData | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [addressMode, setAddressMode] = useState<"add" | "edit">("add");
   const hasFetchedCompanies = useRef(false);
 
   // 새 회사 데이터 폼
@@ -323,6 +326,32 @@ const CompanyManagementPage = () => {
       
       const isChanged = JSON.stringify(updatedCompany) !== JSON.stringify(selectedCompany);
       setHasChanges(isChanged);
+    }
+  };
+
+  // 주소 검색 결과 처리
+  const handleAddressSelect = (result: AddressResult) => {
+    if (addressMode === "add") {
+      setNewCompany({
+        ...newCompany,
+        compAddr: result.roadAddress,
+        compLotAddr: result.jibunAddress,
+        compLateX: result.latitude,
+        compLateY: result.longitude,
+      });
+    } else if (addressMode === "edit" && editingCompany) {
+      const updated = {
+        ...editingCompany,
+        compAddr: result.roadAddress,
+        compLotAddr: result.jibunAddress,
+        compLateX: result.latitude,
+        compLateY: result.longitude,
+      };
+      setEditingCompany(updated);
+      if (selectedCompany) {
+        const isChanged = JSON.stringify(updated) !== JSON.stringify(selectedCompany);
+        setHasChanges(isChanged);
+      }
     }
   };
 
@@ -655,7 +684,16 @@ const CompanyManagementPage = () => {
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 mb-1.5">도로명 주소</label>
-                <input type="text" value={newCompany.compAddr} onChange={(e) => setNewCompany({...newCompany, compAddr: e.target.value})} className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400 transition-all" placeholder="도로명 주소" />
+                <div className="flex gap-2">
+                  <input type="text" value={newCompany.compAddr} onChange={(e) => setNewCompany({...newCompany, compAddr: e.target.value})} className="flex-1 px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400 transition-all" placeholder="도로명 주소" />
+                  <button
+                    type="button"
+                    onClick={() => { setAddressMode("add"); setShowAddressModal(true); }}
+                    className="shrink-0 px-3 py-2.5 text-xs font-medium text-amber-700 bg-amber-50 rounded-xl hover:bg-amber-100 transition-colors"
+                  >
+                    주소 검색
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 mb-1.5">지번 주소</label>
@@ -664,11 +702,11 @@ const CompanyManagementPage = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1.5">위도</label>
-                  <input type="number" value={newCompany.compLateX || ""} onChange={(e) => setNewCompany({...newCompany, compLateX: parseFloat(e.target.value) || 0})} className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400 transition-all" step="any" />
+                  <input type="number" value={newCompany.compLateX || ""} readOnly className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50/80 text-gray-700" step="any" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1.5">경도</label>
-                  <input type="number" value={newCompany.compLateY || ""} onChange={(e) => setNewCompany({...newCompany, compLateY: parseFloat(e.target.value) || 0})} className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400 transition-all" step="any" />
+                  <input type="number" value={newCompany.compLateY || ""} readOnly className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50/80 text-gray-700" step="any" />
                 </div>
               </div>
               <div>
@@ -751,11 +789,11 @@ const CompanyManagementPage = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">위도</label>
-                  <input type="number" value={isEditMode ? editingCompany?.compLateX || 0 : selectedCompany.compLateX} onChange={(e) => handleEditChange("compLateX", parseFloat(e.target.value))} readOnly={!isEditMode} step="any" className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${isEditMode ? "bg-white border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400" : "bg-gray-50/80 border-gray-100 text-gray-700"}`} />
+                  <input type="number" value={isEditMode ? editingCompany?.compLateX || 0 : selectedCompany.compLateX} readOnly step="any" className="w-full px-3.5 py-2.5 border rounded-xl text-sm bg-gray-50/80 border-gray-100 text-gray-700" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">경도</label>
-                  <input type="number" value={isEditMode ? editingCompany?.compLateY || 0 : selectedCompany.compLateY} onChange={(e) => handleEditChange("compLateY", parseFloat(e.target.value))} readOnly={!isEditMode} step="any" className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${isEditMode ? "bg-white border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400" : "bg-gray-50/80 border-gray-100 text-gray-700"}`} />
+                  <input type="number" value={isEditMode ? editingCompany?.compLateY || 0 : selectedCompany.compLateY} readOnly step="any" className="w-full px-3.5 py-2.5 border rounded-xl text-sm bg-gray-50/80 border-gray-100 text-gray-700" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">웹사이트 URL</label>
@@ -767,7 +805,18 @@ const CompanyManagementPage = () => {
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">주소</label>
-                  <input type="text" value={isEditMode ? editingCompany?.compAddr || "" : selectedCompany.compAddr} onChange={(e) => handleEditChange("compAddr", e.target.value)} readOnly={!isEditMode} className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${isEditMode ? "bg-white border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400" : "bg-gray-50/80 border-gray-100 text-gray-700"}`} />
+                  <div className="flex gap-2">
+                    <input type="text" value={isEditMode ? editingCompany?.compAddr || "" : selectedCompany.compAddr} onChange={(e) => handleEditChange("compAddr", e.target.value)} readOnly={!isEditMode} className={`flex-1 px-3.5 py-2.5 border rounded-xl text-sm transition-all ${isEditMode ? "bg-white border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400" : "bg-gray-50/80 border-gray-100 text-gray-700"}`} />
+                    {isEditMode && (
+                      <button
+                        type="button"
+                        onClick={() => { setAddressMode("edit"); setShowAddressModal(true); }}
+                        className="shrink-0 px-3 py-2.5 text-xs font-medium text-amber-700 bg-amber-50 rounded-xl hover:bg-amber-100 transition-colors"
+                      >
+                        주소 검색
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">이미지 URL</label>
@@ -873,6 +922,13 @@ const CompanyManagementPage = () => {
           </div>
         </div>
       )}
+
+      {/* 주소 검색 모달 */}
+      <AddressSearchModal
+        isOpen={showAddressModal}
+        onClose={() => setShowAddressModal(false)}
+        onSelect={handleAddressSelect}
+      />
     </div>
   );
 };

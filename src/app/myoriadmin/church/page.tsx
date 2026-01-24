@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import AddressSearchModal, { AddressResult } from "@/components/common/AddressSearchModal";
 
 interface ChurchData {
   churchIdx: number;
@@ -44,6 +45,8 @@ const ChurchManagementPage = () => {
   const [loading, setLoading] = useState(true);
   const [editingChurch, setEditingChurch] = useState<ChurchData | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [addressMode, setAddressMode] = useState<"add" | "edit">("add");
   const hasFetchedChurches = useRef(false);
 
   // 새 교회 데이터 폼
@@ -264,6 +267,32 @@ const ChurchManagementPage = () => {
       
       const isChanged = JSON.stringify(updatedChurch) !== JSON.stringify(selectedChurch);
       setHasChanges(isChanged);
+    }
+  };
+
+  // 주소 검색 결과 처리
+  const handleAddressSelect = (result: AddressResult) => {
+    if (addressMode === "add") {
+      setNewChurch({
+        ...newChurch,
+        churchAddr: result.roadAddress,
+        churchLotAddr: result.jibunAddress,
+        churchLatX: result.latitude,
+        churchLatY: result.longitude,
+      });
+    } else if (addressMode === "edit" && editingChurch) {
+      const updated = {
+        ...editingChurch,
+        churchAddr: result.roadAddress,
+        churchLotAddr: result.jibunAddress,
+        churchLatX: result.latitude,
+        churchLatY: result.longitude,
+      };
+      setEditingChurch(updated);
+      if (selectedChurch) {
+        const isChanged = JSON.stringify(updated) !== JSON.stringify(selectedChurch);
+        setHasChanges(isChanged);
+      }
     }
   };
 
@@ -617,8 +646,8 @@ const ChurchManagementPage = () => {
                   <input
                     type="number"
                     value={newChurch.churchLatX}
-                    onChange={(e) => setNewChurch({...newChurch, churchLatX: parseFloat(e.target.value)})}
-                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
+                    readOnly
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50/80 text-gray-700"
                     step="any"
                   />
                 </div>
@@ -627,8 +656,8 @@ const ChurchManagementPage = () => {
                   <input
                     type="number"
                     value={newChurch.churchLatY}
-                    onChange={(e) => setNewChurch({...newChurch, churchLatY: parseFloat(e.target.value)})}
-                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
+                    readOnly
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50/80 text-gray-700"
                     step="any"
                   />
                 </div>
@@ -653,12 +682,21 @@ const ChurchManagementPage = () => {
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 mb-1.5">주소</label>
-                <input
-                  type="text"
-                  value={newChurch.churchAddr}
-                  onChange={(e) => setNewChurch({...newChurch, churchAddr: e.target.value})}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newChurch.churchAddr}
+                    onChange={(e) => setNewChurch({...newChurch, churchAddr: e.target.value})}
+                    className="flex-1 px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => { setAddressMode("add"); setShowAddressModal(true); }}
+                    className="shrink-0 px-3 py-2.5 text-xs font-medium text-purple-700 bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors"
+                  >
+                    주소 검색
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 mb-1.5">이미지 URL</label>
@@ -814,12 +852,9 @@ const ChurchManagementPage = () => {
                   <input
                     type="number"
                     value={isEditMode ? editingChurch?.churchLatX || 0 : selectedChurch.churchLatX}
-                    onChange={(e) => handleEditChange("churchLatX", parseFloat(e.target.value))}
-                    readOnly={!isEditMode}
+                    readOnly
                     step="any"
-                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
-                      isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
-                    }`}
+                    className="w-full px-3.5 py-2.5 border rounded-xl text-sm bg-gray-50/80 border-gray-100 text-gray-700"
                   />
                 </div>
                 <div>
@@ -827,12 +862,9 @@ const ChurchManagementPage = () => {
                   <input
                     type="number"
                     value={isEditMode ? editingChurch?.churchLatY || 0 : selectedChurch.churchLatY}
-                    onChange={(e) => handleEditChange("churchLatY", parseFloat(e.target.value))}
-                    readOnly={!isEditMode}
+                    readOnly
                     step="any"
-                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
-                      isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
-                    }`}
+                    className="w-full px-3.5 py-2.5 border rounded-xl text-sm bg-gray-50/80 border-gray-100 text-gray-700"
                   />
                 </div>
                 <div>
@@ -861,15 +893,26 @@ const ChurchManagementPage = () => {
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">주소</label>
-                  <input
-                    type="text"
-                    value={isEditMode ? editingChurch?.churchAddr || "" : selectedChurch.churchAddr}
-                    onChange={(e) => handleEditChange("churchAddr", e.target.value)}
-                    readOnly={!isEditMode}
-                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
-                      isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
-                    }`}
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={isEditMode ? editingChurch?.churchAddr || "" : selectedChurch.churchAddr}
+                      onChange={(e) => handleEditChange("churchAddr", e.target.value)}
+                      readOnly={!isEditMode}
+                      className={`flex-1 px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
+                        isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
+                      }`}
+                    />
+                    {isEditMode && (
+                      <button
+                        type="button"
+                        onClick={() => { setAddressMode("edit"); setShowAddressModal(true); }}
+                        className="shrink-0 px-3 py-2.5 text-xs font-medium text-purple-700 bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors"
+                      >
+                        주소 검색
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">이미지 URL</label>
@@ -1018,6 +1061,13 @@ const ChurchManagementPage = () => {
           </div>
         </div>
       )}
+
+      {/* 주소 검색 모달 */}
+      <AddressSearchModal
+        isOpen={showAddressModal}
+        onClose={() => setShowAddressModal(false)}
+        onSelect={handleAddressSelect}
+      />
     </div>
   );
 };
