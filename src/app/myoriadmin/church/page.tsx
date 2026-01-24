@@ -338,104 +338,125 @@ const ChurchManagementPage = () => {
   };
 
   return (
-    <div className="flex h-full gap-4">
+    <div className="flex h-full gap-5">
       {/* 왼쪽 리스트 영역 */}
-      <div className="w-1/2 bg-white rounded-lg shadow p-4">
-        {/* 메뉴 경로 */}
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold">교회선택 - 교회 관리</h2>
+      <div className="w-1/2 bg-white rounded-2xl border border-gray-100 p-5 flex flex-col">
+        {/* 헤더 */}
+        <div className="mb-5">
+          <h2 className="text-lg font-bold text-gray-900">교회 관리</h2>
+          <p className="text-sm text-gray-400 mt-0.5">등록된 교회 목록</p>
         </div>
 
         {/* 검색 영역 */}
         <div className="flex gap-2 mb-4">
-          <input
-            type="text"
-            placeholder="검색 텍스트 입력"
-            value={searchKeyword}
-            onChange={(e) => setSearchKeyword(e.target.value)}
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-          />
+          <div className="relative flex-1">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="교회명 검색..."
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            />
+          </div>
           <button
             onClick={handleSearch}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+            className="px-5 py-2.5 bg-purple-600 text-white text-sm font-medium rounded-xl hover:bg-purple-700 transition-colors shadow-sm"
           >
             검색
           </button>
         </div>
 
         {/* 액션 버튼 */}
-        <div className="flex justify-end gap-2 mb-4">
-          <button
-            onClick={() => setIsAddMode(true)}
-            className="w-8 h-8 bg-green-500 text-white rounded-full hover:bg-green-600"
-            title="교회 추가"
-          >
-            +
-          </button>
-          <button
-            onClick={handleDeleteChurches}
-            disabled={selectedChurches.length === 0}
-            className={`w-8 h-8 rounded-full text-white ${
-              selectedChurches.length > 0 
-                ? 'bg-red-500 hover:bg-red-600' 
-                : 'bg-gray-300 cursor-not-allowed'
-            }`}
-            title="선택된 교회 삭제"
-          >
-            🗑️
-          </button>
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-xs text-gray-400">
+            {selectedChurches.length > 0 && `${selectedChurches.length}개 선택됨`}
+          </span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setIsAddMode(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors"
+              title="교회 추가"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              추가
+            </button>
+            <button
+              onClick={handleDeleteChurches}
+              disabled={selectedChurches.length === 0}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                selectedChurches.length > 0
+                  ? 'text-rose-700 bg-rose-50 hover:bg-rose-100'
+                  : 'text-gray-400 bg-gray-50 cursor-not-allowed'
+              }`}
+              title="선택된 교회 삭제"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              삭제
+            </button>
+          </div>
         </div>
 
         {/* 테이블 */}
-        <div className="border rounded-lg overflow-hidden">
-          <div className="overflow-y-auto max-h-96">
+        <div className="flex-1 border border-gray-100 rounded-xl overflow-hidden">
+          <div className="overflow-y-auto max-h-[calc(100vh-380px)]">
             <table className="w-full">
-              <thead className="bg-gray-50 sticky top-0">
+              <thead className="bg-gray-50/80 sticky top-0">
                 <tr>
-                  <th className="px-3 py-2 text-left">
+                  <th className="px-3 py-3 text-left w-10">
                     <input
                       type="checkbox"
                       checked={churches && churches.length > 0 && selectedChurches.length === churches.length}
                       onChange={handleSelectAll}
+                      className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                     />
                   </th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">교회 ID</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">교회 이름</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">교회 위치</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">교회 종류</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500">ID</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500">교회명</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500">위치</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500">종류</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-3 py-4 text-center">로딩 중...</td>
+                    <td colSpan={5} className="px-3 py-10 text-center text-sm text-gray-400">로딩 중...</td>
                   </tr>
                 ) : !churches || churches.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-3 py-4 text-center">검색 결과가 없습니다.</td>
+                    <td colSpan={5} className="px-3 py-10 text-center text-sm text-gray-400">검색 결과가 없습니다.</td>
                   </tr>
                 ) : (
                   churches.map((church) => (
-                    <tr 
+                    <tr
                       key={church.churchIdx}
-                      className={`hover:bg-gray-50 cursor-pointer ${
-                        selectedChurch?.churchIdx === church.churchIdx ? 'bg-blue-50' : ''
+                      className={`border-t border-gray-50 cursor-pointer transition-colors ${
+                        selectedChurch?.churchIdx === church.churchIdx
+                          ? 'bg-purple-50/70'
+                          : 'hover:bg-gray-50/70'
                       }`}
                       onClick={() => setSelectedChurch(church)}
                     >
-                      <td className="px-3 py-2">
+                      <td className="px-3 py-2.5">
                         <input
                           type="checkbox"
                           checked={selectedChurches.includes(church.churchIdx)}
                           onChange={() => handleSelectChurch(church.churchIdx)}
                           onClick={(e) => e.stopPropagation()}
+                          className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                         />
                       </td>
-                      <td className="px-3 py-2 text-sm">{church.churchIdx}</td>
-                      <td className="px-3 py-2 text-sm">{church.churchName}</td>
-                      <td className="px-3 py-2 text-sm">{church.churchLocation}</td>
-                      <td className="px-3 py-2 text-sm">{church.churchType}</td>
+                      <td className="px-3 py-2.5 text-xs text-gray-400 font-mono">{church.churchIdx}</td>
+                      <td className="px-3 py-2.5 text-sm font-medium text-gray-900">{church.churchName}</td>
+                      <td className="px-3 py-2.5 text-sm text-gray-500">{church.churchLocation}</td>
+                      <td className="px-3 py-2.5 text-xs text-gray-400">{church.churchType}</td>
                     </tr>
                   ))
                 )}
@@ -445,14 +466,12 @@ const ChurchManagementPage = () => {
         </div>
 
         {/* 페이지네이션 */}
-        <div className="flex items-center justify-center gap-4 mt-4">
-          {/* 페이지당 행 수 선택 */}
+        <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">페이지당:</span>
             <select
               value={rowsPerPage}
               onChange={(e) => handleRowsPerPageChange(parseInt(e.target.value))}
-              className="px-2 py-1 text-sm border rounded bg-white"
+              className="px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
             >
               <option value={10}>10개</option>
               <option value={30}>30개</option>
@@ -460,34 +479,31 @@ const ChurchManagementPage = () => {
               <option value={100}>100개</option>
             </select>
           </div>
-          
-          {/* 페이징 버튼들 */}
-          <div className="flex items-center gap-2">
-            <button 
+
+          <div className="flex items-center gap-1">
+            <button
               onClick={() => goToPage(1)}
               disabled={currentPage === 1}
-              className={`px-2 py-1 text-sm border rounded transition-colors ${
-                currentPage === 1 
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                  : 'bg-white text-gray-700 hover:bg-gray-50 cursor-pointer'
+              className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs transition-colors ${
+                currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100'
               }`}
-              title="첫 페이지"
             >
-              ⏮️
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+              </svg>
             </button>
-            <button 
+            <button
               onClick={() => goToPage(currentPage - 1)}
               disabled={currentPage === 1}
-              className={`px-2 py-1 text-sm border rounded transition-colors ${
-                currentPage === 1 
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                  : 'bg-white text-gray-700 hover:bg-gray-50 cursor-pointer'
+              className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs transition-colors ${
+                currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100'
               }`}
-              title="이전 페이지"
             >
-              ◀️
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
             </button>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 px-2">
               <input
                 type="number"
                 value={currentPage}
@@ -497,160 +513,173 @@ const ChurchManagementPage = () => {
                     goToPage(page);
                   }
                 }}
-                className="w-12 px-1 py-1 text-sm text-center border rounded"
+                className="w-10 px-1 py-1 text-xs text-center border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/20"
                 min={1}
                 max={totalPages}
               />
-              <span className="text-sm text-gray-600">of {totalPages}</span>
+              <span className="text-xs text-gray-400">/ {totalPages}</span>
             </div>
-            <button 
+            <button
               onClick={() => goToPage(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className={`px-2 py-1 text-sm border rounded transition-colors ${
-                currentPage === totalPages 
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                  : 'bg-white text-gray-700 hover:bg-gray-50 cursor-pointer'
+              className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs transition-colors ${
+                currentPage === totalPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100'
               }`}
-              title="다음 페이지"
             >
-              ▶️
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </button>
-            <button 
+            <button
               onClick={() => goToPage(totalPages)}
               disabled={currentPage === totalPages}
-              className={`px-2 py-1 text-sm border rounded transition-colors ${
-                currentPage === totalPages 
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                  : 'bg-white text-gray-700 hover:bg-gray-50 cursor-pointer'
+              className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs transition-colors ${
+                currentPage === totalPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100'
               }`}
-              title="마지막 페이지"
             >
-              ⏭️
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+              </svg>
             </button>
           </div>
         </div>
       </div>
 
       {/* 오른쪽 상세 영역 */}
-      <div className="w-1/2 bg-white rounded-lg shadow p-4 flex flex-col">
+      <div className="w-1/2 bg-white rounded-2xl border border-gray-100 p-5 flex flex-col">
         {isAddMode ? (
           <div className="flex flex-col h-full">
-            <h3 className="text-lg font-semibold mb-4">교회 추가</h3>
-            <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center">
+                <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </div>
               <div>
-                <label className="block text-sm font-medium mb-1">교회명</label>
+                <h3 className="text-lg font-bold text-gray-900">교회 추가</h3>
+                <p className="text-xs text-gray-400">새 교회 정보를 입력하세요</p>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5">교회명</label>
                 <input
                   type="text"
                   value={newChurch.churchName}
                   onChange={(e) => setNewChurch({...newChurch, churchName: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
+                  placeholder="교회명을 입력하세요"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">위치</label>
-                <input
-                  type="text"
-                  value={newChurch.churchLocation}
-                  onChange={(e) => setNewChurch({...newChurch, churchLocation: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">교회 종류</label>
-                <input
-                  type="text"
-                  value={newChurch.churchType}
-                  onChange={(e) => setNewChurch({...newChurch, churchType: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">설립년도</label>
-                <input
-                  type="text"
-                  value={newChurch.churchEstablished}
-                  onChange={(e) => setNewChurch({...newChurch, churchEstablished: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">담임목사</label>
-                <input
-                  type="text"
-                  value={newChurch.churchPastor}
-                  onChange={(e) => setNewChurch({...newChurch, churchPastor: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium mb-1">위도</label>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">위치</label>
+                  <input
+                    type="text"
+                    value={newChurch.churchLocation}
+                    onChange={(e) => setNewChurch({...newChurch, churchLocation: e.target.value})}
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">교회 종류</label>
+                  <input
+                    type="text"
+                    value={newChurch.churchType}
+                    onChange={(e) => setNewChurch({...newChurch, churchType: e.target.value})}
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">설립년도</label>
+                  <input
+                    type="text"
+                    value={newChurch.churchEstablished}
+                    onChange={(e) => setNewChurch({...newChurch, churchEstablished: e.target.value})}
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">담임목사</label>
+                  <input
+                    type="text"
+                    value={newChurch.churchPastor}
+                    onChange={(e) => setNewChurch({...newChurch, churchPastor: e.target.value})}
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">위도</label>
                   <input
                     type="number"
                     value={newChurch.churchLatX}
                     onChange={(e) => setNewChurch({...newChurch, churchLatX: parseFloat(e.target.value)})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
                     step="any"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">경도</label>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">경도</label>
                   <input
                     type="number"
                     value={newChurch.churchLatY}
                     onChange={(e) => setNewChurch({...newChurch, churchLatY: parseFloat(e.target.value)})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
                     step="any"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">웹사이트 URL</label>
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5">웹사이트 URL</label>
                 <input
                   type="url"
                   value={newChurch.churchURL}
                   onChange={(e) => setNewChurch({...newChurch, churchURL: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">지번</label>
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5">지번</label>
                 <input
                   type="text"
                   value={newChurch.churchLotAddr}
                   onChange={(e) => setNewChurch({...newChurch, churchLotAddr: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">주소</label>
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5">주소</label>
                 <input
                   type="text"
                   value={newChurch.churchAddr}
                   onChange={(e) => setNewChurch({...newChurch, churchAddr: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">이미지 URL</label>
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5">이미지 URL</label>
                 <input
                   type="url"
                   value={newChurch.churchMapIMG}
                   onChange={(e) => setNewChurch({...newChurch, churchMapIMG: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
                 />
               </div>
             </div>
-            <div className="flex gap-2 mt-4 pt-4 border-t">
+            <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
               <button
                 onClick={handleAddChurch}
-                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                className="px-5 py-2.5 bg-purple-600 text-white text-sm font-medium rounded-xl hover:bg-purple-700 transition-colors shadow-sm"
               >
                 저장
               </button>
               <button
                 onClick={() => setIsAddMode(false)}
-                className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                className="px-5 py-2.5 text-gray-600 text-sm font-medium bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
               >
                 취소
               </button>
@@ -659,35 +688,46 @@ const ChurchManagementPage = () => {
         ) : selectedChurch ? (
           <div className="flex flex-col h-full">
             {/* 상단 카드 */}
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <span className="bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                    {selectedChurch.churchIdx}
-                  </span>
-                  <span className="text-lg font-semibold">{selectedChurch.churchName}</span>
-                  <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm">
-                    {selectedChurch.churchType}
-                  </span>
-                  <span className="bg-purple-500 text-white px-3 py-1 rounded-full text-sm">
-                    {selectedChurch.churchLocation}
-                  </span>
+            <div className="mb-5 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border border-purple-100/50">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-xl bg-white shadow-sm flex items-center justify-center">
+                    <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6M9 9h.01M15 9h.01M9 13h.01M15 13h.01" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-gray-900">{selectedChurch.churchName}</h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded-md">
+                        {selectedChurch.churchType}
+                      </span>
+                      <span className="px-2 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-700 rounded-md">
+                        {selectedChurch.churchLocation}
+                      </span>
+                      <span className="text-xs text-gray-400">#{selectedChurch.churchIdx}</span>
+                    </div>
+                  </div>
                 </div>
                 {!isEditMode && (
-                  <div className="flex gap-2">
+                  <div className="flex gap-1.5">
                     <button
                       onClick={handleEditStart}
-                      className="w-8 h-8 bg-blue-500 text-white rounded-md hover:bg-blue-600 flex items-center justify-center"
+                      className="w-8 h-8 rounded-lg bg-white shadow-sm border border-gray-200 hover:border-purple-300 hover:bg-purple-50 flex items-center justify-center transition-all"
                       title="수정"
                     >
-                      ✏️
+                      <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
                     </button>
                     <button
                       onClick={handleDeleteSingleChurch}
-                      className="w-8 h-8 bg-red-500 text-white rounded-md hover:bg-red-600 flex items-center justify-center"
+                      className="w-8 h-8 rounded-lg bg-white shadow-sm border border-gray-200 hover:border-rose-300 hover:bg-rose-50 flex items-center justify-center transition-all"
                       title="삭제"
                     >
-                      🗑️
+                      <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
                     </button>
                   </div>
                 )}
@@ -695,41 +735,46 @@ const ChurchManagementPage = () => {
             </div>
 
             {/* 상세 정보 */}
-            <h3 className="text-lg font-semibold mb-4">교회 상세 정보</h3>
-            <div className="flex-1 overflow-y-auto pr-2">
-              <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <h3 className="text-sm font-bold text-gray-900">상세 정보</h3>
+              {isEditMode && (
+                <span className="px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 rounded-md">편집중</span>
+              )}
+            </div>
+            <div className="flex-1 overflow-y-auto pr-1">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
                 <div>
-                  <label className="block text-sm font-medium mb-1">교회명</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">교회명</label>
                   <input
                     type="text"
                     value={isEditMode ? editingChurch?.churchName || "" : selectedChurch.churchName}
                     onChange={(e) => handleEditChange("churchName", e.target.value)}
                     readOnly={!isEditMode}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
-                      isEditMode ? "bg-white" : "bg-gray-50"
+                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
+                      isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
                     }`}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">위치</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">위치</label>
                   <input
                     type="text"
                     value={isEditMode ? editingChurch?.churchLocation || "" : selectedChurch.churchLocation}
                     onChange={(e) => handleEditChange("churchLocation", e.target.value)}
                     readOnly={!isEditMode}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
-                      isEditMode ? "bg-white" : "bg-gray-50"
+                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
+                      isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
                     }`}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">교회 종류</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">교회 종류</label>
                   <select
                     value={isEditMode ? editingChurch?.churchType || "" : selectedChurch.churchType}
                     onChange={(e) => handleEditChange("churchType", e.target.value)}
                     disabled={!isEditMode}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
-                      isEditMode ? "bg-white" : "bg-gray-50"
+                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
+                      isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
                     }`}
                   >
                     <option value="감리교">감리교</option>
@@ -741,131 +786,131 @@ const ChurchManagementPage = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">설립년도</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">설립년도</label>
                   <input
                     type="text"
                     value={isEditMode ? editingChurch?.churchEstablished || "" : selectedChurch.churchEstablished}
                     onChange={(e) => handleEditChange("churchEstablished", e.target.value)}
                     readOnly={!isEditMode}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
-                      isEditMode ? "bg-white" : "bg-gray-50"
+                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
+                      isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
                     }`}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">담임목사</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">담임목사</label>
                   <input
                     type="text"
                     value={isEditMode ? editingChurch?.churchPastor || "" : selectedChurch.churchPastor}
                     onChange={(e) => handleEditChange("churchPastor", e.target.value)}
                     readOnly={!isEditMode}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
-                      isEditMode ? "bg-white" : "bg-gray-50"
+                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
+                      isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
                     }`}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">위도</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">위도</label>
                   <input
                     type="number"
                     value={isEditMode ? editingChurch?.churchLatX || 0 : selectedChurch.churchLatX}
                     onChange={(e) => handleEditChange("churchLatX", parseFloat(e.target.value))}
                     readOnly={!isEditMode}
                     step="any"
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
-                      isEditMode ? "bg-white" : "bg-gray-50"
+                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
+                      isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
                     }`}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">경도</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">경도</label>
                   <input
                     type="number"
                     value={isEditMode ? editingChurch?.churchLatY || 0 : selectedChurch.churchLatY}
                     onChange={(e) => handleEditChange("churchLatY", parseFloat(e.target.value))}
                     readOnly={!isEditMode}
                     step="any"
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
-                      isEditMode ? "bg-white" : "bg-gray-50"
+                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
+                      isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
                     }`}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">웹사이트 URL</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">웹사이트 URL</label>
                   <input
                     type="url"
                     value={isEditMode ? editingChurch?.churchURL || "" : selectedChurch.churchURL}
                     onChange={(e) => handleEditChange("churchURL", e.target.value)}
                     readOnly={!isEditMode}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
-                      isEditMode ? "bg-white" : "bg-gray-50"
+                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
+                      isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
                     }`}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">지번</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">지번</label>
                   <input
                     type="text"
                     value={isEditMode ? editingChurch?.churchLotAddr || "" : selectedChurch.churchLotAddr}
                     onChange={(e) => handleEditChange("churchLotAddr", e.target.value)}
                     readOnly={!isEditMode}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
-                      isEditMode ? "bg-white" : "bg-gray-50"
+                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
+                      isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
                     }`}
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium mb-1">주소</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">주소</label>
                   <input
                     type="text"
                     value={isEditMode ? editingChurch?.churchAddr || "" : selectedChurch.churchAddr}
                     onChange={(e) => handleEditChange("churchAddr", e.target.value)}
                     readOnly={!isEditMode}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
-                      isEditMode ? "bg-white" : "bg-gray-50"
+                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
+                      isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
                     }`}
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium mb-1">이미지 URL</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">이미지 URL</label>
                   <input
                     type="url"
                     value={isEditMode ? editingChurch?.churchMapIMG || "" : selectedChurch.churchMapIMG}
                     onChange={(e) => handleEditChange("churchMapIMG", e.target.value)}
                     readOnly={!isEditMode}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
-                      isEditMode ? "bg-white" : "bg-gray-50"
+                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
+                      isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
                     }`}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">상태</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">상태</label>
                   <input
                     type="number"
                     value={isEditMode ? editingChurch?.churchStatus || 0 : selectedChurch.churchStatus}
                     onChange={(e) => handleEditChange("churchStatus", parseInt(e.target.value))}
                     readOnly={!isEditMode}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
-                      isEditMode ? "bg-white" : "bg-gray-50"
+                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
+                      isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
                     }`}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">조회수</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">조회수</label>
                   <input
                     type="number"
                     value={isEditMode ? editingChurch?.churchViewCount || 0 : selectedChurch.churchViewCount}
                     onChange={(e) => handleEditChange("churchViewCount", parseInt(e.target.value))}
                     readOnly={!isEditMode}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
-                      isEditMode ? "bg-white" : "bg-gray-50"
+                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
+                      isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
                     }`}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">등록일</label>
-                  <div className="w-full px-3 py-2 text-gray-700 bg-gray-50 rounded-md">
-                    {selectedChurch.createdAt 
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">등록일</label>
+                  <div className="w-full px-3.5 py-2.5 text-sm text-gray-500 bg-gray-50/80 border border-gray-100 rounded-xl">
+                    {selectedChurch.createdAt
                       ? new Date(selectedChurch.createdAt).toLocaleString('ko-KR', {
                           year: 'numeric',
                           month: '2-digit',
@@ -877,9 +922,9 @@ const ChurchManagementPage = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">수정일</label>
-                  <div className="w-full px-3 py-2 text-gray-700 bg-gray-50 rounded-md">
-                    {selectedChurch.updatedAt 
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">수정일</label>
+                  <div className="w-full px-3.5 py-2.5 text-sm text-gray-500 bg-gray-50/80 border border-gray-100 rounded-xl">
+                    {selectedChurch.updatedAt
                       ? new Date(selectedChurch.updatedAt).toLocaleString('ko-KR', {
                           year: 'numeric',
                           month: '2-digit',
@@ -892,19 +937,19 @@ const ChurchManagementPage = () => {
                 </div>
               </div>
             </div>
-            
+
             {/* 편집 모드 버튼 */}
             {isEditMode && (
-              <div className="flex gap-2 mt-4 pt-4 border-t">
+              <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
                 <button
                   onClick={handleUpdateChurch}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                  className="px-5 py-2.5 bg-purple-600 text-white text-sm font-medium rounded-xl hover:bg-purple-700 transition-colors shadow-sm"
                 >
                   저장
                 </button>
                 <button
                   onClick={handleEditCancel}
-                  className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                  className="px-5 py-2.5 text-gray-600 text-sm font-medium bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
                 >
                   취소
                 </button>
@@ -912,21 +957,32 @@ const ChurchManagementPage = () => {
             )}
           </div>
         ) : (
-          <div className="flex items-center justify-center h-full text-gray-500">
-            교회를 선택하거나 추가 버튼을 클릭하세요.
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
+              <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6M9 9h.01M15 9h.01M9 13h.01M15 13h.01" />
+              </svg>
+            </div>
+            <p className="text-sm text-gray-400">교회를 선택하거나</p>
+            <p className="text-sm text-gray-400">추가 버튼을 클릭하세요</p>
           </div>
         )}
       </div>
 
       {/* 삭제 완료 모달 */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h3 className="text-lg font-semibold mb-4">알림</h3>
-            <p className="mb-4">삭제가 완료되었습니다.</p>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full mx-4">
+            <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-center text-gray-900 mb-2">삭제 완료</h3>
+            <p className="text-sm text-gray-500 text-center mb-5">선택한 항목이 삭제되었습니다.</p>
             <button
               onClick={() => setShowDeleteModal(false)}
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+              className="w-full px-4 py-2.5 bg-purple-600 text-white text-sm font-medium rounded-xl hover:bg-purple-700 transition-colors"
             >
               확인
             </button>
@@ -936,22 +992,27 @@ const ChurchManagementPage = () => {
 
       {/* 편집 취소 확인 모달 */}
       {showCancelModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h3 className="text-lg font-semibold mb-4">확인</h3>
-            <p className="mb-4">변경된 사항이 있습니다. 변경을 취소하시겠습니까?</p>
-            <div className="flex gap-2 justify-end">
-              <button
-                onClick={handleCancelConfirm}
-                className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-              >
-                예
-              </button>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full mx-4">
+            <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-center text-gray-900 mb-2">변경 취소</h3>
+            <p className="text-sm text-gray-500 text-center mb-5">변경된 사항이 있습니다. 취소하시겠습니까?</p>
+            <div className="flex gap-2">
               <button
                 onClick={() => setShowCancelModal(false)}
-                className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                className="flex-1 px-4 py-2.5 text-gray-600 text-sm font-medium bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
               >
-                아니오
+                돌아가기
+              </button>
+              <button
+                onClick={handleCancelConfirm}
+                className="flex-1 px-4 py-2.5 bg-rose-600 text-white text-sm font-medium rounded-xl hover:bg-rose-700 transition-colors"
+              >
+                취소하기
               </button>
             </div>
           </div>

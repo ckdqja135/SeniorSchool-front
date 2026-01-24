@@ -39,10 +39,11 @@ interface MonthlyStatsResponse {
 }
 
 interface RecentActivity {
-  id: number;
+  id: string;
   type: string;
   action: string;
   name: string;
+  entityName: string | null;
   timestamp: string;
 }
 
@@ -136,7 +137,7 @@ const AdminMainPage = () => {
       const data: RecentActivityResponse = await response.json();
       
       if (data.success && data.data) {
-        setRecentActivities(data.data.slice(0, 6)); // 최대 6개만 표시
+        setRecentActivities(data.data.slice(0, 15)); // 최대 15개 표시
       }
     } catch (error) {
       console.error("최근 활동 조회 실패:", error);
@@ -282,58 +283,71 @@ const AdminMainPage = () => {
   const avgActivityLast3Months = avgPostsLast3Months + avgCompaniesLast3Months;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-[1600px]">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="stats-card bg-white rounded-lg shadow p-6 animate-fade-in-up" style={{ animationDelay: '0ms' }}>
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg animate-pulse-slow">
-              <span className="text-xl">📝</span>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="relative overflow-hidden bg-white rounded-2xl border border-gray-100 p-6 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full -translate-y-8 translate-x-8"></div>
+          <div className="relative">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-11 h-11 rounded-xl bg-emerald-100 flex items-center justify-center">
+                <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
             </div>
-            <div className="ml-4">
-              <h3 className="text-lg font-semibold text-gray-800">총 게시글</h3>
-              <p className="text-2xl font-bold text-green-600">{loading ? "..." : overviewData.totalPosts.toLocaleString()}</p>
-              <p className="text-sm text-green-600">게시글 수</p>
-            </div>
+            <p className="text-sm font-medium text-gray-500 mb-1">총 게시글</p>
+            <p className="text-3xl font-bold text-gray-900">{loading ? "..." : overviewData.totalPosts.toLocaleString()}</p>
           </div>
         </div>
 
-        <div className="stats-card bg-white rounded-lg shadow p-6 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-gradient-to-r from-yellow-500 to-yellow-600 text-white shadow-lg animate-pulse-slow">
-              <span className="text-xl">🎓</span>
+        <div className="relative overflow-hidden bg-white rounded-2xl border border-gray-100 p-6 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-50 rounded-full -translate-y-8 translate-x-8"></div>
+          <div className="relative">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-11 h-11 rounded-xl bg-amber-100 flex items-center justify-center">
+                <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
             </div>
-            <div className="ml-4">
-              <h3 className="text-lg font-semibold text-gray-800">등록된 업체</h3>
-              <p className="text-2xl font-bold text-yellow-600">{loading ? "..." : overviewData.totalCompanies.toLocaleString()}</p>
-              <p className="text-sm text-green-600">학교+교회+회사, 등</p>
-            </div>
+            <p className="text-sm font-medium text-gray-500 mb-1">등록된 업체</p>
+            <p className="text-3xl font-bold text-gray-900">{loading ? "..." : overviewData.totalCompanies.toLocaleString()}</p>
+            <p className="text-xs text-gray-400 mt-1">학교+교회+회사</p>
           </div>
         </div>
 
-        <div className="stats-card bg-white rounded-lg shadow p-6 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg animate-pulse-slow">
-              <span className="text-xl">🚨</span>
+        <div className="relative overflow-hidden bg-white rounded-2xl border border-gray-100 p-6 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-rose-50 rounded-full -translate-y-8 translate-x-8"></div>
+          <div className="relative">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-11 h-11 rounded-xl bg-rose-100 flex items-center justify-center">
+                <svg className="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              {!loading && overviewData.reportedPosts > 0 && (
+                <span className="px-2 py-0.5 text-xs font-medium bg-rose-100 text-rose-700 rounded-full">대기중</span>
+              )}
             </div>
-            <div className="ml-4">
-              <h3 className="text-lg font-semibold text-gray-800">신고된 게시글</h3>
-              <p className="text-2xl font-bold text-red-600">{loading ? "..." : overviewData.reportedPosts.toLocaleString()}</p>
-              <p className="text-sm text-red-600">처리 대기 중</p>
-            </div>
+            <p className="text-sm font-medium text-gray-500 mb-1">신고된 게시글</p>
+            <p className="text-3xl font-bold text-gray-900">{loading ? "..." : overviewData.reportedPosts.toLocaleString()}</p>
           </div>
         </div>
 
-        <div className="stats-card bg-white rounded-lg shadow p-6 animate-fade-in-up" style={{ animationDelay: '300ms' }}>
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg animate-pulse-slow">
-              <span className="text-xl">📊</span>
+        <div className="relative overflow-hidden bg-white rounded-2xl border border-gray-100 p-6 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-full -translate-y-8 translate-x-8"></div>
+          <div className="relative">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-11 h-11 rounded-xl bg-blue-100 flex items-center justify-center">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </div>
             </div>
-            <div className="ml-4">
-              <h3 className="text-lg font-semibold text-gray-800">이번 주 활동</h3>
-              <p className="text-2xl font-bold text-blue-600">{loading ? "..." : overviewData.thisWeekActivity.toLocaleString()}</p>
-              <p className="text-sm text-blue-600">게시글+업체 등록</p>
-            </div>
+            <p className="text-sm font-medium text-gray-500 mb-1">이번 주 활동</p>
+            <p className="text-3xl font-bold text-gray-900">{loading ? "..." : overviewData.thisWeekActivity.toLocaleString()}</p>
+            <p className="text-xs text-gray-400 mt-1">게시글+업체 등록</p>
           </div>
         </div>
       </div>
@@ -449,59 +463,116 @@ const AdminMainPage = () => {
         </div>
 
         {/* 최근 활동 */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">최근 활동</h3>
-          <div className="space-y-3 max-h-96 overflow-y-auto">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">최근 활동</h3>
+              <p className="text-sm text-gray-400 mt-0.5">실시간 업데이트</p>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center">
+              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          </div>
+          <div className="space-y-1 max-h-[420px] overflow-y-auto">
             {activityLoading ? (
-              <div className="text-center py-8 text-gray-500">로딩 중...</div>
+              <div className="text-center py-8 text-gray-400">로딩 중...</div>
             ) : recentActivities.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">최근 활동이 없습니다.</div>
+              <div className="text-center py-8 text-gray-400">최근 활동이 없습니다.</div>
             ) : (
               recentActivities.map((activity) => {
-                // 타입에 따른 아이콘과 액션 텍스트 설정
                 const getActivityInfo = (type: string, action: string) => {
-                  const icons: Record<string, string> = {
+                  const typeLabels: Record<string, string> = {
+                    church_post: "교회 게시글",
+                    school_post: "학교 게시글",
+                    company_post: "회사 게시글",
+                    restaurant_post: "식당 게시글",
+                    outsource_post: "외주 게시글",
+                    freeboard_post: "자유게시판",
+                    church: "교회",
+                    school: "학교",
+                    company: "회사",
+                    restaurant: "식당",
+                    outsource: "외주업체",
+                  };
+
+                  const actionLabels: Record<string, string> = {
+                    create: "새로 작성",
+                    add: "등록",
+                    update: "수정",
+                    delete: "삭제",
+                  };
+
+                  const typeIcons: Record<string, string> = {
+                    church_post: "⛪",
+                    school_post: "🏫",
+                    company_post: "🏢",
+                    restaurant_post: "🍽️",
+                    outsource_post: "🔧",
+                    freeboard_post: "📋",
                     church: "⛪",
                     school: "🏫",
                     company: "🏢",
                     restaurant: "🍽️",
                     outsource: "🔧",
-                    post: "📝",
-                    board: "📋"
                   };
-                  
-                  const actions: Record<string, string> = {
-                    add: "등록됨",
-                    update: "수정됨",
-                    delete: "삭제됨",
-                    create: "작성됨"
+
+                  const typeColors: Record<string, string> = {
+                    church_post: "bg-purple-100 text-purple-600",
+                    school_post: "bg-blue-100 text-blue-600",
+                    company_post: "bg-amber-100 text-amber-600",
+                    restaurant_post: "bg-orange-100 text-orange-600",
+                    outsource_post: "bg-slate-100 text-slate-600",
+                    freeboard_post: "bg-indigo-100 text-indigo-600",
+                    church: "bg-purple-100 text-purple-600",
+                    school: "bg-blue-100 text-blue-600",
+                    company: "bg-amber-100 text-amber-600",
+                    restaurant: "bg-orange-100 text-orange-600",
+                    outsource: "bg-slate-100 text-slate-600",
                   };
-                  
+
+                  const actionColors: Record<string, string> = {
+                    create: "text-emerald-600",
+                    add: "text-emerald-600",
+                    update: "text-blue-600",
+                    delete: "text-rose-600",
+                  };
+
                   return {
-                    icon: icons[type] || "📌",
-                    actionText: actions[action] || action
+                    typeLabel: typeLabels[type] || type,
+                    actionLabel: actionLabels[action] || action,
+                    icon: typeIcons[type] || "📌",
+                    colorClass: typeColors[type] || "bg-gray-100 text-gray-600",
+                    actionColor: actionColors[action] || "text-gray-600",
                   };
                 };
-                
-                const { icon, actionText } = getActivityInfo(activity.type, activity.action);
+
+                const { typeLabel, actionLabel, icon, colorClass, actionColor } = getActivityInfo(activity.type, activity.action);
                 const timeAgo = new Date(activity.timestamp).toLocaleString('ko-KR', {
-                  year: 'numeric',
                   month: '2-digit',
                   day: '2-digit',
                   hour: '2-digit',
                   minute: '2-digit'
                 });
-                
+
                 return (
-                  <div key={activity.id} className="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg bg-blue-500">
+                  <div key={activity.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm shrink-0 ${colorClass}`}>
                       {icon}
                     </div>
-                    <div className="ml-3 flex-1">
-                      <p className="text-sm font-medium text-gray-900">
-                        <span className="font-semibold text-blue-600">{activity.name}</span> {actionText}
-                      </p>
-                      <p className="text-xs text-gray-500">{timeAgo}</p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <span className="text-xs font-medium text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">{typeLabel}</span>
+                        <span className={`text-xs font-semibold ${actionColor}`}>{actionLabel}</span>
+                      </div>
+                      <p className="text-sm text-gray-900 truncate font-medium">{activity.name}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {activity.entityName && (
+                          <span className="text-xs text-gray-400 truncate">@ {activity.entityName}</span>
+                        )}
+                        <span className="text-xs text-gray-300">{timeAgo}</span>
+                      </div>
                     </div>
                   </div>
                 );
@@ -512,69 +583,65 @@ const AdminMainPage = () => {
       </div>
 
       {/* 최근 사용자 테이블 */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-800">최근 사용자</h3>
-          <p className="text-sm text-gray-600 mt-1">실시간 접속 현황</p>
+      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <div className="px-6 py-5 flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">최근 사용자</h3>
+            <p className="text-sm text-gray-400 mt-0.5">실시간 접속 현황</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+            <span className="text-xs text-gray-400">Live</span>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  이름
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  이메일
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  역할
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  마지막 접속
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  상태
-                </th>
+            <thead>
+              <tr className="border-t border-gray-100 bg-gray-50/50">
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500">이름</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500">이메일</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500">역할</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500">마지막 접속</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500">상태</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody>
               {recentUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={5} className="px-6 py-10 text-center text-gray-400 text-sm">
                     최근 사용자가 없습니다.
                   </td>
                 </tr>
               ) : (
                 recentUsers.map((user, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
+                  <tr key={index} className="border-t border-gray-50 hover:bg-gray-50/50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white text-sm font-semibold shadow-sm">
                           {user.name.charAt(0).toUpperCase()}
                         </div>
-                        <span className="ml-3 text-sm font-medium text-gray-900">{user.name}</span>
+                        <span className="text-sm font-medium text-gray-900">{user.name}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {user.email}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        user.role === '마스터' 
-                          ? 'bg-purple-100 text-purple-800' 
-                          : 'bg-blue-100 text-blue-800'
+                      <span className={`px-2.5 py-1 text-xs font-medium rounded-lg ${
+                        user.role === '마스터'
+                          ? 'bg-purple-50 text-purple-700'
+                          : 'bg-blue-50 text-blue-700'
                       }`}>
                         {user.role}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
                       {user.lastLogin}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="flex items-center">
-                        <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
-                        <span className="text-sm text-green-600">{user.status}</span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="w-2 h-2 bg-emerald-400 rounded-full"></span>
+                        <span className="text-xs font-medium text-emerald-600">{user.status}</span>
                       </span>
                     </td>
                   </tr>
@@ -586,51 +653,74 @@ const AdminMainPage = () => {
       </div>
 
       {/* 추가 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg shadow p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-green-100 text-sm">이번 달 신규 게시글</p>
-              <p className="text-2xl font-bold">
-                {monthlyLoading ? "..." : (currentMonth?.postCount || 0).toLocaleString()}개
-              </p>
-              {postGrowthRate !== 0 && (
-                <p className={`text-xs mt-1 ${postGrowthRate > 0 ? 'text-green-200' : 'text-red-200'}`}>
-                  {postGrowthRate > 0 ? '↑' : '↓'} {Math.abs(postGrowthRate)}% (지난 달 대비)
-                </p>
-              )}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-6 text-white shadow-lg shadow-emerald-500/20">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-12 translate-x-12"></div>
+          <div className="absolute bottom-0 left-0 w-20 h-20 bg-white/5 rounded-full translate-y-8 -translate-x-8"></div>
+          <div className="relative">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-emerald-100 text-sm font-medium">이번 달 신규 게시글</p>
+              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
             </div>
-            <div className="text-3xl">📝</div>
+            <p className="text-3xl font-bold">
+              {monthlyLoading ? "..." : (currentMonth?.postCount || 0).toLocaleString()}
+              <span className="text-lg font-normal ml-1">개</span>
+            </p>
+            {postGrowthRate !== 0 && (
+              <div className={`inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full text-xs font-medium ${postGrowthRate > 0 ? 'bg-white/20' : 'bg-red-400/30'}`}>
+                {postGrowthRate > 0 ? '↑' : '↓'} {Math.abs(postGrowthRate)}%
+                <span className="text-white/70">지난 달 대비</span>
+              </div>
+            )}
           </div>
         </div>
-        
-        <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-lg shadow p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-yellow-100 text-sm">이번 달 신규 업체</p>
-              <p className="text-2xl font-bold">
-                {monthlyLoading ? "..." : (currentMonth?.companyCount || 0).toLocaleString()}건
-              </p>
-              {companyGrowthRate !== 0 && (
-                <p className={`text-xs mt-1 ${companyGrowthRate > 0 ? 'text-yellow-200' : 'text-red-200'}`}>
-                  {companyGrowthRate > 0 ? '↑' : '↓'} {Math.abs(companyGrowthRate)}% (지난 달 대비)
-                </p>
-              )}
+
+        <div className="relative overflow-hidden bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-6 text-white shadow-lg shadow-amber-500/20">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-12 translate-x-12"></div>
+          <div className="absolute bottom-0 left-0 w-20 h-20 bg-white/5 rounded-full translate-y-8 -translate-x-8"></div>
+          <div className="relative">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-amber-100 text-sm font-medium">이번 달 신규 업체</p>
+              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
             </div>
-            <div className="text-3xl">🏫</div>
+            <p className="text-3xl font-bold">
+              {monthlyLoading ? "..." : (currentMonth?.companyCount || 0).toLocaleString()}
+              <span className="text-lg font-normal ml-1">건</span>
+            </p>
+            {companyGrowthRate !== 0 && (
+              <div className={`inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full text-xs font-medium ${companyGrowthRate > 0 ? 'bg-white/20' : 'bg-red-400/30'}`}>
+                {companyGrowthRate > 0 ? '↑' : '↓'} {Math.abs(companyGrowthRate)}%
+                <span className="text-white/70">지난 달 대비</span>
+              </div>
+            )}
           </div>
         </div>
-        
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-blue-100 text-sm">최근 3개월 평균 활동</p>
-              <p className="text-2xl font-bold">
-                {monthlyLoading ? "..." : avgActivityLast3Months.toLocaleString()}건
-              </p>
-              <p className="text-xs text-blue-200 mt-1">월평균 게시글+업체</p>
+
+        <div className="relative overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-6 text-white shadow-lg shadow-indigo-500/20">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-12 translate-x-12"></div>
+          <div className="absolute bottom-0 left-0 w-20 h-20 bg-white/5 rounded-full translate-y-8 -translate-x-8"></div>
+          <div className="relative">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-indigo-100 text-sm font-medium">최근 3개월 평균 활동</p>
+              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
             </div>
-            <div className="text-3xl">📊</div>
+            <p className="text-3xl font-bold">
+              {monthlyLoading ? "..." : avgActivityLast3Months.toLocaleString()}
+              <span className="text-lg font-normal ml-1">건</span>
+            </p>
+            <p className="text-xs text-white/60 mt-2">월평균 게시글+업체</p>
           </div>
         </div>
       </div>
