@@ -135,15 +135,11 @@ const FreeboardManagementPage: React.FC = () => {
         boardContent: newBoard.boardContent,
         boardID: newBoard.boardID,
         boardPW: newBoard.boardPW,
-        // UI 변경 없이 필수 category 충족: 기본값 '자유'
         category: '자유'
       } as any;
       const res = await fetch(`${API_BASE_URL}/admin/freeboard`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       if (res.ok) {
@@ -167,10 +163,7 @@ const FreeboardManagementPage: React.FC = () => {
       for (const id of selectedIds) {
         const res = await fetch(`${API_BASE_URL}/admin/freeboard/${id}`, {
           method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
+          headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
         });
         if (!res.ok) throw new Error(`삭제 실패 id=${id}`);
       }
@@ -209,18 +202,11 @@ const FreeboardManagementPage: React.FC = () => {
 
   const handleEditCancel = () => {
     if (hasChanges) setShowCancelModal(true);
-    else {
-      setIsEditMode(false);
-      setEditingBoard(null);
-      setHasChanges(false);
-    }
+    else { setIsEditMode(false); setEditingBoard(null); setHasChanges(false); }
   };
 
   const handleCancelConfirm = () => {
-    setIsEditMode(false);
-    setEditingBoard(null);
-    setHasChanges(false);
-    setShowCancelModal(false);
+    setIsEditMode(false); setEditingBoard(null); setHasChanges(false); setShowCancelModal(false);
   };
 
   const handleEditChange = (field: keyof FreeboardData, value: string) => {
@@ -238,29 +224,18 @@ const FreeboardManagementPage: React.FC = () => {
       const accessToken = getToken();
       const changedData: Partial<FreeboardData> = { boardIdx: editingBoard.boardIdx } as any;
       (Object.keys(editingBoard) as (keyof FreeboardData)[]).forEach((k) => {
-        if (editingBoard[k] !== selectedBoard[k]) {
-          (changedData as any)[k] = editingBoard[k];
-        }
+        if (editingBoard[k] !== selectedBoard[k]) { (changedData as any)[k] = editingBoard[k]; }
       });
-      const body = {
-        boardTitle: changedData.boardTitle,
-        boardContent: changedData.boardContent
-      };
-
+      const body = { boardTitle: changedData.boardTitle, boardContent: changedData.boardContent };
       const res = await fetch(`${API_BASE_URL}/admin/freeboard/${editingBoard.boardIdx}`, {
         method: "PUT",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
       if (res.ok) {
         alert("게시글이 성공적으로 수정되었습니다.");
         setSelectedBoard({ ...selectedBoard, ...body } as FreeboardData);
-        setIsEditMode(false);
-        setEditingBoard(null);
-        setHasChanges(false);
+        setIsEditMode(false); setEditingBoard(null); setHasChanges(false);
         searchBoards(searchKeyword, currentPage, rowsPerPage);
       } else {
         alert("게시글 수정에 실패했습니다.");
@@ -272,88 +247,116 @@ const FreeboardManagementPage: React.FC = () => {
   };
 
   return (
-    <div className="flex h-full gap-4">
-      <div className="w-1/2 bg-white rounded-lg shadow p-4">
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold">자유게시판 관리</h2>
+    <div className="flex h-full gap-5">
+      {/* 왼쪽 리스트 영역 */}
+      <div className="w-1/2 bg-white rounded-2xl border border-gray-100 p-5 flex flex-col">
+        {/* 헤더 */}
+        <div className="mb-5">
+          <h2 className="text-lg font-bold text-gray-900">자유게시판 관리</h2>
+          <p className="text-sm text-gray-400 mt-0.5">등록된 게시글 목록</p>
         </div>
 
+        {/* 검색 영역 */}
         <div className="flex gap-2 mb-4">
-          <input
-            type="text"
-            placeholder="제목으로 검색"
-            value={searchKeyword}
-            onChange={(e) => setSearchKeyword(e.target.value)}
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
-            onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-          />
+          <div className="relative flex-1">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="제목으로 검색..."
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
+              onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+            />
+          </div>
           <button
             onClick={handleSearch}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+            className="px-5 py-2.5 bg-purple-600 text-white text-sm font-medium rounded-xl hover:bg-purple-700 transition-colors shadow-sm"
           >
             검색
           </button>
         </div>
 
-        <div className="flex justify-end gap-2 mb-4">
-          <button
-            onClick={() => setIsAddMode(true)}
-            className="w-8 h-8 bg-green-500 text-white rounded-full hover:bg-green-600"
-            title="게시글 추가"
-          >
-            +
-          </button>
-          <button
-            onClick={handleDelete}
-            disabled={selectedIds.length === 0}
-            className={`w-8 h-8 rounded-full text-white ${selectedIds.length > 0 ? "bg-red-500 hover:bg-red-600" : "bg-gray-300 cursor-not-allowed"}`}
-            title="선택된 게시글 삭제"
-          >
-            🗑️
-          </button>
+        {/* 액션 버튼 */}
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-xs text-gray-400">
+            {selectedIds.length > 0 && `${selectedIds.length}개 선택됨`}
+          </span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setIsAddMode(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors"
+              title="게시글 추가"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              추가
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={selectedIds.length === 0}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                selectedIds.length > 0
+                  ? 'text-rose-700 bg-rose-50 hover:bg-rose-100'
+                  : 'text-gray-400 bg-gray-50 cursor-not-allowed'
+              }`}
+              title="선택된 게시글 삭제"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              삭제
+            </button>
+          </div>
         </div>
 
-        <div className="border rounded-lg overflow-hidden">
-          <div className="overflow-y-auto max-h-96">
+        {/* 테이블 */}
+        <div className="flex-1 border border-gray-100 rounded-xl overflow-hidden">
+          <div className="overflow-y-auto max-h-[calc(100vh-380px)]">
             <table className="w-full">
-              <thead className="bg-gray-50 sticky top-0">
+              <thead className="bg-gray-50/80 sticky top-0">
                 <tr>
-                  <th className="px-3 py-2 text-left">
+                  <th className="px-3 py-3 text-left w-10">
                     <input
                       type="checkbox"
                       checked={boards && boards.length > 0 && selectedIds.length === boards.length}
                       onChange={handleSelectAll}
+                      className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                     />
                   </th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">글 ID</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">제목</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">작성자</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">등록일</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500">ID</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500">제목</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500">작성자</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500">등록일</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-3 py-4 text-center">로딩 중...</td>
+                    <td colSpan={5} className="px-3 py-10 text-center text-sm text-gray-400">로딩 중...</td>
                   </tr>
                 ) : !boards || boards.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-3 py-4 text-center">검색 결과가 없습니다.</td>
+                    <td colSpan={5} className="px-3 py-10 text-center text-sm text-gray-400">검색 결과가 없습니다.</td>
                   </tr>
                 ) : (
                   boards.map((b) => (
                     <tr
                       key={b.boardIdx}
-                      className={`hover:bg-gray-50 cursor-pointer ${selectedBoard?.boardIdx === b.boardIdx ? "bg-blue-50" : ""}`}
+                      className={`border-t border-gray-50 cursor-pointer transition-colors ${
+                        selectedBoard?.boardIdx === b.boardIdx
+                          ? 'bg-purple-50/70'
+                          : 'hover:bg-gray-50/70'
+                      }`}
                       onClick={async () => {
                         setSelectedBoard(b);
                         try {
                           const accessToken = getToken();
                           const res = await fetch(`${API_BASE_URL}/admin/freeboard/${b.boardIdx}?includeDeleted=1`, {
-                            headers: {
-                              Authorization: `Bearer ${accessToken}`,
-                              "Content-Type": "application/json",
-                            },
+                            headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
                           });
                           if (res.ok) {
                             const data = await res.json();
@@ -365,18 +368,21 @@ const FreeboardManagementPage: React.FC = () => {
                         }
                       }}
                     >
-                      <td className="px-3 py-2">
+                      <td className="px-3 py-2.5">
                         <input
                           type="checkbox"
                           checked={selectedIds.includes(b.boardIdx)}
                           onChange={() => handleSelect(b.boardIdx)}
                           onClick={(e) => e.stopPropagation()}
+                          className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                         />
                       </td>
-                      <td className="px-3 py-2 text-sm">{b.boardIdx}</td>
-                      <td className="px-3 py-2 text-sm">{b.boardTitle}</td>
-                      <td className="px-3 py-2 text-sm">{b.boardID || '-'}</td>
-                      <td className="px-3 py-2 text-sm">{b.boardRegDate ? new Date(b.boardRegDate).toLocaleString() : '-'}</td>
+                      <td className="px-3 py-2.5 text-xs text-gray-400 font-mono">{b.boardIdx}</td>
+                      <td className="px-3 py-2.5 text-sm font-medium text-gray-900 truncate max-w-[180px]">{b.boardTitle}</td>
+                      <td className="px-3 py-2.5 text-sm text-gray-500">{b.boardID || '-'}</td>
+                      <td className="px-3 py-2.5 text-xs text-gray-400">
+                        {b.boardRegDate ? new Date(b.boardRegDate).toLocaleDateString('ko-KR') : '-'}
+                      </td>
                     </tr>
                   ))
                 )}
@@ -385,13 +391,13 @@ const FreeboardManagementPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center justify-center gap-4 mt-4">
+        {/* 페이지네이션 */}
+        <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">페이지당:</span>
             <select
               value={rowsPerPage}
               onChange={(e) => handleRowsPerPageChange(parseInt(e.target.value))}
-              className="px-2 py-1 text-sm border rounded bg-white"
+              className="px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
             >
               <option value={10}>10개</option>
               <option value={30}>30개</option>
@@ -400,202 +406,310 @@ const FreeboardManagementPage: React.FC = () => {
             </select>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <button
               onClick={() => goToPage(1)}
               disabled={currentPage === 1}
-              className={`px-2 py-1 text-sm border rounded transition-colors ${currentPage === 1 ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white text-gray-700 hover:bg-gray-50 cursor-pointer"}`}
-              title="첫 페이지"
+              className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs transition-colors ${
+                currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100'
+              }`}
             >
-              ⏮️
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+              </svg>
             </button>
             <button
               onClick={() => goToPage(currentPage - 1)}
               disabled={currentPage === 1}
-              className={`px-2 py-1 text-sm border rounded transition-colors ${currentPage === 1 ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white text-gray-700 hover:bg-gray-50 cursor-pointer"}`}
-              title="이전 페이지"
+              className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs transition-colors ${
+                currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100'
+              }`}
             >
-              ◀️
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
             </button>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 px-2">
               <input
                 type="number"
                 value={tempPage}
                 onChange={(e) => setTempPage(e.target.value)}
                 onBlur={() => {
-                  const page = parseInt(tempPage as string);
-                  if (!isNaN(page)) {
-                    const clamped = Math.min(Math.max(page, 1), totalPages);
-                    goToPage(clamped);
-                  } else {
-                    setTempPage(String(currentPage));
-                  }
+                  const page = parseInt(tempPage);
+                  if (!isNaN(page)) { goToPage(Math.min(Math.max(page, 1), totalPages)); }
+                  else { setTempPage(String(currentPage)); }
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
-                    const page = parseInt(tempPage as string);
-                    if (!isNaN(page)) {
-                      const clamped = Math.min(Math.max(page, 1), totalPages);
-                      goToPage(clamped);
-                    } else {
-                      setTempPage(String(currentPage));
-                    }
+                    const page = parseInt(tempPage);
+                    if (!isNaN(page)) { goToPage(Math.min(Math.max(page, 1), totalPages)); }
+                    else { setTempPage(String(currentPage)); }
                   }
                 }}
-                className="w-12 px-1 py-1 text-sm text-center border rounded"
+                className="w-10 px-1 py-1 text-xs text-center border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/20"
                 min={1}
                 max={totalPages}
               />
-              <span className="text-sm text-gray-600">of {totalPages}</span>
+              <span className="text-xs text-gray-400">/ {totalPages}</span>
             </div>
             <button
               onClick={() => goToPage(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className={`px-2 py-1 text-sm border rounded transition-colors ${currentPage === totalPages ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white text-gray-700 hover:bg-gray-50 cursor-pointer"}`}
-              title="다음 페이지"
+              className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs transition-colors ${
+                currentPage === totalPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100'
+              }`}
             >
-              ▶️
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </button>
             <button
               onClick={() => goToPage(totalPages)}
               disabled={currentPage === totalPages}
-              className={`px-2 py-1 text-sm border rounded transition-colors ${currentPage === totalPages ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white text-gray-700 hover:bg-gray-50 cursor-pointer"}`}
-              title="마지막 페이지"
+              className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs transition-colors ${
+                currentPage === totalPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100'
+              }`}
             >
-              ⏭️
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+              </svg>
             </button>
           </div>
         </div>
       </div>
 
-      <div className="w-1/2 bg-white rounded-lg shadow p-4 flex flex-col">
+      {/* 오른쪽 상세 영역 */}
+      <div className="w-1/2 bg-white rounded-2xl border border-gray-100 p-5 flex flex-col">
         {isAddMode ? (
           <div className="flex flex-col h-full">
-            <h3 className="text-lg font-semibold mb-4">게시글 추가</h3>
-            <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center">
+                <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </div>
               <div>
-                <label className="block text-sm font-medium mb-1">제목</label>
+                <h3 className="text-lg font-bold text-gray-900">게시글 추가</h3>
+                <p className="text-xs text-gray-400">새 게시글을 작성하세요</p>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5">제목</label>
                 <input
                   type="text"
                   value={newBoard.boardTitle}
                   onChange={(e) => setNewBoard({ ...newBoard, boardTitle: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
+                  placeholder="제목을 입력하세요"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">내용</label>
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5">내용</label>
                 <textarea
                   value={newBoard.boardContent}
                   onChange={(e) => setNewBoard({ ...newBoard, boardContent: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all resize-none"
                   rows={8}
+                  placeholder="내용을 입력하세요"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium mb-1">작성자 ID (선택)</label>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">작성자 ID (선택)</label>
                   <input
                     type="text"
                     value={newBoard.boardID}
                     onChange={(e) => setNewBoard({ ...newBoard, boardID: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">비밀번호 (선택)</label>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">비밀번호 (선택)</label>
                   <input
                     type="password"
                     value={newBoard.boardPW}
                     onChange={(e) => setNewBoard({ ...newBoard, boardPW: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
                   />
                 </div>
               </div>
-              
             </div>
-            <div className="flex gap-2 mt-4 pt-4 border-t">
-              <button onClick={handleAdd} className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">저장</button>
-              <button onClick={() => setIsAddMode(false)} className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">취소</button>
+            <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
+              <button onClick={handleAdd} className="px-5 py-2.5 bg-purple-600 text-white text-sm font-medium rounded-xl hover:bg-purple-700 transition-colors shadow-sm">저장</button>
+              <button onClick={() => setIsAddMode(false)} className="px-5 py-2.5 text-gray-600 text-sm font-medium bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">취소</button>
             </div>
           </div>
         ) : selectedBoard ? (
           <div className="flex flex-col h-full">
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <span className="bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-semibold">{selectedBoard.boardIdx}</span>
-                  <span className="text-lg font-semibold">{selectedBoard.boardTitle}</span>
-                  {selectedBoard.boardID && (
-                    <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm">{selectedBoard.boardID}</span>
-                  )}
+            {/* 상단 카드 */}
+            <div className="mb-5 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border border-purple-100/50">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-xl bg-white shadow-sm flex items-center justify-center">
+                    <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-gray-900 line-clamp-1">{selectedBoard.boardTitle}</h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      {selectedBoard.boardID && (
+                        <span className="px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded-md">
+                          {selectedBoard.boardID}
+                        </span>
+                      )}
+                      <span className={`px-2 py-0.5 text-xs font-medium rounded-md ${
+                        selectedBoard.isDeleted === 1 ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'
+                      }`}>
+                        {selectedBoard.isDeleted === 1 ? '삭제됨' : '정상'}
+                      </span>
+                      <span className="text-xs text-gray-400">#{selectedBoard.boardIdx}</span>
+                    </div>
+                  </div>
                 </div>
                 {!isEditMode && (
-                  <div className="flex gap-2">
-                    <button onClick={handleEditStart} className="w-8 h-8 bg-blue-500 text-white rounded-md hover:bg-blue-600 flex items-center justify-center" title="수정">✏️</button>
-                    <button onClick={async () => { setSelectedIds([selectedBoard.boardIdx]); await handleDelete(); setSelectedBoard(null); }} className="w-8 h-8 bg-red-500 text-white rounded-md hover:bg-red-600 flex items-center justify-center" title="삭제">🗑️</button>
+                  <div className="flex gap-1.5">
+                    <button
+                      onClick={handleEditStart}
+                      className="w-8 h-8 rounded-lg bg-white shadow-sm border border-gray-200 hover:border-purple-300 hover:bg-purple-50 flex items-center justify-center transition-all"
+                      title="수정"
+                    >
+                      <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={async () => { setSelectedIds([selectedBoard.boardIdx]); await handleDelete(); setSelectedBoard(null); }}
+                      className="w-8 h-8 rounded-lg bg-white shadow-sm border border-gray-200 hover:border-rose-300 hover:bg-rose-50 flex items-center justify-center transition-all"
+                      title="삭제"
+                    >
+                      <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
                   </div>
                 )}
               </div>
             </div>
 
-            <h3 className="text-lg font-semibold mb-4">게시글 상세</h3>
-            <div className="flex-1 overflow-y-auto pr-2">
-              <div className="grid grid-cols-1 gap-x-6 gap-y-4">
+            {/* 상세 정보 */}
+            <div className="flex items-center gap-2 mb-4">
+              <h3 className="text-sm font-bold text-gray-900">게시글 상세</h3>
+              {isEditMode && (
+                <span className="px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 rounded-md">편집중</span>
+              )}
+            </div>
+            <div className="flex-1 overflow-y-auto pr-1">
+              <div className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium mb-1">제목</label>
-                  <input type="text" value={isEditMode ? editingBoard?.boardTitle || "" : selectedBoard.boardTitle} onChange={(e) => handleEditChange("boardTitle", e.target.value)} readOnly={!isEditMode} className={`w-full px-3 py-2 border border-gray-300 rounded-md ${isEditMode ? "bg-white" : "bg-gray-50"}`} />
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">제목</label>
+                  <input
+                    type="text"
+                    value={isEditMode ? editingBoard?.boardTitle || "" : selectedBoard.boardTitle}
+                    onChange={(e) => handleEditChange("boardTitle", e.target.value)}
+                    readOnly={!isEditMode}
+                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
+                      isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
+                    }`}
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">내용</label>
-                  <textarea value={isEditMode ? editingBoard?.boardContent || "" : selectedBoard.boardContent} onChange={(e) => handleEditChange("boardContent", e.target.value)} readOnly={!isEditMode} rows={10} className={`w-full px-3 py-2 border border-gray-300 rounded-md ${isEditMode ? "bg-white" : "bg-gray-50"}`} />
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">내용</label>
+                  <textarea
+                    value={isEditMode ? editingBoard?.boardContent || "" : selectedBoard.boardContent}
+                    onChange={(e) => handleEditChange("boardContent", e.target.value)}
+                    readOnly={!isEditMode}
+                    rows={10}
+                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all resize-none ${
+                      isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
+                    }`}
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1">작성자 ID</label>
-                    <input type="text" value={isEditMode ? editingBoard?.boardID || "" : (selectedBoard.boardID || "")} onChange={(e) => handleEditChange("boardID", e.target.value)} readOnly={!isEditMode} className={`w-full px-3 py-2 border border-gray-300 rounded-md ${isEditMode ? "bg-white" : "bg-gray-50"}`} />
+                    <label className="block text-xs font-semibold text-gray-400 mb-1.5">작성자 ID</label>
+                    <input
+                      type="text"
+                      value={isEditMode ? editingBoard?.boardID || "" : (selectedBoard.boardID || "")}
+                      onChange={(e) => handleEditChange("boardID", e.target.value)}
+                      readOnly={!isEditMode}
+                      className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
+                        isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
+                      }`}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-400 mb-1.5">등록일</label>
+                    <div className="w-full px-3.5 py-2.5 text-sm text-gray-500 bg-gray-50/80 border border-gray-100 rounded-xl">
+                      {selectedBoard.boardRegDate
+                        ? new Date(selectedBoard.boardRegDate).toLocaleString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+                        : '-'}
+                    </div>
                   </div>
                 </div>
-                  <div>
-                  <label className="block text-sm font-medium mb-1">등록일</label>
-                  <input type="text" value={selectedBoard.boardRegDate ? new Date(selectedBoard.boardRegDate).toLocaleString() : "-"} readOnly className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50" />
-                </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">삭제 여부</label>
-                    <input type="text" value={selectedBoard.isDeleted === 1 ? '삭제됨' : '미삭제'} readOnly className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50" />
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">삭제 여부</label>
+                  <div className={`w-full px-3.5 py-2.5 text-sm border border-gray-100 rounded-xl ${
+                    selectedBoard.isDeleted === 1 ? 'bg-rose-50/80 text-rose-700' : 'bg-emerald-50/80 text-emerald-700'
+                  }`}>
+                    {selectedBoard.isDeleted === 1 ? '삭제됨' : '미삭제'}
                   </div>
+                </div>
               </div>
             </div>
 
+            {/* 편집 모드 버튼 */}
             {isEditMode && (
-              <div className="flex gap-2 mt-4 pt-4 border-t">
-                <button onClick={handleUpdate} className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">저장</button>
-                <button onClick={handleEditCancel} className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">취소</button>
+              <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
+                <button onClick={handleUpdate} className="px-5 py-2.5 bg-purple-600 text-white text-sm font-medium rounded-xl hover:bg-purple-700 transition-colors shadow-sm">저장</button>
+                <button onClick={handleEditCancel} className="px-5 py-2.5 text-gray-600 text-sm font-medium bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">취소</button>
               </div>
             )}
           </div>
         ) : (
-          <div className="flex items-center justify-center h-full text-gray-500">게시글을 선택하거나 추가 버튼을 클릭하세요.</div>
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
+              <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <p className="text-sm text-gray-400">게시글을 선택하거나</p>
+            <p className="text-sm text-gray-400">추가 버튼을 클릭하세요</p>
+          </div>
         )}
       </div>
 
+      {/* 삭제 완료 모달 */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h3 className="text-lg font-semibold mb-4">알림</h3>
-            <p className="mb-4">삭제가 완료되었습니다.</p>
-            <button onClick={() => setShowDeleteModal(false)} className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">확인</button>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full mx-4">
+            <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-center text-gray-900 mb-2">삭제 완료</h3>
+            <p className="text-sm text-gray-500 text-center mb-5">선택한 항목이 삭제되었습니다.</p>
+            <button onClick={() => setShowDeleteModal(false)} className="w-full px-4 py-2.5 bg-purple-600 text-white text-sm font-medium rounded-xl hover:bg-purple-700 transition-colors">확인</button>
           </div>
         </div>
       )}
 
+      {/* 편집 취소 확인 모달 */}
       {showCancelModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h3 className="text-lg font-semibold mb-4">확인</h3>
-            <p className="mb-4">변경된 사항이 있습니다. 변경을 취소하시겠습니까?</p>
-            <div className="flex gap-2 justify-end">
-              <button onClick={handleCancelConfirm} className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">예</button>
-              <button onClick={() => setShowCancelModal(false)} className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">아니오</button>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full mx-4">
+            <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-center text-gray-900 mb-2">변경 취소</h3>
+            <p className="text-sm text-gray-500 text-center mb-5">변경된 사항이 있습니다. 취소하시겠습니까?</p>
+            <div className="flex gap-2">
+              <button onClick={() => setShowCancelModal(false)} className="flex-1 px-4 py-2.5 text-gray-600 text-sm font-medium bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">돌아가기</button>
+              <button onClick={handleCancelConfirm} className="flex-1 px-4 py-2.5 bg-rose-600 text-white text-sm font-medium rounded-xl hover:bg-rose-700 transition-colors">취소하기</button>
             </div>
           </div>
         </div>
@@ -605,6 +719,3 @@ const FreeboardManagementPage: React.FC = () => {
 };
 
 export default FreeboardManagementPage;
-
-
-

@@ -422,6 +422,18 @@ const AdminMainPage = () => {
                       cornerRadius: 8,
                       boxPadding: 4,
                       callbacks: {
+                        title: (items) => {
+                          const idx = items[0]?.dataIndex;
+                          if (idx !== undefined) {
+                            const reversed = [...monthlyData].reverse();
+                            const raw = reversed[idx]?.month || "";
+                            const parts = raw.split("-");
+                            if (parts.length === 2) {
+                              return `${parts[0].slice(2)}년 ${parseInt(parts[1])}월`;
+                            }
+                          }
+                          return items[0]?.label || "";
+                        },
                         label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y}건`,
                       },
                     },
