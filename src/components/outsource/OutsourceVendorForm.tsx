@@ -165,103 +165,154 @@ export default function OutsourceVendorForm({
     };
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="max-w-4xl mx-auto p-6">
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold mb-2">
-                    {mode === 'create' ? '외주 업체 등록' : '외주 업체 수정'}
-                </h1>
-                <p className="text-gray-600">
-                    외주 업체 정보를 입력해주세요. 필수 항목은{' '}
-                    <span className="text-red-500">*</span>로 표시되어 있습니다.
-                </p>
-            </div>
-
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* 전역 에러 표시 */}
             {submitError && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-red-600">{submitError}</p>
+                <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border-l-4 border-red-500 p-5 animate-in slide-in-from-top duration-300">
+                    <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0">
+                            <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-red-800 mb-1">오류가 발생했습니다</h3>
+                            <p className="text-red-700 text-sm">{submitError}</p>
+                        </div>
+                    </div>
                 </div>
             )}
 
-            {/* 폼 유효성 에러 표시 (개발용) */}
+            {/* 폼 유효성 에러 표시 */}
             {Object.keys(errors).length > 0 && (
-                <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-sm font-medium text-yellow-800 mb-2">
-                        입력 내용을 확인해주세요:
-                    </p>
-                    <ul className="text-sm text-yellow-700 list-disc list-inside">
-                        {Object.entries(errors).map(([key, error]) => {
-                            // 에러 메시지 추출
-                            const errorMessage = 
-                                error && typeof error === 'object' && 'message' in error
-                                    ? (error as { message?: string | { message?: string } }).message
-                                    : undefined;
-                            
-                            const messageText = 
-                                typeof errorMessage === 'string'
-                                    ? errorMessage
-                                    : errorMessage && typeof errorMessage === 'object' && 'message' in errorMessage
-                                    ? String(errorMessage.message)
-                                    : '유효하지 않은 값';
-                            
-                            return (
-                                <li key={key}>
-                                    {key}: {messageText}
-                                </li>
-                            );
-                        })}
-                    </ul>
+                <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border-l-4 border-yellow-500 p-5 animate-in slide-in-from-top duration-300">
+                    <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0">
+                            <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="font-semibold text-yellow-800 mb-2">입력 내용을 확인해주세요</h3>
+                            <ul className="space-y-1">
+                                {Object.entries(errors).map(([key, error]) => {
+                                    const errorMessage =
+                                        error && typeof error === 'object' && 'message' in error
+                                            ? (error as { message?: string | { message?: string } }).message
+                                            : undefined;
+
+                                    const messageText =
+                                        typeof errorMessage === 'string'
+                                            ? errorMessage
+                                            : errorMessage && typeof errorMessage === 'object' && 'message' in errorMessage
+                                            ? String(errorMessage.message)
+                                            : '유효하지 않은 값';
+
+                                    return (
+                                        <li key={key} className="flex items-center gap-2 text-sm text-yellow-700">
+                                            <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></span>
+                                            <span className="font-medium">{key}:</span>
+                                            <span>{messageText}</span>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             )}
 
-            <div className="space-y-8">
+            <div className="space-y-6">
                 {/* 기본 정보 섹션 */}
-                <div className="p-6 bg-white border rounded-lg shadow-sm">
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60 p-6 md:p-8 hover:shadow-xl transition-shadow duration-300">
+                    <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200">
+                        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2 rounded-lg">
+                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <h2 className="text-xl font-bold text-gray-800">기본 정보</h2>
+                    </div>
                     <BasicInfoSection form={form as any} />
                 </div>
 
                 {/* 예산 정보 섹션 (개발 분야 전용) */}
                 {isDevelopment && (
-                    <div className="p-6 bg-white border rounded-lg shadow-sm">
+                    <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60 p-6 md:p-8 hover:shadow-xl transition-shadow duration-300">
+                        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200">
+                            <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-2 rounded-lg">
+                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <h2 className="text-xl font-bold text-gray-800">예산 정보</h2>
+                        </div>
                         <BudgetSection form={form as any} />
                     </div>
                 )}
 
                 {/* 개발 스택 및 팀 구성 섹션 (개발 분야 전용) */}
                 {isDevelopment && (
-                    <div className="p-6 bg-white border rounded-lg shadow-sm">
+                    <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60 p-6 md:p-8 hover:shadow-xl transition-shadow duration-300">
+                        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200">
+                            <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-2 rounded-lg">
+                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                            </div>
+                            <h2 className="text-xl font-bold text-gray-800">개발 스택 및 팀 구성</h2>
+                        </div>
                         <DevTeamSection form={form as any} />
                     </div>
                 )}
 
                 {/* 정부지원사업 섹션 (개발 분야 전용) */}
                 {isDevelopment && (
-                    <div className="p-6 bg-white border rounded-lg shadow-sm">
+                    <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60 p-6 md:p-8 hover:shadow-xl transition-shadow duration-300">
+                        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200">
+                            <div className="bg-gradient-to-br from-orange-500 to-red-600 p-2 rounded-lg">
+                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                                </svg>
+                            </div>
+                            <h2 className="text-xl font-bold text-gray-800">정부지원사업</h2>
+                        </div>
                         <GovSupportSection form={form as any} />
                     </div>
                 )}
             </div>
 
             {/* 제출 버튼 */}
-            <div className="mt-8 flex gap-4">
+            <div className="sticky bottom-4 mt-8 flex gap-4 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/60 p-4">
                 <button
                     type="button"
                     onClick={() => router.back()}
-                    className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
+                    className="px-8 py-3.5 border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 font-semibold text-gray-700 transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={isSubmitting}
                 >
                     취소
                 </button>
                 <button
                     type="submit"
-                    className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 px-8 py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
                     disabled={isSubmitting}
                 >
-                    {isSubmitting
-                        ? '저장 중...'
-                        : mode === 'create'
-                            ? '등록하기'
-                            : '수정하기'}
+                    {isSubmitting ? (
+                        <>
+                            <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>저장 중...</span>
+                        </>
+                    ) : (
+                        <>
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span>{mode === 'create' ? '등록하기' : '수정하기'}</span>
+                        </>
+                    )}
                 </button>
             </div>
         </form>
