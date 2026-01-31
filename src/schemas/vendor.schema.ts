@@ -144,7 +144,10 @@ const baseVendorObjectSchema = z.object({
     minBudget: z.number().int().min(0).optional(),
     avgBudget: z.number().int().min(0).optional(),
     maxBudget: z.number().int().min(0).optional(),
-    avgBudgetRange: avgBudgetRangeSchema.optional(),
+    avgBudgetRange: z.preprocess(
+        (val) => val === '' ? undefined : val,
+        avgBudgetRangeSchema.optional()
+    ),
     mainPortfolioUrl: z.string().url().optional().or(z.literal('')),
     websiteUrl: z.string().url().optional().or(z.literal('')),
     region: z.string().max(50).optional(),

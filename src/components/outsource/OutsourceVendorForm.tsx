@@ -82,6 +82,35 @@ export default function OutsourceVendorForm({
         }
     }, [category, setValue, getValues]);
 
+    // Validation 에러 핸들러
+    const onError = (errors: any) => {
+        console.error('Validation errors:', errors);
+
+        // 에러 메시지 수집
+        const errorMessages: string[] = [];
+        Object.entries(errors).forEach(([field, error]: [string, any]) => {
+            if (error?.message) {
+                errorMessages.push(`• ${error.message}`);
+            } else if (error && typeof error === 'object') {
+                // 중첩된 에러 처리 (예: devInfo.techStackSummary)
+                Object.entries(error).forEach(([subField, subError]: [string, any]) => {
+                    if (subError?.message) {
+                        errorMessages.push(`• ${subError.message}`);
+                    }
+                });
+            }
+        });
+
+        const message = errorMessages.length > 0
+            ? `입력 내용을 확인해주세요:\n\n${errorMessages.join('\n')}`
+            : '입력 내용을 확인해주세요. 필수 항목을 모두 입력했는지 확인해주세요.';
+
+        alert(message);
+
+        // 에러가 있는 위치로 스크롤
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     const onSubmit = async (data: any) => {
         setIsSubmitting(true);
         setSubmitError(null);
@@ -118,6 +147,11 @@ export default function OutsourceVendorForm({
             // 기타 분야가 아닐 때는 customCategory 제거
             if (processedData.category !== 'OTHER') {
                 delete processedData.customCategory;
+            }
+
+            // 빈 문자열인 optional 필드들 제거
+            if (processedData.avgBudgetRange === '') {
+                delete processedData.avgBudgetRange;
             }
 
             // API 엔드포인트로 데이터 전송
@@ -165,7 +199,7 @@ export default function OutsourceVendorForm({
     };
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit, onError)} className="space-y-6">
             {/* 전역 에러 표시 */}
             {submitError && (
                 <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border-l-4 border-red-500 p-5 animate-in slide-in-from-top duration-300">
