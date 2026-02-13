@@ -358,14 +358,21 @@ export default function CompanyBoardDetailPage() {
         commentsData = data.data;
       }
       
-      // API는 위로 갈수록 과거, 아래로 갈수록 최근 순서로 뿌려주므로
-      // 화면에서는 반대로 표시해야 함 (위로 갈수록 최근, 아래로 갈수록 과거)
-      const reversedComments = [...commentsData].reverse();
-      
-      setAllComments(reversedComments);
-      setTotalComments(reversedComments.length);
-      setVisibleComments(reversedComments.slice(0, commentsPerLoad));
-      setHasMoreComments(reversedComments.length > commentsPerLoad);
+      // 부모 댓글(depth:0)은 최신순, 대댓글(depth>0)은 부모 아래에 시간순 유지
+      const parents = commentsData.filter(c => Number(c.commentDepth) === 0).reverse();
+      const sorted: CompanyComment[] = [];
+      for (const parent of parents) {
+        sorted.push(parent);
+        const replies = commentsData.filter(
+          c => Number(c.commentDepth) > 0 && String(c.commentParent) === String(parent.commentIdx)
+        );
+        sorted.push(...replies);
+      }
+
+      setAllComments(sorted);
+      setTotalComments(sorted.length);
+      setVisibleComments(sorted.slice(0, commentsPerLoad));
+      setHasMoreComments(sorted.length > commentsPerLoad);
     } catch (error) {
       console.error('댓글 로딩 오류:', error);
       setAllComments([]);

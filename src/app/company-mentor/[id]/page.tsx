@@ -110,6 +110,12 @@ export default function CompanyDetailPage() {
   // 회사 정보 탭 관련 상태 (직원정보, 채무정보, 매출정보)
   const [companyInfoTab, setCompanyInfoTab] = useState<'employee' | 'debt' | 'revenue'>('employee');
 
+  // URL에 프로토콜이 없으면 https:// 추가
+  const ensureProtocol = (url: string): string => {
+    if (!/^https?:\/\//i.test(url)) return `https://${url}`;
+    return url;
+  };
+
   // 금액을 한국어 단위(조/억)로 포맷
   const formatKoreanMoney = (value: number): string => {
     const eok = Math.round(value / 100000000);
@@ -696,8 +702,8 @@ export default function CompanyDetailPage() {
                   max-width: 100%;
                 ">🏢 ${company.compLotAddr || ''}</div>
                 ${company.compURL ? `
-                <a href="${company.compURL}" 
-                   target="_blank" 
+                <a href="${ensureProtocol(company.compURL)}"
+                   target="_blank"
                    rel="noopener noreferrer"
                    style="
                      display: inline-block;
@@ -981,65 +987,102 @@ export default function CompanyDetailPage() {
           <div className="space-y-6">
             {/* 회사 정보 */}
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6 tracking-wide">회사 정보</h2>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 hover:shadow-md transition-all duration-200">
-                  <span className="text-xs text-blue-700 font-bold uppercase tracking-wider mb-1 block">위치</span>
-                  <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-900 leading-relaxed">{company.compLocate}</p>
+              <h2 className="text-lg font-bold text-gray-800 mb-5">회사 정보</h2>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 transition-all duration-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                    <span className="text-sm text-gray-500 font-medium">위치</span>
+                  </div>
+                  <span className="text-sm font-bold text-gray-900">{company.compLocate}</span>
                 </div>
-                <div className="bg-green-50 p-3 rounded-lg border border-green-100 hover:shadow-md transition-all duration-200">
-                  <span className="text-xs text-green-700 font-bold uppercase tracking-wider mb-1 block">구분</span>
-                  <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-900 leading-relaxed">{company.compType}</p>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 transition-all duration-200">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
+                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                      </div>
+                      <span className="text-xs text-gray-500 font-medium">구분</span>
+                    </div>
+                    <span className="text-sm font-bold text-gray-900">{company.compType}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 transition-all duration-200">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
+                        <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <span className="text-xs text-gray-500 font-medium">설립</span>
+                    </div>
+                    <span className="text-sm font-bold text-gray-900">
+                      {company.compEstablish ? `${company.compEstablish}년` : '정보 없음'}
+                    </span>
+                  </div>
                 </div>
-                <div className="bg-purple-50 p-3 rounded-lg border border-purple-100 hover:shadow-md transition-all duration-200">
-                  <span className="text-xs text-purple-700 font-bold uppercase tracking-wider mb-1 block">설립</span>
-                  <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-900 leading-relaxed">
-                    {company.compEstablish ? `${company.compEstablish}년` : '정보 없음'}
-                  </p>
-                </div>
-                <div className="bg-orange-50 p-3 rounded-lg border border-orange-100 hover:shadow-md transition-all duration-200">
-                  <span className="text-xs text-orange-700 font-bold uppercase tracking-wider mb-1 block">CEO</span>
-                  <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-900 leading-relaxed">{company.compCEO}</p>
+
+                <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 transition-all duration-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center">
+                      <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </div>
+                    <span className="text-sm text-gray-500 font-medium">CEO</span>
+                  </div>
+                  <span className="text-sm font-bold text-gray-900">{company.compCEO}</span>
                 </div>
               </div>
-              
-              <div className="mt-6 p-4 bg-yellow-50 border border-yellow-100 rounded-lg">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+
+              {/* 평균 평점 */}
+              <div className="mt-5 p-4 bg-gray-50 rounded-xl">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
-                    <p className="text-xs font-semibold text-yellow-700 uppercase tracking-widest mb-1">평균 평점</p>
+                    <p className="text-xs font-medium text-gray-500 mb-1.5">평균 평점</p>
                     {averageRating ? (
                       <div className="flex items-center gap-3">
                         {renderStarRating(averageRating, 'lg')}
                         <span className="text-lg font-bold text-gray-900 leading-none pt-2">{averageRating.toFixed(1)} / 5.0</span>
                       </div>
                     ) : (
-                      <p className="text-sm text-gray-500">아직 평점이 없습니다. 첫 후기를 작성해보세요!</p>
+                      <p className="text-sm text-gray-400">아직 평점이 없습니다.</p>
                     )}
                   </div>
-                  <div className="text-sm text-gray-600 font-medium">
+                  <span className="text-xs text-gray-400 font-medium">
                     {ratingCount > 0 ? `${ratingCount.toLocaleString()}개의 회사 후기` : '후기 0개'}
-                  </div>
+                  </span>
                 </div>
               </div>
-              
-              <div className="mt-8">
-                {company.compURL && (
-                  <a
-                    href={company.compURL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center px-6 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 font-medium text-base shadow-md hover:shadow-lg"
-                  >
-                    <i className="fa fa-external-link mr-3 text-lg"></i>
-                    회사 홈페이지
-                  </a>
-                )}
-              </div>
+
+              {/* 홈페이지 버튼 */}
+              {company.compURL && (
+                <a
+                  href={ensureProtocol(company.compURL)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-5 w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-all duration-200 font-medium text-sm"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                  회사 홈페이지
+                </a>
+              )}
             </div>
 
             {/* 회사 상세 정보 (직원/채무/매출) 탭 */}
             <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex border-b border-gray-200 mb-6">
+              <div className="flex items-center border-b border-gray-200 mb-6">
                 <button
                   onClick={() => setCompanyInfoTab('employee')}
                   className={`px-4 py-2 text-sm font-semibold transition-all duration-200 border-b-2 ${
@@ -1070,127 +1113,217 @@ export default function CompanyDetailPage() {
                 >
                   매출 정보
                 </button>
+                <div className="relative ml-auto mb-1 group">
+                  <svg className="w-5 h-5 text-gray-500 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="absolute bottom-full right-0 mb-2 w-64 p-3 bg-gray-800 text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
+                    금융감독원 전자공시시스템(OpenDart)의 사업보고서 기반 데이터이며, 비상장 기업은 제공되지 않을 수 있습니다.
+                    <div className="absolute top-full right-3 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                  </div>
+                </div>
               </div>
 
               {/* 직원 정보 탭 */}
               {companyInfoTab === 'employee' && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200 hover:shadow-md transition-all duration-200">
-                    <span className="text-xs text-blue-700 font-bold uppercase tracking-wider mb-2 block">총 직원 수</span>
-                    <p className="text-2xl font-bold text-gray-900">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 transition-all duration-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </div>
+                      <span className="text-sm text-gray-500 font-medium">총 직원 수</span>
+                    </div>
+                    <span className="text-lg font-bold text-gray-900">
                       {(company.totalEmployees || company.compEmployeeCount)
-                        ? `${(company.totalEmployees || company.compEmployeeCount)!.toLocaleString()}명` 
-                        : '정보 없음'}
-                    </p>
+                        ? `${(company.totalEmployees || company.compEmployeeCount)!.toLocaleString()}명`
+                        : <span className="text-sm text-gray-400 font-normal">정보 없음</span>}
+                    </span>
                   </div>
-                  
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border border-green-200 hover:shadow-md transition-all duration-200">
-                    <span className="text-xs text-green-700 font-bold uppercase tracking-wider mb-2 block">평균 연봉</span>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {company.compAvgSalary 
-                        ? `${Math.round(company.compAvgSalary / 10000).toLocaleString()}만원` 
-                        : '정보 없음'}
-                    </p>
+
+                  <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 transition-all duration-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
+                        <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <span className="text-sm text-gray-500 font-medium">평균 연봉</span>
+                    </div>
+                    <span className="text-lg font-bold text-gray-900">
+                      {company.compAvgSalary
+                        ? `${Math.round(company.compAvgSalary / 10000).toLocaleString()}만원`
+                        : <span className="text-sm text-gray-400 font-normal">정보 없음</span>}
+                    </span>
                   </div>
-                  
-                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200 hover:shadow-md transition-all duration-200">
-                    <span className="text-xs text-purple-700 font-bold uppercase tracking-wider mb-2 block">신규 입사자</span>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {company.newHires !== null && company.newHires !== undefined
-                        ? `${company.newHires.toLocaleString()}명` 
-                        : '정보 없음'}
-                    </p>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 transition-all duration-200">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
+                          <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                          </svg>
+                        </div>
+                        <span className="text-xs text-gray-500 font-medium">신규 입사</span>
+                      </div>
+                      <span className="text-base font-bold text-gray-900">
+                        {company.newHires !== null && company.newHires !== undefined
+                          ? `${company.newHires.toLocaleString()}명`
+                          : <span className="text-xs text-gray-400 font-normal">없음</span>}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 transition-all duration-200">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center">
+                          <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6" />
+                          </svg>
+                        </div>
+                        <span className="text-xs text-gray-500 font-medium">퇴사자</span>
+                      </div>
+                      <span className="text-base font-bold text-gray-900">
+                        {company.resignations !== null && company.resignations !== undefined
+                          ? `${company.resignations.toLocaleString()}명`
+                          : <span className="text-xs text-gray-400 font-normal">없음</span>}
+                      </span>
+                    </div>
                   </div>
-                  
-                  <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-lg border border-orange-200 hover:shadow-md transition-all duration-200">
-                    <span className="text-xs text-orange-700 font-bold uppercase tracking-wider mb-2 block">퇴사자 수</span>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {company.resignations !== null && company.resignations !== undefined
-                        ? `${company.resignations.toLocaleString()}명` 
-                        : '정보 없음'}
-                    </p>
-                  </div>
-                  
-                  <div className="bg-gradient-to-br from-pink-50 to-pink-100 p-4 rounded-lg border border-pink-200 hover:shadow-md transition-all duration-200 col-span-2">
-                    <span className="text-xs text-pink-700 font-bold uppercase tracking-wider mb-2 block">평균 근속 연수</span>
-                    <p className="text-2xl font-bold text-gray-900">
+
+                  <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 transition-all duration-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-pink-50 flex items-center justify-center">
+                        <svg className="w-5 h-5 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <span className="text-sm text-gray-500 font-medium">평균 근속 연수</span>
+                    </div>
+                    <span className="text-lg font-bold text-gray-900">
                       {company.compAvgTenure !== null && company.compAvgTenure !== undefined
-                        ? `${company.compAvgTenure}년` 
-                        : '정보 없음'}
-                    </p>
+                        ? `${company.compAvgTenure}년`
+                        : <span className="text-sm text-gray-400 font-normal">정보 없음</span>}
+                    </span>
                   </div>
                 </div>
               )}
 
               {/* 채무 정보 탭 */}
               {companyInfoTab === 'debt' && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200 hover:shadow-md transition-all duration-200">
-                    <span className="text-xs text-blue-700 font-bold uppercase tracking-wider mb-2 block">자본금</span>
-                    <p className="text-2xl font-bold text-gray-900">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 transition-all duration-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                      </div>
+                      <span className="text-sm text-gray-500 font-medium">자본금</span>
+                    </div>
+                    <span className="text-lg font-bold text-gray-900">
                       {company.compCapital
                         ? formatKoreanMoney(company.compCapital)
-                        : '정보 없음'}
-                    </p>
+                        : <span className="text-sm text-gray-400 font-normal">정보 없음</span>}
+                    </span>
                   </div>
-                  
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border border-green-200 hover:shadow-md transition-all duration-200">
-                    <span className="text-xs text-green-700 font-bold uppercase tracking-wider mb-2 block">자산 총계</span>
-                    <p className="text-2xl font-bold text-gray-900">
+
+                  <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 transition-all duration-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
+                        <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                      </div>
+                      <span className="text-sm text-gray-500 font-medium">자산 총계</span>
+                    </div>
+                    <span className="text-lg font-bold text-gray-900">
                       {company.compTotalAssets
                         ? formatKoreanMoney(company.compTotalAssets)
-                        : '정보 없음'}
-                    </p>
+                        : <span className="text-sm text-gray-400 font-normal">정보 없음</span>}
+                    </span>
                   </div>
-                  
-                  <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-lg border border-red-200 hover:shadow-md transition-all duration-200">
-                    <span className="text-xs text-red-700 font-bold uppercase tracking-wider mb-2 block">부채 총계</span>
-                    <p className="text-2xl font-bold text-gray-900">
+
+                  <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 transition-all duration-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center">
+                        <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                        </svg>
+                      </div>
+                      <span className="text-sm text-gray-500 font-medium">부채 총계</span>
+                    </div>
+                    <span className="text-lg font-bold text-red-600">
                       {company.compTotalLiabilities
                         ? formatKoreanMoney(company.compTotalLiabilities)
-                        : '정보 없음'}
-                    </p>
+                        : <span className="text-sm text-gray-400 font-normal">정보 없음</span>}
+                    </span>
                   </div>
-                  
-                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200 hover:shadow-md transition-all duration-200">
-                    <span className="text-xs text-purple-700 font-bold uppercase tracking-wider mb-2 block">자본 총계</span>
-                    <p className="text-2xl font-bold text-gray-900">
+
+                  <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 transition-all duration-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
+                        <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                        </svg>
+                      </div>
+                      <span className="text-sm text-gray-500 font-medium">자본 총계</span>
+                    </div>
+                    <span className="text-lg font-bold text-gray-900">
                       {company.compTotalEquity
                         ? formatKoreanMoney(company.compTotalEquity)
-                        : '정보 없음'}
-                    </p>
+                        : <span className="text-sm text-gray-400 font-normal">정보 없음</span>}
+                    </span>
                   </div>
                 </div>
               )}
 
               {/* 매출 정보 탭 */}
               {companyInfoTab === 'revenue' && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200 hover:shadow-md transition-all duration-200 col-span-2">
-                    <span className="text-xs text-blue-700 font-bold uppercase tracking-wider mb-2 block">매출액</span>
-                    <p className="text-3xl font-bold text-gray-900">
+                <div className="space-y-3">
+                  <div className="p-5 bg-gradient-to-r from-purple-600 to-purple-700 rounded-xl text-white">
+                    <span className="text-xs font-medium text-purple-200 uppercase tracking-wider">매출액</span>
+                    <p className="text-2xl font-bold mt-1">
                       {company.compSales
                         ? formatKoreanMoney(company.compSales)
                         : '정보 없음'}
                     </p>
                   </div>
-                  
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border border-green-200 hover:shadow-md transition-all duration-200">
-                    <span className="text-xs text-green-700 font-bold uppercase tracking-wider mb-2 block">영업 이익</span>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {company.compOperatingProfit
-                        ? formatKoreanMoney(company.compOperatingProfit)
-                        : '정보 없음'}
-                    </p>
-                  </div>
-                  
-                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200 hover:shadow-md transition-all duration-200">
-                    <span className="text-xs text-purple-700 font-bold uppercase tracking-wider mb-2 block">당기 순이익</span>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {company.compNetIncome
-                        ? formatKoreanMoney(company.compNetIncome)
-                        : '정보 없음'}
-                    </p>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex flex-col p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 transition-all duration-200">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
+                          <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                          </svg>
+                        </div>
+                        <span className="text-xs text-gray-500 font-medium">영업 이익</span>
+                      </div>
+                      <span className="text-base font-bold text-gray-900">
+                        {company.compOperatingProfit
+                          ? formatKoreanMoney(company.compOperatingProfit)
+                          : <span className="text-sm text-gray-400 font-normal">정보 없음</span>}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 transition-all duration-200">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                          <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <span className="text-xs text-gray-500 font-medium">당기 순이익</span>
+                      </div>
+                      <span className="text-base font-bold text-gray-900">
+                        {company.compNetIncome
+                          ? formatKoreanMoney(company.compNetIncome)
+                          : <span className="text-sm text-gray-400 font-normal">정보 없음</span>}
+                      </span>
+                    </div>
                   </div>
                 </div>
               )}

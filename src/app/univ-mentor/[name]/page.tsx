@@ -655,39 +655,76 @@ export default function SchoolPage() {
           <div className="space-y-6">
             {/* 대학교 정보 */}
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6 tracking-wide">대학교 정보</h2>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 hover:shadow-md transition-all duration-200">
-                  <span className="text-xs text-blue-700 font-bold uppercase tracking-wider mb-1 block">위치</span>
-                  <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-900 leading-relaxed">{university.univLocate}</p>
+              <h2 className="text-lg font-bold text-gray-800 mb-5">대학교 정보</h2>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-green-200 transition-all duration-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                    <span className="text-sm text-gray-500 font-medium">위치</span>
+                  </div>
+                  <span className="text-sm font-bold text-gray-900">{university.univLocate}</span>
                 </div>
-                <div className="bg-green-50 p-3 rounded-lg border border-green-100 hover:shadow-md transition-all duration-200">
-                  <span className="text-xs text-green-700 font-bold uppercase tracking-wider mb-1 block">구분</span>
-                  <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-900 leading-relaxed">{university.univType}</p>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-green-200 transition-all duration-200">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
+                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                      </div>
+                      <span className="text-xs text-gray-500 font-medium">구분</span>
+                    </div>
+                    <span className="text-sm font-bold text-gray-900">{university.univType}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-green-200 transition-all duration-200">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
+                        <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <span className="text-xs text-gray-500 font-medium">설립</span>
+                    </div>
+                    <span className="text-sm font-bold text-gray-900">
+                      {university.univEstablish ? `${university.univEstablish}년` : '정보 없음'}
+                    </span>
+                  </div>
                 </div>
-                <div className="bg-purple-50 p-3 rounded-lg border border-purple-100 hover:shadow-md transition-all duration-200">
-                  <span className="text-xs text-purple-700 font-bold uppercase tracking-wider mb-1 block">설립</span>
-                  <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-900 leading-relaxed">
-                    {university.univEstablish ? `${university.univEstablish}년` : '정보 없음'}
-                  </p>
-                </div>
-                <div className="bg-orange-50 p-3 rounded-lg border border-orange-100 hover:shadow-md transition-all duration-200">
-                  <span className="text-xs text-orange-700 font-bold uppercase tracking-wider mb-1 block">총장</span>
-                  <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-900 leading-relaxed">{university.univPresident}</p>
+
+                <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-green-200 transition-all duration-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center">
+                      <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </div>
+                    <span className="text-sm text-gray-500 font-medium">총장</span>
+                  </div>
+                  <span className="text-sm font-bold text-gray-900">{university.univPresident}</span>
                 </div>
               </div>
-              
-              <div className="mt-8">
+
+              {university.univURL && (
                 <a
-                  href={university.univURL}
+                  href={university.univURL.match(/^https?:\/\//) ? university.univURL : `https://${university.univURL}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center px-6 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 font-medium text-base shadow-md hover:shadow-lg"
+                  className="mt-5 w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-all duration-200 font-medium text-sm"
                 >
-                  <i className="fa fa-external-link mr-3 text-lg"></i>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
                   학교 홈페이지
                 </a>
-              </div>
+              )}
             </div>
 
             {/* 지도 */}

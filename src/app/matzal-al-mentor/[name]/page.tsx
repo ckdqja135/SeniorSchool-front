@@ -459,48 +459,78 @@ export default function RestaurantDetailPage() {
           <div className="space-y-6">
             {/* 식당 정보 */}
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6 tracking-wide">식당 정보</h2>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 hover:shadow-md transition-all duration-200">
-                  <span className="text-xs text-blue-700 font-bold uppercase tracking-wider mb-1 block">위치</span>
-                  <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-900 leading-relaxed">{restaurant.restaurantAddr || '정보 없음'}</p>
-                </div>
-                <div className="bg-green-50 p-3 rounded-lg border border-green-100 hover:shadow-md transition-all duration-200">
-                  <span className="text-xs text-green-700 font-bold uppercase tracking-wider mb-1 block">업종</span>
-                  <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-900 leading-relaxed">{restaurant.restaurantType || '정보 없음'}</p>
-                </div>
-                <div className="bg-purple-50 p-3 rounded-lg border border-purple-100 hover:shadow-md transition-all duration-200">
-                  <span className="text-xs text-purple-700 font-bold uppercase tracking-wider mb-1 block">대표자</span>
-                  <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-900 leading-relaxed">{restaurant.restaurantOwner || '정보 없음'}</p>
-                </div>
-                <div className="bg-orange-50 p-3 rounded-lg border border-orange-100 hover:shadow-md transition-all duration-200">
-                  <span className="text-xs text-orange-700 font-bold uppercase tracking-wider mb-1 block">상태</span>
-                  <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-900 leading-relaxed">운영중</p>
-                </div>
-                {/* 평균 평점 */}
-                <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-100 hover:shadow-md transition-all duration-200 col-span-2">
-                  <span className="text-xs text-yellow-700 font-bold uppercase tracking-wider mb-1 block">평균 평점</span>
+              <h2 className="text-lg font-bold text-gray-800 mb-5">식당 정보</h2>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-sky-200 transition-all duration-200">
                   <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                    <span className="text-sm text-gray-500 font-medium">위치</span>
+                  </div>
+                  <span className="text-sm font-bold text-gray-900">{restaurant.restaurantAddr || '정보 없음'}</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-sky-200 transition-all duration-200">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
+                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                      </div>
+                      <span className="text-xs text-gray-500 font-medium">업종</span>
+                    </div>
+                    <span className="text-sm font-bold text-gray-900">{restaurant.restaurantType || '정보 없음'}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-sky-200 transition-all duration-200">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
+                        <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      </div>
+                      <span className="text-xs text-gray-500 font-medium">대표자</span>
+                    </div>
+                    <span className="text-sm font-bold text-gray-900">{restaurant.restaurantOwner || '정보 없음'}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-sky-200 transition-all duration-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
+                      <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <span className="text-sm text-gray-500 font-medium">상태</span>
+                  </div>
+                  <span className="text-sm font-bold text-emerald-600">운영중</span>
+                </div>
+              </div>
+
+              {/* 평균 평점 */}
+              <div className="mt-5 p-4 bg-gray-50 rounded-xl">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 mb-1.5">평균 평점</p>
                     {restaurant.averageRating !== null && restaurant.averageRating !== undefined && restaurant.averageRating > 0 ? (
-                      <>
+                      <div className="flex items-center gap-3">
                         {renderStarRating(restaurant.averageRating, 'lg')}
-                        <span className="text-lg font-bold text-gray-900">
-                          {restaurant.averageRating.toFixed(1)} / 5.0
-                        </span>
-                        <span className="text-sm text-gray-600 font-medium ml-auto">
-                          {restaurant.ratingCount || 0}개의 후기
-                        </span>
-                      </>
+                        <span className="text-lg font-bold text-gray-900 leading-none pt-2">{restaurant.averageRating.toFixed(1)} / 5.0</span>
+                      </div>
                     ) : (
-                      <>
-                        {renderStarRating(null, 'lg')}
-                        <span className="text-lg font-bold text-gray-900">평점 없음</span>
-                        <span className="text-sm text-gray-600 font-medium ml-auto">
-                          {restaurant.ratingCount || 0}개의 후기
-                        </span>
-                      </>
+                      <p className="text-sm text-gray-400">아직 평점이 없습니다.</p>
                     )}
                   </div>
+                  <span className="text-xs text-gray-400 font-medium">
+                    {restaurant.ratingCount || 0}개의 후기
+                  </span>
                 </div>
               </div>
             </div>
