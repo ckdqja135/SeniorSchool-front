@@ -110,6 +110,22 @@ export default function CompanyDetailPage() {
   // 회사 정보 탭 관련 상태 (직원정보, 채무정보, 매출정보)
   const [companyInfoTab, setCompanyInfoTab] = useState<'employee' | 'debt' | 'revenue'>('employee');
 
+  // 금액을 한국어 단위(조/억)로 포맷
+  const formatKoreanMoney = (value: number): string => {
+    const eok = Math.round(value / 100000000);
+    const absEok = Math.abs(eok);
+    const sign = eok < 0 ? '-' : '';
+    if (absEok >= 10000) {
+      const jo = Math.floor(absEok / 10000);
+      const remainEok = absEok % 10000;
+      if (remainEok === 0) {
+        return `${sign}${jo.toLocaleString()}조원`;
+      }
+      return `${sign}${jo.toLocaleString()}조 ${remainEok.toLocaleString()}억원`;
+    }
+    return `${eok.toLocaleString()}억원`;
+  };
+
   // 정렬된 후기 목록 계산
   const sortedBoards = [...boards].sort((a, b) => {
     const dateA = new Date(a.boardRegDate).getTime();
@@ -1112,8 +1128,8 @@ export default function CompanyDetailPage() {
                   <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200 hover:shadow-md transition-all duration-200">
                     <span className="text-xs text-blue-700 font-bold uppercase tracking-wider mb-2 block">자본금</span>
                     <p className="text-2xl font-bold text-gray-900">
-                      {company.compCapital 
-                        ? `${Math.round(company.compCapital / 100000000).toLocaleString()}억원` 
+                      {company.compCapital
+                        ? formatKoreanMoney(company.compCapital)
                         : '정보 없음'}
                     </p>
                   </div>
@@ -1121,8 +1137,8 @@ export default function CompanyDetailPage() {
                   <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border border-green-200 hover:shadow-md transition-all duration-200">
                     <span className="text-xs text-green-700 font-bold uppercase tracking-wider mb-2 block">자산 총계</span>
                     <p className="text-2xl font-bold text-gray-900">
-                      {company.compTotalAssets 
-                        ? `${Math.round(company.compTotalAssets / 100000000).toLocaleString()}억원` 
+                      {company.compTotalAssets
+                        ? formatKoreanMoney(company.compTotalAssets)
                         : '정보 없음'}
                     </p>
                   </div>
@@ -1130,8 +1146,8 @@ export default function CompanyDetailPage() {
                   <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-lg border border-red-200 hover:shadow-md transition-all duration-200">
                     <span className="text-xs text-red-700 font-bold uppercase tracking-wider mb-2 block">부채 총계</span>
                     <p className="text-2xl font-bold text-gray-900">
-                      {company.compTotalLiabilities 
-                        ? `${Math.round(company.compTotalLiabilities / 100000000).toLocaleString()}억원` 
+                      {company.compTotalLiabilities
+                        ? formatKoreanMoney(company.compTotalLiabilities)
                         : '정보 없음'}
                     </p>
                   </div>
@@ -1139,8 +1155,8 @@ export default function CompanyDetailPage() {
                   <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200 hover:shadow-md transition-all duration-200">
                     <span className="text-xs text-purple-700 font-bold uppercase tracking-wider mb-2 block">자본 총계</span>
                     <p className="text-2xl font-bold text-gray-900">
-                      {company.compTotalEquity 
-                        ? `${Math.round(company.compTotalEquity / 100000000).toLocaleString()}억원` 
+                      {company.compTotalEquity
+                        ? formatKoreanMoney(company.compTotalEquity)
                         : '정보 없음'}
                     </p>
                   </div>
@@ -1153,8 +1169,8 @@ export default function CompanyDetailPage() {
                   <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200 hover:shadow-md transition-all duration-200 col-span-2">
                     <span className="text-xs text-blue-700 font-bold uppercase tracking-wider mb-2 block">매출액</span>
                     <p className="text-3xl font-bold text-gray-900">
-                      {company.compSales 
-                        ? `${Math.round(company.compSales / 100000000).toLocaleString()}억원` 
+                      {company.compSales
+                        ? formatKoreanMoney(company.compSales)
                         : '정보 없음'}
                     </p>
                   </div>
@@ -1162,8 +1178,8 @@ export default function CompanyDetailPage() {
                   <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border border-green-200 hover:shadow-md transition-all duration-200">
                     <span className="text-xs text-green-700 font-bold uppercase tracking-wider mb-2 block">영업 이익</span>
                     <p className="text-2xl font-bold text-gray-900">
-                      {company.compOperatingProfit 
-                        ? `${Math.round(company.compOperatingProfit / 100000000).toLocaleString()}억원` 
+                      {company.compOperatingProfit
+                        ? formatKoreanMoney(company.compOperatingProfit)
                         : '정보 없음'}
                     </p>
                   </div>
@@ -1171,8 +1187,8 @@ export default function CompanyDetailPage() {
                   <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200 hover:shadow-md transition-all duration-200">
                     <span className="text-xs text-purple-700 font-bold uppercase tracking-wider mb-2 block">당기 순이익</span>
                     <p className="text-2xl font-bold text-gray-900">
-                      {company.compNetIncome 
-                        ? `${Math.round(company.compNetIncome / 100000000).toLocaleString()}억원` 
+                      {company.compNetIncome
+                        ? formatKoreanMoney(company.compNetIncome)
                         : '정보 없음'}
                     </p>
                   </div>
