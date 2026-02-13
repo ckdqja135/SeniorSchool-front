@@ -176,9 +176,11 @@ const AdminMainPage = () => {
   // localStorage에서 최근 사용자 목록 불러오기 (시간 업데이트된 버전)
   const loadRecentUsers = (): RecentUser[] => {
     const users = loadRecentUsersRaw();
+    const now = Date.now();
     return users.map(user => ({
       ...user,
-      lastLogin: getTimeAgo(user.timestamp)
+      lastLogin: getTimeAgo(user.timestamp),
+      status: (now - user.timestamp) < 10 * 60 * 1000 ? "online" : "offline"
     }));
   };
 
@@ -215,10 +217,12 @@ const AdminMainPage = () => {
       // localStorage에 저장 (timestamp 포함)
       localStorage.setItem("recentUsers", JSON.stringify(updatedUsers));
       
-      // 상태 업데이트 (시간 업데이트된 버전)
+      // 상태 업데이트 (시간 및 온라인 상태 업데이트된 버전)
+      const now2 = Date.now();
       const displayUsers = updatedUsers.map(u => ({
         ...u,
-        lastLogin: getTimeAgo(u.timestamp)
+        lastLogin: getTimeAgo(u.timestamp),
+        status: (now2 - u.timestamp) < 10 * 60 * 1000 ? "online" : "offline"
       }));
       setRecentUsers(displayUsers.slice(0, 6)); // 화면에는 최대 6명만 표시
     } catch (error) {
@@ -652,8 +656,8 @@ const AdminMainPage = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex items-center gap-1.5">
-                        <span className="w-2 h-2 bg-emerald-400 rounded-full"></span>
-                        <span className="text-xs font-medium text-emerald-600">{user.status}</span>
+                        <span className={`w-2 h-2 rounded-full ${user.status === "online" ? "bg-emerald-400" : "bg-gray-300"}`}></span>
+                        <span className={`text-xs font-medium ${user.status === "online" ? "text-emerald-600" : "text-gray-400"}`}>{user.status}</span>
                       </span>
                     </td>
                   </tr>
