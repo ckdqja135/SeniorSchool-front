@@ -13,6 +13,10 @@ interface BoardData {
   category?: string;
   boardRegDate?: string;
   isDeleted?: number;
+  boardLike?: string;
+  boardHits?: string;
+  univIdx?: string;
+  university?: { univIdx: number; univName: string };
 }
 
 interface ApiResponseV1 {
@@ -328,6 +332,7 @@ const UnivBoardManagementPage: React.FC = () => {
                     />
                   </th>
                   <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500">ID</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500">학교명</th>
                   <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500">제목</th>
                   <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500">작성자</th>
                   <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500">등록일</th>
@@ -336,11 +341,11 @@ const UnivBoardManagementPage: React.FC = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="px-3 py-10 text-center text-sm text-gray-400">로딩 중...</td>
+                    <td colSpan={6} className="px-3 py-10 text-center text-sm text-gray-400">로딩 중...</td>
                   </tr>
                 ) : !boards || boards.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-3 py-10 text-center text-sm text-gray-400">검색 결과가 없습니다.</td>
+                    <td colSpan={6} className="px-3 py-10 text-center text-sm text-gray-400">검색 결과가 없습니다.</td>
                   </tr>
                 ) : (
                   boards.map((b) => (
@@ -378,6 +383,7 @@ const UnivBoardManagementPage: React.FC = () => {
                         />
                       </td>
                       <td className="px-3 py-2.5 text-xs text-gray-400 font-mono">{b.boardIdx}</td>
+                      <td className="px-3 py-2.5 text-sm text-gray-600 truncate max-w-[120px]">{b.university?.univName || '-'}</td>
                       <td className="px-3 py-2.5 text-sm font-medium text-gray-900 truncate max-w-[180px]">{b.boardTitle}</td>
                       <td className="px-3 py-2.5 text-sm text-gray-500">{b.boardID || '-'}</td>
                       <td className="px-3 py-2.5 text-xs text-gray-400">

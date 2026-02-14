@@ -13,6 +13,10 @@ interface BoardData {
   category?: string;
   boardRegDate?: string;
   isDeleted?: number;
+  boardLike?: string;
+  boardHits?: string;
+  outsourceIdx?: string;
+  outsource?: { outsourceIdx: number; outsourceName: string };
 }
 
 interface ApiResponseV1 {
@@ -194,6 +198,7 @@ const OutsourceBoardManagementPage: React.FC = () => {
                 <tr>
                   <th className="px-3 py-3 text-left w-10"><input type="checkbox" checked={boards && boards.length > 0 && selectedIds.length === boards.length} onChange={handleSelectAll} className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500" /></th>
                   <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500">ID</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500">업체명</th>
                   <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500">제목</th>
                   <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500">작성자</th>
                   <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500">등록일</th>
@@ -201,9 +206,9 @@ const OutsourceBoardManagementPage: React.FC = () => {
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={5} className="px-3 py-10 text-center text-sm text-gray-400">로딩 중...</td></tr>
+                  <tr><td colSpan={6} className="px-3 py-10 text-center text-sm text-gray-400">로딩 중...</td></tr>
                 ) : !boards || boards.length === 0 ? (
-                  <tr><td colSpan={5} className="px-3 py-10 text-center text-sm text-gray-400">검색 결과가 없습니다.</td></tr>
+                  <tr><td colSpan={6} className="px-3 py-10 text-center text-sm text-gray-400">검색 결과가 없습니다.</td></tr>
                 ) : (
                   boards.map((b) => (
                     <tr key={b.boardIdx} className={`border-t border-gray-50 cursor-pointer transition-colors ${selectedBoard?.boardIdx === b.boardIdx ? 'bg-purple-50/70' : 'hover:bg-gray-50/70'}`}
@@ -217,6 +222,7 @@ const OutsourceBoardManagementPage: React.FC = () => {
                       }}>
                       <td className="px-3 py-2.5"><input type="checkbox" checked={selectedIds.includes(b.boardIdx)} onChange={() => handleSelect(b.boardIdx)} onClick={(e) => e.stopPropagation()} className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500" /></td>
                       <td className="px-3 py-2.5 text-xs text-gray-400 font-mono">{b.boardIdx}</td>
+                      <td className="px-3 py-2.5 text-sm text-gray-600 truncate max-w-[120px]">{b.outsource?.outsourceName || '-'}</td>
                       <td className="px-3 py-2.5 text-sm font-medium text-gray-900 truncate max-w-[180px]">{b.boardTitle}</td>
                       <td className="px-3 py-2.5 text-sm text-gray-500">{b.boardID || '-'}</td>
                       <td className="px-3 py-2.5 text-xs text-gray-400">{b.boardRegDate ? new Date(b.boardRegDate).toLocaleDateString('ko-KR') : '-'}</td>
