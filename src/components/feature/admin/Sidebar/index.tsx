@@ -48,6 +48,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
       subItems: [
         { label: "학교 관리", href: "/myoriadmin/school/management" },
         { label: "대학교 추가 요청 관리", href: "/myoriadmin/school/requests" },
+        { label: "후기 관리", href: "/myoriadmin/school/board" },
       ],
     },
     {
@@ -57,6 +58,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
       subItems: [
         { label: "교회 관리", href: "/myoriadmin/church" },
         { label: "교회 추가 요청 관리", href: "/myoriadmin/church/requests" },
+        { label: "후기 관리", href: "/myoriadmin/church/board" },
       ],
     },
     {
@@ -66,6 +68,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
       subItems: [
         { label: "회사 관리", href: "/myoriadmin/company" },
         { label: "회사 추가 요청 관리", href: "/myoriadmin/company/requests" },
+        { label: "후기 관리", href: "/myoriadmin/company/board" },
       ],
     },
     {
@@ -75,6 +78,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
       subItems: [
         { label: "외주업체 관리", href: "/myoriadmin/outsource" },
         { label: "외주업체 추가 요청 관리", href: "/myoriadmin/outsource/requests" },
+        { label: "후기 관리", href: "/myoriadmin/outsource/board" },
       ],
     },
     {
@@ -84,6 +88,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
       subItems: [
         { label: "식당 관리", href: "/myoriadmin/restaurant" },
         { label: "식당 추가 요청 관리", href: "/myoriadmin/restaurant/requests" },
+        { label: "후기 관리", href: "/myoriadmin/restaurant/board" },
       ],
     },
     {
