@@ -71,9 +71,65 @@ const AdminMainPage = () => {
   const [monthlyData, setMonthlyData] = useState<MonthlyStats[]>([]);
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
   const [recentUsers, setRecentUsers] = useState<RecentUser[]>([]);
+  const [boardCounts, setBoardCounts] = useState<Record<string, number>>({
+    univ: 0, church: 0, comp: 0, outsource: 0, restaurant: 0
+  });
+  const [entityCounts, setEntityCounts] = useState<Record<string, number>>({
+    univ: 0, church: 0, comp: 0, outsource: 0, restaurant: 0
+  });
   const [loading, setLoading] = useState(true);
   const [monthlyLoading, setMonthlyLoading] = useState(true);
   const [activityLoading, setActivityLoading] = useState(true);
+
+  // 오빠별 후기 수 조회
+  const fetchBoardCounts = async () => {
+    try {
+      const accessToken = localStorage.getItem("accessToken");
+      const headers = { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" };
+      const boards = ["univboard", "churchboard", "compboard", "outsourceboard", "restaurantboard"];
+      const keys = ["univ", "church", "comp", "outsource", "restaurant"];
+
+      const results = await Promise.all(
+        boards.map(b => fetch(`https://api.reviewhub.life/admin/${b}?page=1&limit=1`, { headers }).then(r => r.json()).catch(() => null))
+      );
+
+      const counts: Record<string, number> = {};
+      results.forEach((r, i) => {
+        counts[keys[i]] = r?.totalCount ?? 0;
+      });
+      setBoardCounts(counts);
+    } catch (e) {
+      console.error("오빠별 후기 수 조회 실패:", e);
+    }
+  };
+
+  // 오빠별 업체 수 조회
+  const fetchEntityCounts = async () => {
+    try {
+      const accessToken = localStorage.getItem("accessToken");
+      const headers = { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" };
+      const endpoints = [
+        "univ/searchUniv",
+        "church/searchChurch",
+        "comp/searchComp",
+        "outsource/searchOutsource",
+        "restaurant/searchRestaurant",
+      ];
+      const keys = ["univ", "church", "comp", "outsource", "restaurant"];
+
+      const results = await Promise.all(
+        endpoints.map(ep => fetch(`https://api.reviewhub.life/admin/${ep}?page=1&rowsPerPage=1`, { headers }).then(r => r.json()).catch(() => null))
+      );
+
+      const counts: Record<string, number> = {};
+      results.forEach((r, i) => {
+        counts[keys[i]] = r?.totalCount ?? 0;
+      });
+      setEntityCounts(counts);
+    } catch (e) {
+      console.error("오빠별 업체 수 조회 실패:", e);
+    }
+  };
 
   // 개요 통계 조회
   const fetchOverview = async () => {
@@ -234,6 +290,8 @@ const AdminMainPage = () => {
     fetchOverview();
     fetchMonthlyStats();
     fetchRecentActivities();
+    fetchBoardCounts();
+    fetchEntityCounts();
     
     // 최근 사용자 초기화 및 현재 사용자 추가
     const storedUsers = loadRecentUsers();
@@ -287,7 +345,7 @@ const AdminMainPage = () => {
   const avgActivityLast3Months = avgPostsLast3Months + avgCompaniesLast3Months;
 
   return (
-    <div className="space-y-6 max-w-[1600px]">
+    <div className="space-y-6">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         <div className="relative overflow-hidden bg-white rounded-2xl border border-gray-100 p-6 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5">
@@ -302,6 +360,20 @@ const AdminMainPage = () => {
             </div>
             <p className="text-sm font-medium text-gray-500 mb-1">총 게시글</p>
             <p className="text-3xl font-bold text-gray-900">{loading ? "..." : overviewData.totalPosts.toLocaleString()}</p>
+            <div className="mt-3 pt-3 border-t border-gray-100 space-y-1.5">
+              {[
+                { label: "학교", key: "univ", emoji: "🎓" },
+                { label: "교회", key: "church", emoji: "⛪" },
+                { label: "회사", key: "comp", emoji: "🏢" },
+                { label: "외주", key: "outsource", emoji: "💼" },
+                { label: "맛잘알", key: "restaurant", emoji: "🍽️" },
+              ].map(({ label, key, emoji }) => (
+                <div key={key} className="flex items-center justify-between">
+                  <span className="text-xs text-gray-400">{emoji} {label}</span>
+                  <span className="text-xs font-semibold text-gray-600">{boardCounts[key]?.toLocaleString() ?? 0}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -317,7 +389,20 @@ const AdminMainPage = () => {
             </div>
             <p className="text-sm font-medium text-gray-500 mb-1">등록된 업체</p>
             <p className="text-3xl font-bold text-gray-900">{loading ? "..." : overviewData.totalCompanies.toLocaleString()}</p>
-            <p className="text-xs text-gray-400 mt-1">학교+교회+회사</p>
+            <div className="mt-3 pt-3 border-t border-gray-100 space-y-1.5">
+              {[
+                { label: "학교", key: "univ", emoji: "🎓" },
+                { label: "교회", key: "church", emoji: "⛪" },
+                { label: "회사", key: "comp", emoji: "🏢" },
+                { label: "외주", key: "outsource", emoji: "💼" },
+                { label: "식당", key: "restaurant", emoji: "🍽️" },
+              ].map(({ label, key, emoji }) => (
+                <div key={key} className="flex items-center justify-between">
+                  <span className="text-xs text-gray-400">{emoji} {label}</span>
+                  <span className="text-xs font-semibold text-gray-600">{entityCounts[key]?.toLocaleString() ?? 0}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -336,6 +421,20 @@ const AdminMainPage = () => {
             </div>
             <p className="text-sm font-medium text-gray-500 mb-1">신고된 게시글</p>
             <p className="text-3xl font-bold text-gray-900">{loading ? "..." : overviewData.reportedPosts.toLocaleString()}</p>
+            <div className="mt-3 pt-3 border-t border-gray-100 space-y-1.5">
+              {[
+                { label: "학교", key: "univ", emoji: "🎓" },
+                { label: "교회", key: "church", emoji: "⛪" },
+                { label: "회사", key: "comp", emoji: "🏢" },
+                { label: "외주", key: "outsource", emoji: "💼" },
+                { label: "맛잘알", key: "restaurant", emoji: "🍽️" },
+              ].map(({ label, key, emoji }) => (
+                <div key={key} className="flex items-center justify-between">
+                  <span className="text-xs text-gray-400">{emoji} {label}</span>
+                  <span className="text-xs font-semibold text-gray-600">{boardCounts[key]?.toLocaleString() ?? 0}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -351,7 +450,20 @@ const AdminMainPage = () => {
             </div>
             <p className="text-sm font-medium text-gray-500 mb-1">이번 주 활동</p>
             <p className="text-3xl font-bold text-gray-900">{loading ? "..." : overviewData.thisWeekActivity.toLocaleString()}</p>
-            <p className="text-xs text-gray-400 mt-1">게시글+업체 등록</p>
+            <div className="mt-3 pt-3 border-t border-gray-100 space-y-1.5">
+              {[
+                { label: "학교", key: "univ", emoji: "🎓" },
+                { label: "교회", key: "church", emoji: "⛪" },
+                { label: "회사", key: "comp", emoji: "🏢" },
+                { label: "외주", key: "outsource", emoji: "💼" },
+                { label: "맛잘알", key: "restaurant", emoji: "🍽️" },
+              ].map(({ label, key, emoji }) => (
+                <div key={key} className="flex items-center justify-between">
+                  <span className="text-xs text-gray-400">{emoji} {label}</span>
+                  <span className="text-xs font-semibold text-gray-600">{boardCounts[key]?.toLocaleString() ?? 0}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -598,145 +710,116 @@ const AdminMainPage = () => {
         </div>
       </div>
 
-      {/* 최근 사용자 테이블 */}
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-        <div className="px-6 py-5 flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">최근 사용자</h3>
-            <p className="text-sm text-gray-400 mt-0.5">실시간 접속 현황</p>
+      {/* 최근 사용자 + 월간 통계 한 줄 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* 최근 사용자 테이블 */}
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="px-6 py-4 flex items-center justify-between border-b border-gray-100">
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-gray-800">최근 사용자</h3>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                <span className="text-xs text-gray-400">Live</span>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-            <span className="text-xs text-gray-400">Live</span>
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-t border-gray-100 bg-gray-50/50">
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500">이름</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500">이메일</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500">역할</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500">마지막 접속</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500">상태</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentUsers.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-10 text-center text-gray-400 text-sm">
-                    최근 사용자가 없습니다.
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50/50">
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500">이름</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500">이메일</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500">역할</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500">마지막 접속</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500">상태</th>
                 </tr>
-              ) : (
-                recentUsers.map((user, index) => (
-                  <tr key={index} className="border-t border-gray-50 hover:bg-gray-50/50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white text-sm font-semibold shadow-sm">
-                          {user.name.charAt(0).toUpperCase()}
-                        </div>
-                        <span className="text-sm font-medium text-gray-900">{user.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {user.email}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2.5 py-1 text-xs font-medium rounded-lg ${
-                        user.role === '마스터'
-                          ? 'bg-purple-50 text-purple-700'
-                          : 'bg-blue-50 text-blue-700'
-                      }`}>
-                        {user.role}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                      {user.lastLogin}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center gap-1.5">
-                        <span className={`w-2 h-2 rounded-full ${user.status === "online" ? "bg-emerald-400" : "bg-gray-300"}`}></span>
-                        <span className={`text-xs font-medium ${user.status === "online" ? "text-emerald-600" : "text-gray-400"}`}>{user.status}</span>
-                      </span>
+              </thead>
+              <tbody>
+                {recentUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-6 text-center text-gray-400 text-sm">
+                      최근 사용자가 없습니다.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  recentUsers.map((user, index) => (
+                    <tr key={index} className="border-t border-gray-50 hover:bg-gray-50/50 transition-colors">
+                      <td className="px-4 py-2.5 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center text-white text-xs font-semibold">
+                            {user.name.charAt(0).toUpperCase()}
+                          </div>
+                          <span className="text-sm font-medium text-gray-900">{user.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-2.5 whitespace-nowrap text-sm text-gray-500">
+                        {user.email}
+                      </td>
+                      <td className="px-4 py-2.5 whitespace-nowrap">
+                        <span className={`px-2 py-0.5 text-xs font-medium rounded-md ${
+                          user.role === '마스터'
+                            ? 'bg-purple-50 text-purple-700'
+                            : 'bg-blue-50 text-blue-700'
+                        }`}>
+                          {user.role}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 whitespace-nowrap text-sm text-gray-400">
+                        {user.lastLogin}
+                      </td>
+                      <td className="px-4 py-2.5 whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className={`w-2 h-2 rounded-full ${user.status === "online" ? "bg-emerald-400" : "bg-gray-300"}`}></span>
+                          <span className={`text-xs font-medium ${user.status === "online" ? "text-emerald-600" : "text-gray-400"}`}>{user.status}</span>
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
 
-      {/* 추가 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-6 text-white shadow-lg shadow-emerald-500/20">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-12 translate-x-12"></div>
-          <div className="absolute bottom-0 left-0 w-20 h-20 bg-white/5 rounded-full translate-y-8 -translate-x-8"></div>
-          <div className="relative">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-emerald-100 text-sm font-medium">이번 달 신규 게시글</p>
-              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
+        {/* 월간 통계 - 세로 카드 */}
+        <div className="flex flex-col gap-4">
+          <div className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-lg shadow px-6 py-5 text-white flex items-center justify-between">
+            <div>
+              <p className="text-xs text-emerald-100 font-medium">이번 달 신규 게시글</p>
+              <p className="text-2xl font-bold mt-1">
+                {monthlyLoading ? "..." : (currentMonth?.postCount || 0).toLocaleString()}
+                <span className="text-sm font-normal ml-1">개</span>
+              </p>
             </div>
-            <p className="text-3xl font-bold">
-              {monthlyLoading ? "..." : (currentMonth?.postCount || 0).toLocaleString()}
-              <span className="text-lg font-normal ml-1">개</span>
-            </p>
             {postGrowthRate !== 0 && (
-              <div className={`inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full text-xs font-medium ${postGrowthRate > 0 ? 'bg-white/20' : 'bg-red-400/30'}`}>
+              <div className={`px-2.5 py-1 rounded-full text-xs font-medium ${postGrowthRate > 0 ? 'bg-white/20' : 'bg-red-400/30'}`}>
                 {postGrowthRate > 0 ? '↑' : '↓'} {Math.abs(postGrowthRate)}%
-                <span className="text-white/70">지난 달 대비</span>
               </div>
             )}
           </div>
-        </div>
-
-        <div className="relative overflow-hidden bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-6 text-white shadow-lg shadow-amber-500/20">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-12 translate-x-12"></div>
-          <div className="absolute bottom-0 left-0 w-20 h-20 bg-white/5 rounded-full translate-y-8 -translate-x-8"></div>
-          <div className="relative">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-amber-100 text-sm font-medium">이번 달 신규 업체</p>
-              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-              </div>
+          <div className="flex-1 bg-gradient-to-r from-amber-500 to-orange-600 rounded-lg shadow px-6 py-5 text-white flex items-center justify-between">
+            <div>
+              <p className="text-xs text-amber-100 font-medium">이번 달 신규 업체</p>
+              <p className="text-2xl font-bold mt-1">
+                {monthlyLoading ? "..." : (currentMonth?.companyCount || 0).toLocaleString()}
+                <span className="text-sm font-normal ml-1">건</span>
+              </p>
             </div>
-            <p className="text-3xl font-bold">
-              {monthlyLoading ? "..." : (currentMonth?.companyCount || 0).toLocaleString()}
-              <span className="text-lg font-normal ml-1">건</span>
-            </p>
             {companyGrowthRate !== 0 && (
-              <div className={`inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full text-xs font-medium ${companyGrowthRate > 0 ? 'bg-white/20' : 'bg-red-400/30'}`}>
+              <div className={`px-2.5 py-1 rounded-full text-xs font-medium ${companyGrowthRate > 0 ? 'bg-white/20' : 'bg-red-400/30'}`}>
                 {companyGrowthRate > 0 ? '↑' : '↓'} {Math.abs(companyGrowthRate)}%
-                <span className="text-white/70">지난 달 대비</span>
               </div>
             )}
           </div>
-        </div>
-
-        <div className="relative overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-6 text-white shadow-lg shadow-indigo-500/20">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-12 translate-x-12"></div>
-          <div className="absolute bottom-0 left-0 w-20 h-20 bg-white/5 rounded-full translate-y-8 -translate-x-8"></div>
-          <div className="relative">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-indigo-100 text-sm font-medium">최근 3개월 평균 활동</p>
-              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </div>
+          <div className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg shadow px-6 py-5 text-white flex items-center justify-between">
+            <div>
+              <p className="text-xs text-indigo-100 font-medium">최근 3개월 평균 활동</p>
+              <p className="text-2xl font-bold mt-1">
+                {monthlyLoading ? "..." : avgActivityLast3Months.toLocaleString()}
+                <span className="text-sm font-normal ml-1">건</span>
+              </p>
             </div>
-            <p className="text-3xl font-bold">
-              {monthlyLoading ? "..." : avgActivityLast3Months.toLocaleString()}
-              <span className="text-lg font-normal ml-1">건</span>
-            </p>
-            <p className="text-xs text-white/60 mt-2">월평균 게시글+업체</p>
+            <span className="text-xs text-white/60">월평균</span>
           </div>
         </div>
       </div>
