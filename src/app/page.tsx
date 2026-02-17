@@ -9,6 +9,9 @@ import { MatzalAlBoard } from '@/types/MatzalAl';
 import { FreeBoardPost, FreeBoardApiResponse, BestPost, BestPostApiResponse } from '@/types';
 import ReviewWriteModal from '@/components/common/ReviewWriteModal';
 import { fetchRecentFreeboardPosts, fetchBestPosts } from '@/lib/freeboard/freeboardAPI';
+import { useActiveServices } from '@/hooks/Services/useServiceConfig';
+import { useRecentDynamicBoards } from '@/hooks/Services/useDynamicBoard';
+import { ServiceConfig, DynamicBoard } from '@/types/Services';
 
 interface University {
   univName: string;
@@ -95,7 +98,10 @@ export default function HomePage() {
   // 맛잘알 후기 관련 상태 (훅 사용)
   const MATZAL_AL_LIMIT = 5;
   const { boards: recentMatzalAlBoards, loading: isMatzalAlLoading, error: matzalAlError } = useRecentMatzalAlBoards(MATZAL_AL_LIMIT);
-  
+
+  // 동적 서비스 관련 상태
+  const { services: dynamicServices } = useActiveServices();
+
   // 자유게시판 관련 상태
   const [recentFreeBoardPosts, setRecentFreeBoardPosts] = useState<FreeBoardPost[]>([]);
   const [isFreeBoardLoading, setIsFreeBoardLoading] = useState(true);
@@ -1158,7 +1164,119 @@ export default function HomePage() {
 
           </div>
         </div>
+
+        {/* 동적 서비스 최근 후기 섹션 */}
+        {dynamicServices.length > 0 && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto mt-8">
+            {dynamicServices.map((service) => (
+              <DynamicServiceSection key={service.serviceSlug} service={service} />
+            ))}
+          </div>
+        )}
       </main>
+    </div>
+  );
+}
+
+// 동적 서비스 최근 후기 컴포넌트
+function DynamicServiceSection({ service }: { service: ServiceConfig }) {
+  const router = useRouter();
+  const { boards, loading, error } = useRecentDynamicBoards(service.serviceSlug, 5);
+
+  const colorMap: Record<string, { bg: string; text: string; hoverBg: string }> = {
+    blue: { bg: 'bg-blue-100', text: 'text-blue-600', hoverBg: 'hover:bg-blue-200' },
+    red: { bg: 'bg-red-100', text: 'text-red-600', hoverBg: 'hover:bg-red-200' },
+    green: { bg: 'bg-green-100', text: 'text-green-600', hoverBg: 'hover:bg-green-200' },
+    purple: { bg: 'bg-purple-100', text: 'text-purple-600', hoverBg: 'hover:bg-purple-200' },
+    orange: { bg: 'bg-orange-100', text: 'text-orange-600', hoverBg: 'hover:bg-orange-200' },
+    teal: { bg: 'bg-teal-100', text: 'text-teal-600', hoverBg: 'hover:bg-teal-200' },
+    indigo: { bg: 'bg-indigo-100', text: 'text-indigo-600', hoverBg: 'hover:bg-indigo-200' },
+    pink: { bg: 'bg-pink-100', text: 'text-pink-600', hoverBg: 'hover:bg-pink-200' },
+    yellow: { bg: 'bg-yellow-100', text: 'text-yellow-600', hoverBg: 'hover:bg-yellow-200' },
+    cyan: { bg: 'bg-cyan-100', text: 'text-cyan-600', hoverBg: 'hover:bg-cyan-200' },
+  };
+
+  const colors = colorMap[service.serviceColor] || colorMap.blue;
+
+  return (
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+      <div className="p-4 border-b border-gray-200">
+        <div
+          onClick={() => router.push(`/s/${service.serviceSlug}/mentor`)}
+          className="cursor-pointer group"
+        >
+          <div className="flex items-center justify-between">
+            <h2 className={`text-lg font-bold text-gray-900 group-hover:${colors.text} transition-colors duration-300`}>
+              {service.serviceDisplay}
+            </h2>
+            <div className={`w-10 h-10 ${colors.bg} rounded-lg flex items-center justify-center group-hover:animate-pulse transition-all duration-300`}>
+              <span className="text-lg">{service.serviceEmoji}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-4">
+        {loading ? (
+          <div className="text-center py-4">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400 mx-auto mb-2"></div>
+            <p className="text-sm text-gray-500">로딩 중...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-4">
+            <p className="text-sm text-gray-500">후기를 불러오는데 실패했습니다.</p>
+          </div>
+        ) : !boards || boards.length === 0 ? (
+          <div className="text-center py-4">
+            <p className="text-sm text-gray-500">아직 등록된 후기가 없습니다.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {boards.slice(0, 5).map((board) => (
+              <div
+                key={board.boardIdx}
+                className="p-2 rounded hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
+                onClick={() => router.push(`/s/${service.serviceSlug}/board/${board.boardIdx}`)}
+              >
+                <div className="flex items-start space-x-2">
+                  <div className={`w-6 h-6 ${colors.bg} rounded-full flex items-center justify-center flex-shrink-0`}>
+                    <span className="text-xs">{service.serviceEmoji}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <span className="text-xs font-medium text-gray-900">{board.boardId || '익명'}</span>
+                      <span className="text-xs text-gray-500">•</span>
+                      <span className="text-xs text-gray-500">{board.boardRegDate ? board.boardRegDate.split(' ')[0] : ''}</span>
+                    </div>
+                    <p className="text-xs text-gray-900 line-clamp-1">{board.boardTitle}</p>
+                    {board.entityName && (
+                      <p className="text-xs text-gray-600 line-clamp-1 mt-0.5">{board.entityName}</p>
+                    )}
+                    <div className="flex items-center space-x-3 mt-1">
+                      <div className="flex items-center space-x-1">
+                        <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                        <span className="text-xs text-gray-500">{board.boardLike || 0}</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        <span className="text-xs text-gray-500">{board.boardHits || 0}</span>
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {service.serviceDisplay}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

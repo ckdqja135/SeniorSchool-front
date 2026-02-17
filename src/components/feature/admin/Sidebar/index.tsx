@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
+import { ServiceConfig } from "@/types/Services";
+import { fetchActiveServices } from "@/lib/services/serviceConfigAPI";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -25,8 +27,14 @@ interface SubMenuItem {
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
   const pathname = usePathname();
+  const [dynamicServices, setDynamicServices] = useState<ServiceConfig[]>([]);
 
-  const menuItems: MenuItem[] = [
+  useEffect(() => {
+    fetchActiveServices().then(setDynamicServices).catch(() => {});
+  }, []);
+
+  // 기존 정적 메뉴
+  const staticMenuItems: MenuItem[] = [
     {
       icon: "📊",
       label: "Dashboard",
@@ -91,6 +99,31 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
         { label: "후기 관리", href: "/myoriadmin/restaurant/board" },
       ],
     },
+  ];
+
+  // 동적 서비스 메뉴 생성
+  const dynamicMenuItems: MenuItem[] = dynamicServices.map((svc) => ({
+    icon: svc.serviceEmoji,
+    label: svc.serviceDisplay,
+    href: `/myoriadmin/services/${svc.serviceSlug}`,
+    subItems: [
+      { label: `${svc.serviceName} 관리`, href: `/myoriadmin/services/${svc.serviceSlug}` },
+      { label: `추가 요청 관리`, href: `/myoriadmin/services/${svc.serviceSlug}/requests` },
+      { label: `후기 관리`, href: `/myoriadmin/services/${svc.serviceSlug}/board` },
+    ],
+  }));
+
+  // 하단 고정 메뉴
+  const bottomMenuItems: MenuItem[] = [
+    {
+      icon: "🛠️",
+      label: "서비스 관리",
+      href: "/myoriadmin/services",
+      subItems: [
+        { label: "서비스 목록", href: "/myoriadmin/services" },
+        { label: "서비스 추가", href: "/myoriadmin/services/create" },
+      ],
+    },
     {
       icon: "👥",
       label: "관리자 관리",
@@ -104,7 +137,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
       subItems: [
         { label: "신고 게시글", href: "/myoriadmin/posts/reported" }
       ],
-    }
+    },
+  ];
+
+  // 최종 메뉴 조합
+  const menuItems: MenuItem[] = [
+    ...staticMenuItems,
+    ...dynamicMenuItems,
+    ...bottomMenuItems,
   ];
 
   const [expandedItem, setExpandedItem] = useState<string | null>(null);

@@ -12,6 +12,9 @@ import {
   Filler,
 } from "chart.js";
 import { Bar } from "react-chartjs-2";
+import Link from "next/link";
+import { ServiceConfig } from "@/types/Services";
+import { fetchActiveServices } from "@/lib/services/serviceConfigAPI";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, Filler);
 
@@ -77,6 +80,7 @@ const AdminMainPage = () => {
   const [entityCounts, setEntityCounts] = useState<Record<string, number>>({
     univ: 0, church: 0, comp: 0, outsource: 0, restaurant: 0
   });
+  const [dynamicServices, setDynamicServices] = useState<ServiceConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [monthlyLoading, setMonthlyLoading] = useState(true);
   const [activityLoading, setActivityLoading] = useState(true);
@@ -292,6 +296,7 @@ const AdminMainPage = () => {
     fetchRecentActivities();
     fetchBoardCounts();
     fetchEntityCounts();
+    fetchActiveServices().then(setDynamicServices).catch(() => {});
     
     // 최근 사용자 초기화 및 현재 사용자 추가
     const storedUsers = loadRecentUsers();
@@ -823,6 +828,44 @@ const AdminMainPage = () => {
           </div>
         </div>
       </div>
+
+      {/* 동적 서비스 현황 */}
+      {dynamicServices.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">동적 서비스 현황</h3>
+              <p className="text-sm text-gray-400 mt-0.5">동적으로 생성된 서비스 목록</p>
+            </div>
+            <Link
+              href="/myoriadmin/services"
+              className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+            >
+              전체 보기
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {dynamicServices.map((svc) => (
+              <Link
+                key={svc.serviceSlug}
+                href={`/myoriadmin/services/${svc.serviceSlug}`}
+                className="flex items-center gap-3 p-4 rounded-xl border border-gray-100 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+              >
+                <span className="text-2xl">{svc.serviceEmoji}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-900 truncate">{svc.serviceDisplay}</p>
+                  <p className="text-xs text-gray-400">/{svc.serviceSlug}</p>
+                </div>
+                <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                  svc.serviceStatus === 1 ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'
+                }`}>
+                  {svc.serviceStatus === 1 ? '활성' : '비활성'}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
