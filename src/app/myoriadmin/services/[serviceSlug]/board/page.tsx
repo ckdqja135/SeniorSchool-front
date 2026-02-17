@@ -35,23 +35,13 @@ export default function DynamicBoardManagementPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center space-x-4">
-        <button
-          onClick={() => router.push(`/myoriadmin/services/${serviceSlug}`)}
-          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-        >
-          <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {config.serviceEmoji} {config.serviceDisplay} 후기 관리
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            게시글을 관리할 수 있습니다.
-          </p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">
+          {config.serviceEmoji} {config.serviceDisplay} 후기 관리
+        </h1>
+        <p className="text-sm text-gray-500 mt-1">
+          게시글을 관리할 수 있습니다.
+        </p>
       </div>
 
       <GenericBoardTable config={config} slug={serviceSlug} />
