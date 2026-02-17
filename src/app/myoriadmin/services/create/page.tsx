@@ -15,8 +15,8 @@ export default function ServiceCreatePage() {
       </div>
 
       <ServiceCreateForm
-        onSuccess={(slug) => {
-          router.push(`/myoriadmin/services/${slug}`);
+        onSuccess={(service) => {
+          router.push(`/myoriadmin/services/${service.serviceSlug}`);
         }}
       />
     </div>
