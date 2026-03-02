@@ -795,12 +795,13 @@ export default function HomePage() {
             {/* 교회 선배 섹션 */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="p-4 border-b border-gray-200">
-                <div 
+                <div
                   onClick={() => router.push('/church-mentor')}
                   className="cursor-pointer group"
                 >
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-bold text-gray-900 group-hover:text-red-600 transition-colors duration-300">교회 오빠</h2>
+
                     <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center group-hover:animate-pulse group-hover:bg-red-200 transition-all duration-300">
                       <svg className="w-5 h-5 text-red-600 group-hover:text-red-700 transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 2v20M5 8h14" />
@@ -872,6 +873,11 @@ export default function HomePage() {
                 )}
               </div>
             </div>
+
+            {/* 동적 서비스 - 왼쪽 컬럼에 배치 */}
+            {dynamicServices.map((service) => (
+              <DynamicServiceSection key={service.serviceSlug} service={service} />
+            ))}
           </div>
 
           {/* 오른쪽 컬럼 */}
@@ -1163,16 +1169,9 @@ export default function HomePage() {
             </div>
 
           </div>
+
         </div>
 
-        {/* 동적 서비스 최근 후기 섹션 */}
-        {dynamicServices.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto mt-8">
-            {dynamicServices.map((service) => (
-              <DynamicServiceSection key={service.serviceSlug} service={service} />
-            ))}
-          </div>
-        )}
       </main>
     </div>
   );
