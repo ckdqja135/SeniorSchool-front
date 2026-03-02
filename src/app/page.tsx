@@ -486,16 +486,16 @@ export default function HomePage() {
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-16">
-            <div 
+            <div
               onClick={handleBackClick}
               className="cursor-pointer"
             >
               <div className="flex items-center space-x-3">
-              <img 
-                alt="Ori Duck" 
-                src="/images/duck.png" 
-                width="40" 
-                height="40" 
+              <img
+                alt="Ori Duck"
+                src="/images/duck.png"
+                width="40"
+                height="40"
                 className="w-10 h-10"
               />
               <h1 className="text-2xl font-bold text-gray-900">Ori</h1>

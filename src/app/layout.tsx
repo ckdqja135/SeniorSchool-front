@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "../styles/globals.css";
+import ThemeProvider from "@/components/common/ThemeProvider";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://reviewhub.life"),
@@ -111,7 +112,9 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   );
 }
