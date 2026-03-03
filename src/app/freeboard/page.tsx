@@ -296,7 +296,7 @@ export default function FreeBoardPage() {
                 </div>
                 <div>
                   <p className="text-xs sm:text-sm font-medium text-indigo-900">
-                    많이 나온 카테고리를 선정하여 오늘의 리뷰 후기 카테고리 항목을 만듭니다
+                    많이 나온 카테고리를 선정하여 오빠의 리뷰 후기 카테고리 항목을 만듭니다
                   </p>
                   <p className="text-xs text-indigo-600 mt-0.5 sm:mt-1">
                     다양한 경험을 공유하고 카테고리별로 정리된 리뷰를 확인해보세요

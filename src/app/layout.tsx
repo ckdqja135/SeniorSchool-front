@@ -5,11 +5,11 @@ import ThemeProvider from "@/components/common/ThemeProvider";
 export const metadata: Metadata = {
   metadataBase: new URL("https://reviewhub.life"),
   title: {
-    default: "오리(오늘의 리뷰) - 교회·기업·대학교·외주·맛집 리뷰 플랫폼",
-    template: "%s | 오리(오늘의 리뷰)",
+    default: "오리(오빠의 리뷰) - 리뷰 플랫폼",
+    template: "%s | 오리(오빠의 리뷰)",
   },
   description:
-    "교회, 기업, 대학교, 외주, 맛집 등 다양한 분야의 솔직한 리뷰를 공유하는 커뮤니티 플랫폼입니다. 오늘의 리뷰를 확인하세요.",
+    "교회, 기업, 대학교, 외주, 맛집 등 다양한 분야의 솔직한 리뷰를 공유하는 커뮤니티 플랫폼입니다. 오빠의 리뷰를 확인하세요.",
   keywords: [
     "리뷰",
     "교회 리뷰",
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     "대학교 리뷰",
     "외주 리뷰",
     "맛집 리뷰",
-    "오늘의 리뷰",
+    "오빠의 리뷰",
     "오리",
     "커뮤니티",
   ],
@@ -25,14 +25,14 @@ export const metadata: Metadata = {
     type: "website",
     locale: "ko_KR",
     url: "https://reviewhub.life",
-    siteName: "오리(오늘의 리뷰)",
-    title: "오리(오늘의 리뷰) - 교회·기업·대학교·외주·맛집 리뷰 플랫폼",
+    siteName: "오리(오빠의 리뷰)",
+    title: "오리(오빠의 리뷰) - 리뷰 플랫폼",
     description:
       "교회, 기업, 대학교, 외주, 맛집 등 다양한 분야의 솔직한 리뷰를 공유하는 커뮤니티 플랫폼입니다.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "오리(오늘의 리뷰) - 리뷰 플랫폼",
+    title: "오리(오빠의 리뷰) - 리뷰 플랫폼",
     description:
       "교회, 기업, 대학교, 외주, 맛집 등 다양한 분야의 솔직한 리뷰를 공유하는 커뮤니티 플랫폼입니다.",
   },
@@ -62,7 +62,7 @@ export default function RootLayout({
     "@graph": [
       {
         "@type": "WebSite",
-        name: "오리(오늘의 리뷰)",
+        name: "오리(오빠의 리뷰)",
         url: "https://reviewhub.life",
         description:
           "교회, 기업, 대학교, 외주, 맛집 등 다양한 분야의 솔직한 리뷰를 공유하는 커뮤니티 플랫폼",
@@ -79,7 +79,7 @@ export default function RootLayout({
       },
       {
         "@type": "Organization",
-        name: "오리(오늘의 리뷰)",
+        name: "오리(오빠의 리뷰)",
         url: "https://reviewhub.life",
       },
     ],
