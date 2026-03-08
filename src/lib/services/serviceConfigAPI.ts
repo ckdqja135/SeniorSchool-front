@@ -22,9 +22,9 @@ const getAuthHeaders = () => {
 // 활성 서비스 목록 조회 (퍼블릭 - 인증 불필요)
 export const fetchActiveServices = async (): Promise<ServiceConfig[]> => {
   try {
-    const response = await fetch(`${BASE_URL}/admin/services`, {
+    const response = await fetch(`${BASE_URL}/services`, {
       method: 'GET',
-      headers: getAuthHeaders(),
+      headers: { 'Content-Type': 'application/json' },
     });
 
     if (!response.ok) {
