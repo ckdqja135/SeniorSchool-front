@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 
 // API 베이스 URL을 상수로 관리
-const API_BASE_URL = "https://api.reviewhub.life";
+const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 interface UniversityRequest {
   requestIdx: number;

@@ -124,7 +124,7 @@ export default function HomePage() {
         setIsLoading(true);
         setError(null);
         
-        const response = await fetch('https://api.reviewhub.life/board/recent');
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/board/recent`);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -169,7 +169,7 @@ export default function HomePage() {
         setIsChurchLoading(true);
         setChurchError(null);
         
-        const response = await fetch('https://api.reviewhub.life/church/boards/recent');
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/church/boards/recent`);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -200,7 +200,7 @@ export default function HomePage() {
         setIsCompanyLoading(true);
         setCompanyError(null);
         
-        const response = await fetch('https://api.reviewhub.life/comp/board/recent');
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/comp/board/recent`);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);

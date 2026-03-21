@@ -38,7 +38,7 @@ interface ApiResponseV2 {
   restaurants: RestaurantData[];
 }
 
-const API_BASE_URL = "https://api.reviewhub.life";
+const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 const getImageUrl = (imagePath: string | undefined | null): string | null => {
   if (!imagePath) return null;

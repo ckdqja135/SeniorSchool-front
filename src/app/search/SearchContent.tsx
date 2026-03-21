@@ -96,7 +96,7 @@ export default function SearchContent() {
   // 인기 대학교 데이터 가져오기
   const fetchPopularUniversities = async () => {
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/search/top-viewed`);
       
       if (!response.ok) {
@@ -136,7 +136,7 @@ export default function SearchContent() {
     setIsSubmitting(true);
     
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/admin/univ/request`, {
         method: 'POST',
         headers: {
@@ -191,7 +191,7 @@ export default function SearchContent() {
     
     try {
       // 백엔드 API URL
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
 
       const response = await fetch(`${backendURL}/search/school/?univName=${encodeURIComponent(term)}`);
       

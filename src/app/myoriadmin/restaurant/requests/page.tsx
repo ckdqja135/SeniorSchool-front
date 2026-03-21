@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 
-const API_BASE_URL = "https://api.reviewhub.life";
+const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 interface RestaurantRequest {
   requestIdx: number;

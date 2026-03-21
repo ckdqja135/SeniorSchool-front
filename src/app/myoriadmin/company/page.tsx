@@ -85,8 +85,8 @@ const CompanyManagementPage = () => {
     
     try {
       const url = keyword 
-        ? `https://api.reviewhub.life/admin/comp/searchComp?compName=${encodeURIComponent(keyword)}&page=${page}&rowsPerPage=${pageSize}`
-        : `https://api.reviewhub.life/admin/comp/searchComp?page=${page}&rowsPerPage=${pageSize}`;
+        ? `${process.env.NEXT_PUBLIC_BASE_URL}/admin/comp/searchComp?compName=${encodeURIComponent(keyword)}&page=${page}&rowsPerPage=${pageSize}`
+        : `${process.env.NEXT_PUBLIC_BASE_URL}/admin/comp/searchComp?page=${page}&rowsPerPage=${pageSize}`;
       
       console.log(`요청 URL: ${url}`);
       
@@ -192,7 +192,7 @@ const CompanyManagementPage = () => {
     try {
       const accessToken = localStorage.getItem("accessToken");
       
-      const response = await fetch("https://api.reviewhub.life/admin/comp/createComp", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/comp/createComp`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
@@ -243,7 +243,7 @@ const CompanyManagementPage = () => {
       
       // 선택된 모든 회사를 순차적으로 삭제
       const deletePromises = selectedCompanies.map(compIdx =>
-        fetch(`https://api.reviewhub.life/admin/comp/deleteComp/${compIdx}`, {
+        fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/comp/deleteComp/${compIdx}`, {
           method: "DELETE",
           headers: {
             "Authorization": `Bearer ${accessToken}`,
@@ -371,7 +371,7 @@ const CompanyManagementPage = () => {
         }
       });
 
-      const response = await fetch(`https://api.reviewhub.life/admin/comp/comp/${editingCompany.compIdx}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/comp/comp/${editingCompany.compIdx}`, {
         method: "PUT",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
@@ -399,7 +399,7 @@ const CompanyManagementPage = () => {
     try {
       const accessToken = localStorage.getItem("accessToken");
       
-      const response = await fetch(`https://api.reviewhub.life/admin/comp/comp/${compIdx}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/comp/comp/${compIdx}`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
@@ -424,7 +424,7 @@ const CompanyManagementPage = () => {
     try {
       const accessToken = localStorage.getItem("accessToken");
       
-      const response = await fetch(`https://api.reviewhub.life/admin/comp/comp/${compIdx}/status`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/comp/comp/${compIdx}/status`, {
         method: "PUT",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
@@ -448,7 +448,7 @@ const CompanyManagementPage = () => {
     try {
       const accessToken = localStorage.getItem("accessToken");
       
-      const response = await fetch(`https://api.reviewhub.life/admin/comp/comp/${compIdx}/statistics`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/comp/comp/${compIdx}/statistics`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
@@ -471,7 +471,7 @@ const CompanyManagementPage = () => {
     try {
       const accessToken = localStorage.getItem("accessToken");
       
-      const response = await fetch(`https://api.reviewhub.life/admin/comp/statistics/batch`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/comp/statistics/batch`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
@@ -502,7 +502,7 @@ const CompanyManagementPage = () => {
     try {
       const accessToken = localStorage.getItem("accessToken");
 
-      const response = await fetch(`https://api.reviewhub.life/admin/comp/deleteComp/${selectedCompany.compIdx}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/comp/deleteComp/${selectedCompany.compIdx}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${accessToken}`,

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 
-const API_BASE_URL = "https://api.reviewhub.life";
+const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 interface BoardData {
   boardIdx: number;

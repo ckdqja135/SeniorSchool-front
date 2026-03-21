@@ -58,7 +58,7 @@ export default function ChurchMentorPage() {
     setError(null);
     
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/search/church/auto?keyword=${encodeURIComponent(keyword)}`);
       
       if (!response.ok) {
@@ -113,7 +113,7 @@ export default function ChurchMentorPage() {
   // 인기 교회 데이터 가져오기
   const fetchPopularChurches = async () => {
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/search/church/top-viewed`);
       
       if (!response.ok) {
@@ -133,7 +133,7 @@ export default function ChurchMentorPage() {
   // 인기 후기 데이터 가져오기
   const fetchPopularBoards = async () => {
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/church/boards/top-viewed`);
       
       if (!response.ok) {
@@ -195,7 +195,7 @@ export default function ChurchMentorPage() {
       setIsLoading(true);
       setError(null);
 
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       
       // 자동완성 API를 사용해서 결과 개수 확인
       const autoResponse = await fetch(`${backendURL}/search/church/auto?keyword=${encodeURIComponent(searchTerm)}`);
@@ -302,7 +302,7 @@ export default function ChurchMentorPage() {
     setIsSubmitting(true);
     
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/church/requests`, {
         method: 'POST',
         headers: {

@@ -437,7 +437,7 @@ export default function OutsourceBoardDetailPage() {
     }
 
     try {
-      const response = await fetch('https://api.reviewhub.life/outsource/comment/insert', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/outsource/comment/insert`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -475,7 +475,7 @@ export default function OutsourceBoardDetailPage() {
     }
 
     try {
-      const response = await fetch('https://api.reviewhub.life/outsource/comment/insert', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/outsource/comment/insert`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -509,7 +509,7 @@ export default function OutsourceBoardDetailPage() {
   // 댓글 목록 조회
   const fetchComments = async () => {
     try {
-      const response = await fetch(`https://api.reviewhub.life/outsource/comment?boardIdx=${boardId}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/outsource/comment?boardIdx=${boardId}`);
       if (response.ok) {
         const data = await response.json();
         
@@ -545,7 +545,7 @@ export default function OutsourceBoardDetailPage() {
   // 외주업체 정보 조회
   const fetchOutsourceInfo = async (outsourceIdx: number) => {
     try {
-      const response = await fetch(`https://api.reviewhub.life/outsource?limit=1000`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/outsource?limit=1000`);
       if (response.ok) {
         const data = await response.json();
         const outsource = data.data?.find((item: any) => item.outsourceIdx === outsourceIdx);
@@ -574,7 +574,7 @@ export default function OutsourceBoardDetailPage() {
     try {
       setIsLikeLoading(true); // 로딩 시작
       
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const parsedBoardId = parseInt(boardId);
       const requestBody = { 
         boardIdx: parsedBoardId,
@@ -625,7 +625,7 @@ export default function OutsourceBoardDetailPage() {
     if (!board) return;
     
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/outsource/boards/correct`, {
         method: 'PUT',
         headers: {
@@ -660,7 +660,7 @@ export default function OutsourceBoardDetailPage() {
     if (!board) return;
     
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/outsource/boards/delete`, {
         method: 'DELETE',
         headers: {
@@ -699,7 +699,7 @@ export default function OutsourceBoardDetailPage() {
     try {
       setIsReportLoading(true);
       
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const reportData = {
         boardIdx: board.boardIdx,
         reportReason: reportForm.reportReason.trim(),
@@ -736,7 +736,7 @@ export default function OutsourceBoardDetailPage() {
     e.preventDefault();
     
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const editData = {
         commentIdx: editCommentForm.commentIdx,
         commentWriter: editCommentForm.writerId.trim(),
@@ -773,7 +773,7 @@ export default function OutsourceBoardDetailPage() {
   // 댓글 삭제
   const handleDeleteComment = async () => {
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const deleteData = {
         commentIdx: deleteCommentData.commentIdx,
         commentWriter: deleteCommentData.writerId.trim(),

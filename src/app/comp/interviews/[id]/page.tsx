@@ -216,7 +216,7 @@ export default function InterviewDetailPage() {
         setIsLoading(true);
         setError(null);
 
-        const backendURL = 'https://api.reviewhub.life';
+        const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
         const response = await fetch(`${backendURL}/comp/interviews/${interviewIdx}`);
 
         if (!response.ok) {
@@ -286,7 +286,7 @@ export default function InterviewDetailPage() {
     }
 
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       // 면접 후기 댓글 API는 회사 후기 댓글 API와 동일한 엔드포인트를 사용할 수도 있고, 별도일 수도 있습니다.
       // 일단 interviewIdx를 boardIdx로 사용하는 방식으로 시도
       const response = await fetch(`${backendURL}/comp/comment?boardIdx=${interviewIdx}&type=interview`);
@@ -366,7 +366,7 @@ export default function InterviewDetailPage() {
       hasFetchedLikeStatus.current = true;
       
       try {
-        const backendURL = 'https://api.reviewhub.life';
+        const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
         const response = await fetch(`${backendURL}/comp/interviews/${interviewIdx}/like`);
 
         if (response.ok) {
@@ -393,7 +393,7 @@ export default function InterviewDetailPage() {
     
     setIsLikeLoading(true);
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const newLikeStatus = !isLiked;
       
       const requestBody = {
@@ -433,7 +433,7 @@ export default function InterviewDetailPage() {
     }
 
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       // 면접 후기 댓글 작성 API
       const response = await fetch(`${backendURL}/comp/comment/insert`, {
         method: 'POST',
@@ -486,7 +486,7 @@ export default function InterviewDetailPage() {
 
     setIsSubmittingReply(true);
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/comp/comment/insert`, {
         method: 'POST',
         headers: {
@@ -541,7 +541,7 @@ export default function InterviewDetailPage() {
     }
 
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/comp/comment/${editCommentForm.commentIdx}`, {
         method: 'PUT',
         headers: {
@@ -587,7 +587,7 @@ export default function InterviewDetailPage() {
     }
 
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/comp/comment/${deleteCommentData.commentIdx}`, {
         method: 'DELETE',
         headers: {
@@ -661,7 +661,7 @@ export default function InterviewDetailPage() {
 
     setIsReportLoading(true);
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/report`, {
         method: 'POST',
         headers: {
@@ -722,7 +722,7 @@ export default function InterviewDetailPage() {
     }
 
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/comp/interviews/${interviewIdx}`, {
         method: 'PUT',
         headers: {
@@ -766,7 +766,7 @@ export default function InterviewDetailPage() {
     }
 
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/comp/interviews/${interviewIdx}`, {
         method: 'DELETE',
         headers: {

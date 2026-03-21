@@ -78,8 +78,8 @@ const OutsourceManagementPage = () => {
 
     try {
       const url = keyword
-        ? `https://api.reviewhub.life/admin/outsource/searchOutsource?outsourceName=${encodeURIComponent(keyword)}&page=${page}&rowsPerPage=${pageSize}`
-        : `https://api.reviewhub.life/admin/outsource/searchOutsource?page=${page}&rowsPerPage=${pageSize}`;
+        ? `${process.env.NEXT_PUBLIC_BASE_URL}/admin/outsource/searchOutsource?outsourceName=${encodeURIComponent(keyword)}&page=${page}&rowsPerPage=${pageSize}`
+        : `${process.env.NEXT_PUBLIC_BASE_URL}/admin/outsource/searchOutsource?page=${page}&rowsPerPage=${pageSize}`;
 
       console.log(`요청 URL: ${url}`);
 
@@ -161,7 +161,7 @@ const OutsourceManagementPage = () => {
     try {
       const accessToken = localStorage.getItem("accessToken");
 
-      const response = await fetch("https://api.reviewhub.life/admin/outsource/createOutsource", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/outsource/createOutsource`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
@@ -200,7 +200,7 @@ const OutsourceManagementPage = () => {
     try {
       const accessToken = localStorage.getItem("accessToken");
 
-      const response = await fetch(`https://api.reviewhub.life/admin/outsource/${selectedOutsources[0]}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/outsource/${selectedOutsources[0]}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
@@ -295,7 +295,7 @@ const OutsourceManagementPage = () => {
         }
       });
 
-      const response = await fetch(`https://api.reviewhub.life/admin/outsource/${editingOutsource.outsourceIdx}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/outsource/${editingOutsource.outsourceIdx}`, {
         method: "PUT",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
@@ -325,7 +325,7 @@ const OutsourceManagementPage = () => {
     try {
       const accessToken = localStorage.getItem("accessToken");
 
-      const response = await fetch(`https://api.reviewhub.life/admin/outsource/${selectedOutsource.outsourceIdx}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/outsource/${selectedOutsource.outsourceIdx}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${accessToken}`,

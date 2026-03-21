@@ -68,7 +68,7 @@ export default function CompanyMentorPage() {
     setError(null);
     
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/search/comp/?compName=${encodeURIComponent(keyword)}`);
       
       if (!response.ok) {
@@ -129,7 +129,7 @@ export default function CompanyMentorPage() {
     hasFetchedPopularCompanies.current = true;
 
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/comp/top-viewed`);
       
       if (!response.ok) {
@@ -161,7 +161,7 @@ export default function CompanyMentorPage() {
   // 인기 후기 데이터 가져오기 (최근 후기에서 가져오기)
   const fetchPopularBoards = async () => {
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/comp/board/recent`);
       
       if (!response.ok) {
@@ -234,7 +234,7 @@ export default function CompanyMentorPage() {
       setIsLoading(true);
       setError(null);
 
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       
       // 자동완성 API를 사용해서 결과 개수 확인
       const autoResponse = await fetch(`${backendURL}/search/comp/?compName=${encodeURIComponent(searchTerm)}`);
@@ -346,7 +346,7 @@ export default function CompanyMentorPage() {
     setIsSubmitting(true);
     
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/comp/requests`, {
         method: 'POST',
         headers: {

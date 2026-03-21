@@ -5,7 +5,7 @@
 // 2) Run:
 //    node scripts/fetchChurchFromKakao.mjs --keyword="여의도순복음교회" [--count=1] [--upload]
 
-const API_BASE_URL = "https://api.reviewhub.life";
+const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 function parseArgs() {
   const args = process.argv.slice(2);

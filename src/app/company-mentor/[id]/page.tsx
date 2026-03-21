@@ -344,7 +344,7 @@ export default function CompanyDetailPage() {
         setIsLoading(true);
         setError(null);
 
-        const backendURL = 'https://api.reviewhub.life';
+        const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
         let response;
         
         // compIdx 쿼리 파라미터가 있으면 우선 사용, 없으면 companyId 사용
@@ -388,7 +388,7 @@ export default function CompanyDetailPage() {
     const fetchCompanyRating = async () => {
       if (!company?.compIdx) return;
 
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       try {
         const response = await fetch(`${backendURL}/comp/companies/${company.compIdx}/rating`);
         if (!response.ok) {
@@ -455,7 +455,7 @@ export default function CompanyDetailPage() {
         // 현재 compIdx를 기록
         lastFetchedCompIdx.current = company.compIdx;
         
-        const backendURL = 'https://api.reviewhub.life';
+        const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
         const response = await fetch(`${backendURL}/comp/board?compIdx=${company.compIdx}`);
         
         if (!response.ok) {
@@ -503,7 +503,7 @@ export default function CompanyDetailPage() {
         setIsBoardLoading(true);
         setBoardError(null);
         
-        const backendURL = 'https://api.reviewhub.life';
+        const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
         const response = await fetch(`${backendURL}/comp/interviews?compIdx=${company.compIdx}`);
         
         if (!response.ok) {
@@ -550,7 +550,7 @@ export default function CompanyDetailPage() {
         setIsBoardLoading(true);
         setBoardError(null);
         
-        const backendURL = 'https://api.reviewhub.life';
+        const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
         const response = await fetch(`${backendURL}/comp/salaries?compIdx=${company.compIdx}`);
         
         if (!response.ok) {
@@ -827,7 +827,7 @@ export default function CompanyDetailPage() {
     setIsSubmitting(true);
     
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       
       let requestData: any;
       let apiEndpoint: string;

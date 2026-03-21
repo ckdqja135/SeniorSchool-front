@@ -39,7 +39,7 @@ export default function OutsourceMentorPage() {
   const fetchPopularOutsources = async () => {
     setOutsourcesLoading(true);
     try {
-      const response = await fetch('https://api.reviewhub.life/outsource/top-viewed');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/outsource/top-viewed`);
       if (response.ok) {
         const data = await response.json();
         if (Array.isArray(data)) {
@@ -73,7 +73,7 @@ export default function OutsourceMentorPage() {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch(`https://api.reviewhub.life/search/outsource/auto?keyword=${encodeURIComponent(term)}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/search/outsource/auto?keyword=${encodeURIComponent(term)}`);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -164,7 +164,7 @@ export default function OutsourceMentorPage() {
 
     // 검색 결과를 확인하여 단일값이면 상세정보로, 다중값이면 검색결과로 이동
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/search/outsource/auto?keyword=${encodeURIComponent(searchTerm.trim())}`);
 
       if (response.ok) {
@@ -257,7 +257,7 @@ export default function OutsourceMentorPage() {
   const handleRecentSearchClick = async (term: string) => {
     try {
       // 검색 결과를 확인하여 단일값이면 상세정보로, 다중값이면 검색결과로 이동
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/search/outsource/auto?keyword=${encodeURIComponent(term)}`);
 
       if (response.ok) {

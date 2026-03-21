@@ -72,8 +72,8 @@ const ChurchManagementPage = () => {
     
     try {
       const url = keyword 
-        ? `https://api.reviewhub.life/admin/church/searchChurch?churchName=${encodeURIComponent(keyword)}&page=${page}&rowsPerPage=${pageSize}`
-        : `https://api.reviewhub.life/admin/church/searchChurch?page=${page}&rowsPerPage=${pageSize}`;
+        ? `${process.env.NEXT_PUBLIC_BASE_URL}/admin/church/searchChurch?churchName=${encodeURIComponent(keyword)}&page=${page}&rowsPerPage=${pageSize}`
+        : `${process.env.NEXT_PUBLIC_BASE_URL}/admin/church/searchChurch?page=${page}&rowsPerPage=${pageSize}`;
       
       console.log(`요청 URL: ${url}`);
       
@@ -150,7 +150,7 @@ const ChurchManagementPage = () => {
     try {
       const accessToken = localStorage.getItem("accessToken");
       
-      const response = await fetch("https://api.reviewhub.life/admin/church/createChurch", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/church/createChurch`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
@@ -193,7 +193,7 @@ const ChurchManagementPage = () => {
 
       const accessToken = localStorage.getItem("accessToken");
 
-      const response = await fetch("https://api.reviewhub.life/admin/church/deleteChurch", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/church/deleteChurch`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
@@ -312,7 +312,7 @@ const ChurchManagementPage = () => {
         }
       });
 
-      const response = await fetch(`https://api.reviewhub.life/admin/church/${editingChurch.churchIdx}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/church/${editingChurch.churchIdx}`, {
         method: "PUT",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
@@ -343,7 +343,7 @@ const ChurchManagementPage = () => {
     try {
       const accessToken = localStorage.getItem("accessToken");
 
-      const response = await fetch("https://api.reviewhub.life/admin/church/deleteChurch", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/church/deleteChurch`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${accessToken}`,

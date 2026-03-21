@@ -158,7 +158,7 @@ export default function ChurchDetailPage() {
         setIsLoading(true);
         setError(null);
         
-        const backendURL = 'https://api.reviewhub.life';
+        const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
         const response = await fetch(`${backendURL}/church`);
         
         if (!response.ok) {
@@ -203,7 +203,7 @@ export default function ChurchDetailPage() {
         setIsBoardLoading(true);
         setBoardError(null);
         
-        const backendURL = 'https://api.reviewhub.life';
+        const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
         const response = await fetch(`${backendURL}/church/board?churchIdx=${church.churchIdx}`);
         
         if (!response.ok) {
@@ -468,7 +468,7 @@ export default function ChurchDetailPage() {
     setIsSubmitting(true);
     
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       
       // 오늘 날짜 포맷
       const date = new Date();

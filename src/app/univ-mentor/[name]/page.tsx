@@ -176,7 +176,7 @@ export default function SchoolPage() {
     
     try {
       // 백엔드 API 서버
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       
       const response = await fetch(`${backendURL}/search/school?univName=${encodeURIComponent(schoolName)}`);
       
@@ -200,7 +200,7 @@ export default function SchoolPage() {
     if (!university?.univIdx) return;
     
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/board/?univIdx=${university.univIdx}`);
       
       if (response.ok) {
@@ -452,7 +452,7 @@ export default function SchoolPage() {
     e.preventDefault();
     
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       
       // 오늘 날짜 포맷
       const date = new Date();
@@ -518,7 +518,7 @@ export default function SchoolPage() {
     
     setIsSearching(true);
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const url = searchQuery.trim() 
         ? `${backendURL}/board?univIdx=${university.univIdx}&${searchType}=${encodeURIComponent(searchQuery.trim())}`
         : `${backendURL}/board?univIdx=${university.univIdx}`;
@@ -550,7 +550,7 @@ export default function SchoolPage() {
     setIsSearching(true);
     
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/board?univIdx=${university.univIdx}`);
       
       if (response.ok) {
@@ -572,7 +572,7 @@ export default function SchoolPage() {
   //   const fetchReviews = async () => {
   //     setIsSearching(true);
   //     try {
-  //       const backendURL = 'https://api.reviewhub.life';
+  //       const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
   //       const url = searchQuery.trim() 
   //         ? `${backendURL}/board?univIdx=${university.univIdx}&searchQuery=${encodeURIComponent(searchQuery.trim())}`
   //         : `${backendURL}/board?univIdx=${university.univIdx}`;

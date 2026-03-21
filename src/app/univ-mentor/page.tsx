@@ -95,7 +95,7 @@ export default function SchoolPage() {
     
     try {
       // 백엔드 API 서버
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       
       const response = await fetch(`${backendURL}/search/auto?keyword=${encodeURIComponent(keyword)}`);
       
@@ -151,7 +151,7 @@ export default function SchoolPage() {
   // 인기 대학교 데이터 가져오기
   const fetchPopularUniversities = async () => {
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/search/top-viewed`);
       
       if (!response.ok) {
@@ -171,7 +171,7 @@ export default function SchoolPage() {
   // 인기 후기 데이터 가져오기
   const fetchPopularBoards = async () => {
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/board/top-viewed`);
       
       if (!response.ok) {
@@ -251,7 +251,7 @@ export default function SchoolPage() {
       setIsLoading(true);
       setError(null);
 
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       
       // 자동완성 API를 사용해서 결과 개수 확인
       const autoResponse = await fetch(`${backendURL}/search/auto?keyword=${encodeURIComponent(searchTerm)}`);
@@ -358,7 +358,7 @@ export default function SchoolPage() {
     setIsSubmitting(true);
     
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/admin/univ/request`, {
         method: 'POST',
         headers: {

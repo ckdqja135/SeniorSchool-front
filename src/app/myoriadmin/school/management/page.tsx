@@ -74,8 +74,8 @@ const SchoolManagementPage = () => {
     
     try {
       const url = keyword 
-        ? `https://api.reviewhub.life/admin/univ/searchUniv?keyword=${encodeURIComponent(keyword)}&page=${page}&rowsPerPage=${pageSize}`
-        : `https://api.reviewhub.life/admin/univ/searchUniv?page=${page}&rowsPerPage=${pageSize}`;
+        ? `${process.env.NEXT_PUBLIC_BASE_URL}/admin/univ/searchUniv?keyword=${encodeURIComponent(keyword)}&page=${page}&rowsPerPage=${pageSize}`
+        : `${process.env.NEXT_PUBLIC_BASE_URL}/admin/univ/searchUniv?page=${page}&rowsPerPage=${pageSize}`;
       
       console.log(`요청 URL: ${url}`);
       
@@ -155,7 +155,7 @@ const SchoolManagementPage = () => {
     try {
       const accessToken = localStorage.getItem("accessToken");
       
-      const response = await fetch("https://api.reviewhub.life/admin/univ/createUniv", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/univ/createUniv`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
@@ -199,7 +199,7 @@ const SchoolManagementPage = () => {
 
       const accessToken = localStorage.getItem("accessToken");
 
-      const response = await fetch("https://api.reviewhub.life/admin/univ/deleteUniv", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/univ/deleteUniv`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
@@ -318,7 +318,7 @@ const SchoolManagementPage = () => {
         }
       });
 
-      const response = await fetch("https://api.reviewhub.life/admin/univ/putUnivData", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/univ/putUnivData`, {
         method: "PUT",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
@@ -348,7 +348,7 @@ const SchoolManagementPage = () => {
     try {
       const accessToken = localStorage.getItem("accessToken");
 
-      const response = await fetch("https://api.reviewhub.life/admin/univ/deleteUniv", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/univ/deleteUniv`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${accessToken}`,

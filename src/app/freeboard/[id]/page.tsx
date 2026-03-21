@@ -601,7 +601,7 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
     
     setIsReportLoading(true);
     try {
-      const backendURL = process.env.NEXT_PUBLIC_BASE_URL || 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/report`, {
         method: 'POST',
         headers: {

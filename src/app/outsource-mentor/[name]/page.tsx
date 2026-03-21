@@ -220,7 +220,7 @@ export default function OutsourceDetailByNamePage() {
 
     try {
       setIsSubmitting(true);
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       
       const response = await fetch(`${backendURL}/outsource/boards/insert`, {
         method: 'POST',
@@ -262,7 +262,7 @@ export default function OutsourceDetailByNamePage() {
         setLoading(true);
         setError(null);
 
-        const backendURL = 'https://api.reviewhub.life';
+        const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
         let response;
 
         if (outsourceIdx) {

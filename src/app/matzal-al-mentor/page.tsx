@@ -69,7 +69,7 @@ export default function MatzalAlMentorPage() {
     setError(null);
     
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/restaurant/auto?keyword=${encodeURIComponent(keyword)}`);
       
       if (!response.ok) {
@@ -151,7 +151,7 @@ export default function MatzalAlMentorPage() {
     hasFetchedPopularMatzalAl.current = true;
 
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/restaurant/top-viewed`);
       
       if (!response.ok) {
@@ -163,7 +163,7 @@ export default function MatzalAlMentorPage() {
       // 이미지 URL 헬퍼 함수
       const getImageUrl = (imagePath: string | undefined | null): string | null => {
         if (!imagePath) return null;
-        const backendURL = 'https://api.reviewhub.life';
+        const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
         // 이미 절대 URL인 경우 그대로 반환
         if (imagePath.startsWith('http://') || imagePath.startsWith('https://') || imagePath.startsWith('data:')) {
           return imagePath;
@@ -319,7 +319,7 @@ export default function MatzalAlMentorPage() {
       setIsLoading(true);
       setError(null);
 
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       
       // 자동완성 API를 사용해서 결과 개수 확인
       const autoResponse = await fetch(`${backendURL}/restaurant/auto?keyword=${encodeURIComponent(searchTerm)}`);
@@ -706,7 +706,7 @@ export default function MatzalAlMentorPage() {
                   <div className="relative w-full h-40 bg-gradient-to-br from-orange-100 via-amber-50 to-yellow-100 overflow-hidden">
                     {/* 실제 이미지 또는 플레이스홀더 */}
                     {(() => {
-                      const backendURL = 'https://api.reviewhub.life';
+                      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
                       const getImageUrl = (imagePath: string | undefined | null): string | null => {
                         if (!imagePath) return null;
                         if (imagePath.startsWith('http://') || imagePath.startsWith('https://') || imagePath.startsWith('data:')) {

@@ -343,7 +343,7 @@ export default function MatzalAlBoardDetailPage() {
         setIsLoading(true);
         setError(null);
         
-        const response = await fetch(`https://api.reviewhub.life/restaurant/boards/detail/${boardId}`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/restaurant/boards/detail/${boardId}`);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -391,7 +391,7 @@ export default function MatzalAlBoardDetailPage() {
   // 댓글 가져오기
   const fetchComments = async () => {
     try {
-      const response = await fetch(`https://api.reviewhub.life/restaurant/comment?boardIdx=${boardId}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/restaurant/comment?boardIdx=${boardId}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -441,7 +441,7 @@ export default function MatzalAlBoardDetailPage() {
   useEffect(() => {
     const checkLikeStatus = async () => {
       try {
-        const response = await fetch(`https://api.reviewhub.life/restaurant/like?boardIdx=${boardId}`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/restaurant/like?boardIdx=${boardId}`);
         
         if (response.ok) {
           const data = await response.json();
@@ -462,7 +462,7 @@ export default function MatzalAlBoardDetailPage() {
     e.preventDefault();
     
     try {
-      const response = await fetch('https://api.reviewhub.life/restaurant/comment/insert', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/restaurant/comment/insert`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -512,7 +512,7 @@ export default function MatzalAlBoardDetailPage() {
     e.preventDefault();
     
     try {
-      const response = await fetch('https://api.reviewhub.life/restaurant/comment/insert', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/restaurant/comment/insert`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -553,7 +553,7 @@ export default function MatzalAlBoardDetailPage() {
       
       const newLikeStatus = !isLiked;
       
-      const response = await fetch('https://api.reviewhub.life/restaurant/boards/like', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/restaurant/boards/like`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -590,7 +590,7 @@ export default function MatzalAlBoardDetailPage() {
     try {
       setIsReportLoading(true);
       
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/report`, {
         method: 'POST',
         headers: {
@@ -635,7 +635,7 @@ export default function MatzalAlBoardDetailPage() {
     e.preventDefault();
     
     try {
-      const response = await fetch('https://api.reviewhub.life/restaurant/comment/modify', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/restaurant/comment/modify`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -677,7 +677,7 @@ export default function MatzalAlBoardDetailPage() {
     e.preventDefault();
     
     try {
-      const response = await fetch('https://api.reviewhub.life/restaurant/comment/delete', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/restaurant/comment/delete`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -773,7 +773,7 @@ export default function MatzalAlBoardDetailPage() {
     }
 
     try {
-      const response = await fetch('https://api.reviewhub.life/restaurant/boards/correct', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/restaurant/boards/correct`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -817,7 +817,7 @@ export default function MatzalAlBoardDetailPage() {
     }
 
     try {
-      const response = await fetch('https://api.reviewhub.life/restaurant/board/delete', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/restaurant/board/delete`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

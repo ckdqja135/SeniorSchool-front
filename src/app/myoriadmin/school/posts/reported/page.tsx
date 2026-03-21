@@ -26,7 +26,7 @@ const ReportedPostsPage = () => {
   const fetchReports = async () => {
     setLoading(true);
     try {
-      const url = "https://api.reviewhub.life/admin/report/getReports";
+      const url = `${process.env.NEXT_PUBLIC_BASE_URL}/admin/report/getReports`;
       
       const accessToken = localStorage.getItem("accessToken");
       
@@ -91,7 +91,7 @@ const ReportedPostsPage = () => {
 
       const accessToken = localStorage.getItem("accessToken");
 
-      const response = await fetch("https://api.reviewhub.life/admin/report/processReports", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/report/processReports`, {
         method: "PUT",
         headers: {
           "Authorization": `Bearer ${accessToken}`,

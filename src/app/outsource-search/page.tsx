@@ -25,7 +25,7 @@ function OutsourceSearchContent() {
         setIsLoading(true);
         setError(null);
 
-        const backendURL = 'https://api.reviewhub.life';
+        const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
         // 자동완성 API 사용 (검색어로 필터링된 결과)
         const response = await fetch(`${backendURL}/search/outsource/auto?keyword=${encodeURIComponent(searchName)}`);
 

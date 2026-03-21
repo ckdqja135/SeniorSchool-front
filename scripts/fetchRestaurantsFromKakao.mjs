@@ -5,7 +5,7 @@
 // 2) Run:
 //    node scripts/fetchRestaurantsFromKakao.mjs --count=50 [--upload]
 
-const API_BASE_URL = "https://api.reviewhub.life";
+const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 function parseArgs() {
   const args = process.argv.slice(2);

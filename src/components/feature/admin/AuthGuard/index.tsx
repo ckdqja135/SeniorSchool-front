@@ -27,7 +27,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
 
       // 토큰 유효성을 백엔드에 검증 요청
       try {
-        const response = await fetch("https://api.reviewhub.life/admin/user/getAdminlist", {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/user/getAdminlist`, {
           method: "GET",
           headers: {
             "Authorization": `Bearer ${accessToken}`,

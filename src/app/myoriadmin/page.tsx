@@ -94,7 +94,7 @@ const AdminMainPage = () => {
       const keys = ["univ", "church", "comp", "outsource", "restaurant"];
 
       const results = await Promise.all(
-        boards.map(b => fetch(`https://api.reviewhub.life/admin/${b}?page=1&limit=1`, { headers }).then(r => r.json()).catch(() => null))
+        boards.map(b => fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/${b}?page=1&limit=1`, { headers }).then(r => r.json()).catch(() => null))
       );
 
       const counts: Record<string, number> = {};
@@ -122,7 +122,7 @@ const AdminMainPage = () => {
       const keys = ["univ", "church", "comp", "outsource", "restaurant"];
 
       const results = await Promise.all(
-        endpoints.map(ep => fetch(`https://api.reviewhub.life/admin/${ep}?page=1&rowsPerPage=1`, { headers }).then(r => r.json()).catch(() => null))
+        endpoints.map(ep => fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/${ep}?page=1&rowsPerPage=1`, { headers }).then(r => r.json()).catch(() => null))
       );
 
       const counts: Record<string, number> = {};
@@ -140,7 +140,7 @@ const AdminMainPage = () => {
     setLoading(true);
     try {
       const accessToken = localStorage.getItem("accessToken");
-      const response = await fetch("https://api.reviewhub.life/admin/dashboard/overview", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/dashboard/overview`, {
         headers: {
           "Authorization": `Bearer ${accessToken}`,
           "Content-Type": "application/json",
@@ -163,7 +163,7 @@ const AdminMainPage = () => {
     setMonthlyLoading(true);
     try {
       const accessToken = localStorage.getItem("accessToken");
-      const response = await fetch("https://api.reviewhub.life/admin/dashboard/monthly-stats", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/dashboard/monthly-stats`, {
         headers: {
           "Authorization": `Bearer ${accessToken}`,
           "Content-Type": "application/json",
@@ -188,7 +188,7 @@ const AdminMainPage = () => {
     setActivityLoading(true);
     try {
       const accessToken = localStorage.getItem("accessToken");
-      const response = await fetch("https://api.reviewhub.life/admin/dashboard/recent-activities", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/dashboard/recent-activities`, {
         headers: {
           "Authorization": `Bearer ${accessToken}`,
           "Content-Type": "application/json",

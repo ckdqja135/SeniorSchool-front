@@ -43,7 +43,7 @@ const AdminManagementPage = () => {
   const fetchAdmins = async () => {
     setLoading(true);
     try {
-      const url = "https://api.reviewhub.life/admin/user/getAdminlist";
+      const url = `${process.env.NEXT_PUBLIC_BASE_URL}/admin/user/getAdminlist`;
       
       const accessToken = localStorage.getItem("accessToken");
       
@@ -106,7 +106,7 @@ const AdminManagementPage = () => {
     try {
       const accessToken = localStorage.getItem("accessToken");
       
-      const response = await fetch("https://api.reviewhub.life/admin/user/createAdmin", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/user/createAdmin`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
@@ -141,7 +141,7 @@ const AdminManagementPage = () => {
 
       const accessToken = localStorage.getItem("accessToken");
 
-      const response = await fetch("https://api.reviewhub.life/admin/user/deleteAdmin", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/user/deleteAdmin`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
@@ -224,7 +224,7 @@ const AdminManagementPage = () => {
         }
       });
 
-      const response = await fetch("https://api.reviewhub.life/admin/user/putAdminData", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/user/putAdminData`, {
         method: "PUT",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
@@ -254,7 +254,7 @@ const AdminManagementPage = () => {
     try {
       const accessToken = localStorage.getItem("accessToken");
 
-      const response = await fetch("https://api.reviewhub.life/admin/user/deleteAdmin", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/user/deleteAdmin`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${accessToken}`,

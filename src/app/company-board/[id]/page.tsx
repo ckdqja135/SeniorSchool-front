@@ -275,7 +275,7 @@ export default function CompanyBoardDetailPage() {
         setIsLoading(true);
         setError(null);
 
-        const backendURL = 'https://api.reviewhub.life';
+        const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
         const response = await fetch(`${backendURL}/comp/board/detail?boardIdx=${boardId}`);
 
         if (!response.ok) {
@@ -341,7 +341,7 @@ export default function CompanyBoardDetailPage() {
     }
 
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/comp/comment?boardIdx=${boardId}`);
 
       if (!response.ok) {
@@ -414,7 +414,7 @@ export default function CompanyBoardDetailPage() {
       hasFetchedLikeStatus.current = true;
       
       try {
-        const backendURL = 'https://api.reviewhub.life';
+        const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
         const response = await fetch(`${backendURL}/comp/board/like/${boardId}`);
 
         if (response.ok) {
@@ -444,7 +444,7 @@ export default function CompanyBoardDetailPage() {
     
     setIsLikeLoading(true);
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const newLikeStatus = !isLiked; // 새로운 상태 미리 계산
       
       const requestBody = {
@@ -493,7 +493,7 @@ export default function CompanyBoardDetailPage() {
     }
 
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/comp/comment/insert`, {
         method: 'POST',
         headers: {
@@ -547,7 +547,7 @@ export default function CompanyBoardDetailPage() {
 
     setIsSubmittingReply(true);
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/comp/comment/insert`, {
         method: 'POST',
         headers: {
@@ -604,7 +604,7 @@ export default function CompanyBoardDetailPage() {
     }
 
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/comp/comment/${editCommentForm.commentIdx}`, {
         method: 'PUT',
         headers: {
@@ -652,7 +652,7 @@ export default function CompanyBoardDetailPage() {
     }
 
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/comp/comment/${deleteCommentData.commentIdx}`, {
         method: 'DELETE',
         headers: {
@@ -728,7 +728,7 @@ export default function CompanyBoardDetailPage() {
 
     setIsReportLoading(true);
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/report`, {
         method: 'POST',
         headers: {
@@ -823,7 +823,7 @@ export default function CompanyBoardDetailPage() {
     }
 
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/comp/board/correct`, {
         method: 'PUT',
         headers: {
@@ -869,7 +869,7 @@ export default function CompanyBoardDetailPage() {
     }
 
     try {
-      const backendURL = 'https://api.reviewhub.life';
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/comp/board/delete`, {
         method: 'DELETE',
         headers: {
