@@ -56,7 +56,9 @@ export const useRecentOutsourceBoards = () => {
       const response = await getRecentOutsourceBoards();
       setBoards(response.data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '최근 후기를 불러오는데 실패했습니다.');
+      console.error('최근 외주 후기 로딩 오류:', err);
+      setError(null);
+      setBoards([]);
     } finally {
       setLoading(false);
     }

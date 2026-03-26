@@ -103,6 +103,10 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap"
           rel="stylesheet"
         />
+        <link
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css"
+          rel="stylesheet"
+        />
 
         {/* Font Awesome */}
         <link

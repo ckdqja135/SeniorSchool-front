@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 기본 폰트 설정 */
+body {
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Pretendard', sans-serif;
+  letter-spacing: -0.02em;
+}
+
 /* 다크 모드 전역 스타일 */
 html.dark {
   color-scheme: dark;
