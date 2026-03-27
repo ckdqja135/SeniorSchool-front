@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: "/myoriadmin/",
       },
     ],
-    sitemap: "https://reviewhub.life/sitemap.xml",
+    sitemap: "https://ori.blue/sitemap.xml",
   };
 }

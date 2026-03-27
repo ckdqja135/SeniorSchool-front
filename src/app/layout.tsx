@@ -3,7 +3,7 @@ import "../styles/globals.css";
 import ThemeProvider from "@/components/common/ThemeProvider";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://reviewhub.life"),
+  metadataBase: new URL("https://ori.blue"),
   title: {
     default: "오리(오빠의 리뷰) - 통합 리뷰 플랫폼",
     template: "%s | 오리(오빠의 리뷰)",
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "ko_KR",
-    url: "https://reviewhub.life",
+    url: "https://ori.blue",
     siteName: "오리(오빠의 리뷰)",
     title: "오리(오빠의 리뷰) - 통합 리뷰 플랫폼",
     description:
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://reviewhub.life",
+    canonical: "https://ori.blue",
   },
 };
 
@@ -63,7 +63,7 @@ export default function RootLayout({
       {
         "@type": "WebSite",
         name: "오리(오빠의 리뷰)",
-        url: "https://reviewhub.life",
+        url: "https://ori.blue",
         description:
           "교회, 기업, 대학교, 외주, 맛집 등 다양한 분야의 솔직한 리뷰를 공유하는 커뮤니티 플랫폼",
         inLanguage: "ko-KR",
@@ -72,7 +72,7 @@ export default function RootLayout({
           target: {
             "@type": "EntryPoint",
             urlTemplate:
-              "https://reviewhub.life/search?q={search_term_string}",
+              "https://ori.blue/search?q={search_term_string}",
           },
           "query-input": "required name=search_term_string",
         },
@@ -80,7 +80,7 @@ export default function RootLayout({
       {
         "@type": "Organization",
         name: "오리(오빠의 리뷰)",
-        url: "https://reviewhub.life",
+        url: "https://ori.blue",
       },
     ],
   };
