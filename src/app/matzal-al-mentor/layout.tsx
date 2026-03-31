@@ -8,7 +8,10 @@ export const metadata: Metadata = {
     title: "맛잘알 리뷰 | 오리(오빠의 리뷰)",
     description:
       "맛집에 대한 솔직한 리뷰와 정보를 확인하세요.",
-    url: "https://reviewhub.life/matzal-al-mentor",
+    url: "https://ori.blue/matzal-al-mentor",
+  },
+  alternates: {
+    canonical: "https://ori.blue/matzal-al-mentor",
   },
 };
 

@@ -8,7 +8,10 @@ export const metadata: Metadata = {
     title: "기업 리뷰 | 오리(오빠의 리뷰)",
     description:
       "다양한 기업에 대한 솔직한 리뷰와 정보를 확인하세요.",
-    url: "https://reviewhub.life/company-mentor",
+    url: "https://ori.blue/company-mentor",
+  },
+  alternates: {
+    canonical: "https://ori.blue/company-mentor",
   },
 };
 
