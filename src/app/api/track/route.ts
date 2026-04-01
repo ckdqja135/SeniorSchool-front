@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
-    const { path } = await req.json();
+    const { path, referrer } = await req.json();
     if (!path) return NextResponse.json({ success: false }, { status: 400 });
 
     const ip =
@@ -16,9 +16,8 @@ export async function POST(req: NextRequest) {
         "Content-Type": "application/json",
         "x-forwarded-for": ip,
         "user-agent": req.headers.get("user-agent") || "",
-        referer: req.headers.get("referer") || "",
       },
-      body: JSON.stringify({ path }),
+      body: JSON.stringify({ path, referrer }),
     });
 
     return NextResponse.json({ success: true });
