@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import AddressSearchModal, { AddressResult } from "@/components/common/AddressSearchModal";
+import { useNavigationGuard } from "@/components/common/NavigationGuard";
 
 interface ChurchData {
   churchIdx: number;
@@ -31,6 +32,7 @@ interface ApiResponse {
 }
 
 const ChurchManagementPage = () => {
+  const { setDirty } = useNavigationGuard();
   const [searchKeyword, setSearchKeyword] = useState("");
   const [churches, setChurches] = useState<ChurchData[]>([]);
   const [selectedChurch, setSelectedChurch] = useState<ChurchData | null>(null);
@@ -42,12 +44,16 @@ const ChurchManagementPage = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [pendingChurch, setPendingChurch] = useState<ChurchData | null>(null);
   const [loading, setLoading] = useState(true);
   const [editingChurch, setEditingChurch] = useState<ChurchData | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [addressMode, setAddressMode] = useState<"add" | "edit">("add");
+  const [isDuplicateName, setIsDuplicateName] = useState(false);
   const hasFetchedChurches = useRef(false);
+  const duplicateCheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 새 교회 데이터 폼
   const [newChurch, setNewChurch] = useState({
@@ -64,6 +70,30 @@ const ChurchManagementPage = () => {
     churchMapIMG: "",
     churchStatus: 1
   });
+
+  // 주소 정규화 (서울특별시 → 서울, 부산광역시 → 부산 등)
+  const normalizeAddr = (addr: string) =>
+    addr.replace(/특별시|광역시|특별자치시|특별자치도/g, "").replace(/\s+/g, " ").trim();
+
+  // 교회 중복 체크 (이름 + 주소)
+  const checkDuplicate = (name: string, addr: string) => {
+    if (duplicateCheckTimer.current) clearTimeout(duplicateCheckTimer.current);
+    if (!name.trim() || !addr.trim()) { setIsDuplicateName(false); return; }
+    duplicateCheckTimer.current = setTimeout(async () => {
+      try {
+        const accessToken = localStorage.getItem("accessToken");
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/admin/church/searchChurch?churchName=${encodeURIComponent(name.trim())}&page=1&rowsPerPage=100`,
+          { headers: { "Authorization": `Bearer ${accessToken}` } }
+        );
+        const data = await res.json();
+        const normAddr = normalizeAddr(addr);
+        setIsDuplicateName((data.data || []).some((c: ChurchData) =>
+          c.churchName === name.trim() && normalizeAddr(c.churchAddr || "") === normAddr
+        ));
+      } catch { setIsDuplicateName(false); }
+    }, 400);
+  };
 
   // 교회 검색
   const searchChurches = async (keyword = "", page = 1, pageSize = rowsPerPage) => {
@@ -110,6 +140,12 @@ const ChurchManagementPage = () => {
       setLoading(false);
     }
   };
+
+  // 추가/수정 모드 변경 시 navigation guard 등록
+  useEffect(() => {
+    setDirty(isAddMode || isEditMode, isAddMode ? "add" : "edit");
+    return () => { if (!isAddMode && !isEditMode) setDirty(false); };
+  }, [isAddMode, isEditMode]);
 
   // 초기 데이터 로드
   useEffect(() => {
@@ -259,6 +295,32 @@ const ChurchManagementPage = () => {
     setShowCancelModal(false);
   };
 
+  // 리스트 항목 클릭 (추가/수정 중일 때 이탈 확인)
+  const handleChurchRowClick = (church: ChurchData) => {
+    if (isAddMode || isEditMode) {
+      setPendingChurch(church);
+      setShowLeaveModal(true);
+    } else {
+      setSelectedChurch(church);
+    }
+  };
+
+  // 이탈 확인
+  const handleLeaveConfirm = () => {
+    if (isAddMode) {
+      setIsAddMode(false);
+      setIsDuplicateName(false);
+      setNewChurch({ churchName: "", churchLocation: "", churchType: "", churchEstablished: "", churchPastor: "", churchLatX: 0, churchLatY: 0, churchURL: "", churchLotAddr: "", churchAddr: "", churchMapIMG: "", churchStatus: 1 });
+    } else if (isEditMode) {
+      setIsEditMode(false);
+      setEditingChurch(null);
+      setHasChanges(false);
+    }
+    setSelectedChurch(pendingChurch);
+    setPendingChurch(null);
+    setShowLeaveModal(false);
+  };
+
   // 편집 데이터 변경
   const handleEditChange = (field: keyof ChurchData, value: string | number) => {
     if (editingChurch && selectedChurch) {
@@ -275,14 +337,17 @@ const ChurchManagementPage = () => {
     if (addressMode === "add") {
       setNewChurch({
         ...newChurch,
+        ...(result.placeName ? { churchName: result.placeName } : {}),
         churchAddr: result.roadAddress,
         churchLotAddr: result.jibunAddress,
         churchLatX: result.latitude,
         churchLatY: result.longitude,
       });
+      checkDuplicate(result.placeName || newChurch.churchName, result.roadAddress);
     } else if (addressMode === "edit" && editingChurch) {
       const updated = {
         ...editingChurch,
+        ...(result.placeName ? { churchName: result.placeName } : {}),
         churchAddr: result.roadAddress,
         churchLotAddr: result.jibunAddress,
         churchLatX: result.latitude,
@@ -471,7 +536,7 @@ const ChurchManagementPage = () => {
                           ? 'bg-purple-50/70'
                           : 'hover:bg-gray-50/70'
                       }`}
-                      onClick={() => setSelectedChurch(church)}
+                      onClick={() => handleChurchRowClick(church)}
                     >
                       <td className="px-3 py-2.5">
                         <input
@@ -589,20 +654,32 @@ const ChurchManagementPage = () => {
                 <p className="text-xs text-gray-400">새 교회 정보를 입력하세요</p>
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto space-y-4 pr-1">
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1.5">교회명</label>
-                <input
-                  type="text"
-                  value={newChurch.churchName}
-                  onChange={(e) => setNewChurch({...newChurch, churchName: e.target.value})}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
-                  placeholder="교회명을 입력하세요"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
+            <div className="flex-1 overflow-y-auto pr-1">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">위치</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">교회명</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newChurch.churchName}
+                      onChange={(e) => { setNewChurch({...newChurch, churchName: e.target.value}); checkDuplicate(e.target.value, newChurch.churchAddr); }}
+                      className={`flex-1 px-3.5 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all ${
+                        isDuplicateName ? "border-rose-400 focus:ring-rose-500/20 focus:border-rose-400" : "border-gray-200 focus:ring-purple-500/20 focus:border-purple-400"
+                      }`}
+                      placeholder="교회명을 입력하세요"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => { setAddressMode("add"); setShowAddressModal(true); }}
+                      className="shrink-0 px-3 py-2.5 text-xs font-medium text-purple-700 bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors"
+                    >
+                      검색
+                    </button>
+                  </div>
+                  {isDuplicateName && <p className="mt-1.5 text-xs text-rose-500">동일한 이름과 주소의 교회가 이미 등록되어 있습니다.</p>}
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">위치</label>
                   <input
                     type="text"
                     value={newChurch.churchLocation}
@@ -611,18 +688,23 @@ const ChurchManagementPage = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">교회 종류</label>
-                  <input
-                    type="text"
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">교회 종류</label>
+                  <select
                     value={newChurch.churchType}
                     onChange={(e) => setNewChurch({...newChurch, churchType: e.target.value})}
                     className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
-                  />
+                  >
+                    <option value="">선택하세요</option>
+                    <option value="감리교">감리교</option>
+                    <option value="장로교">장로교</option>
+                    <option value="침례교">침례교</option>
+                    <option value="성결교">성결교</option>
+                    <option value="순복음">순복음</option>
+                    <option value="기타">기타</option>
+                  </select>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">설립년도</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">설립년도</label>
                   <input
                     type="text"
                     value={newChurch.churchEstablished}
@@ -631,7 +713,7 @@ const ChurchManagementPage = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">담임목사</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">담임목사</label>
                   <input
                     type="text"
                     value={newChurch.churchPastor}
@@ -639,73 +721,62 @@ const ChurchManagementPage = () => {
                     className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
                   />
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">위도</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">위도</label>
                   <input
                     type="number"
                     value={newChurch.churchLatX}
                     readOnly
-                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50/80 text-gray-700"
                     step="any"
+                    className="w-full px-3.5 py-2.5 border rounded-xl text-sm bg-gray-50/80 border-gray-100 text-gray-700"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">경도</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">경도</label>
                   <input
                     type="number"
                     value={newChurch.churchLatY}
                     readOnly
-                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50/80 text-gray-700"
                     step="any"
+                    className="w-full px-3.5 py-2.5 border rounded-xl text-sm bg-gray-50/80 border-gray-100 text-gray-700"
                   />
                 </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1.5">웹사이트 URL</label>
-                <input
-                  type="url"
-                  value={newChurch.churchURL}
-                  onChange={(e) => setNewChurch({...newChurch, churchURL: e.target.value})}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1.5">지번</label>
-                <input
-                  type="text"
-                  value={newChurch.churchLotAddr}
-                  onChange={(e) => setNewChurch({...newChurch, churchLotAddr: e.target.value})}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1.5">주소</label>
-                <div className="flex gap-2">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">웹사이트 URL</label>
+                  <input
+                    type="url"
+                    value={newChurch.churchURL}
+                    onChange={(e) => setNewChurch({...newChurch, churchURL: e.target.value})}
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">지번</label>
+                  <input
+                    type="text"
+                    value={newChurch.churchLotAddr}
+                    onChange={(e) => setNewChurch({...newChurch, churchLotAddr: e.target.value})}
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">주소</label>
                   <input
                     type="text"
                     value={newChurch.churchAddr}
-                    onChange={(e) => setNewChurch({...newChurch, churchAddr: e.target.value})}
-                    className="flex-1 px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
+                    onChange={(e) => { setNewChurch({...newChurch, churchAddr: e.target.value}); checkDuplicate(newChurch.churchName, e.target.value); }}
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
                   />
-                  <button
-                    type="button"
-                    onClick={() => { setAddressMode("add"); setShowAddressModal(true); }}
-                    className="shrink-0 px-3 py-2.5 text-xs font-medium text-purple-700 bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors"
-                  >
-                    주소 검색
-                  </button>
                 </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1.5">이미지 URL</label>
-                <input
-                  type="url"
-                  value={newChurch.churchMapIMG}
-                  onChange={(e) => setNewChurch({...newChurch, churchMapIMG: e.target.value})}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
-                />
+                <div className="col-span-2">
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">이미지 URL</label>
+                  <input
+                    type="url"
+                    value={newChurch.churchMapIMG}
+                    onChange={(e) => setNewChurch({...newChurch, churchMapIMG: e.target.value})}
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
+                  />
+                </div>
               </div>
             </div>
             <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
@@ -783,15 +854,22 @@ const ChurchManagementPage = () => {
               <div className="grid grid-cols-2 gap-x-4 gap-y-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">교회명</label>
-                  <input
-                    type="text"
-                    value={isEditMode ? editingChurch?.churchName || "" : selectedChurch.churchName}
-                    onChange={(e) => handleEditChange("churchName", e.target.value)}
-                    readOnly={!isEditMode}
-                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
-                      isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
-                    }`}
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={isEditMode ? editingChurch?.churchName || "" : selectedChurch.churchName}
+                      onChange={(e) => handleEditChange("churchName", e.target.value)}
+                      readOnly={!isEditMode}
+                      className={`flex-1 px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
+                        isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
+                      }`}
+                    />
+                    {isEditMode && (
+                      <button type="button" onClick={() => { setAddressMode("edit"); setShowAddressModal(true); }} className="shrink-0 px-3 py-2.5 text-xs font-medium text-purple-700 bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors">
+                        검색
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">위치</label>
@@ -893,26 +971,15 @@ const ChurchManagementPage = () => {
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">주소</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={isEditMode ? editingChurch?.churchAddr || "" : selectedChurch.churchAddr}
-                      onChange={(e) => handleEditChange("churchAddr", e.target.value)}
-                      readOnly={!isEditMode}
-                      className={`flex-1 px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
-                        isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
-                      }`}
-                    />
-                    {isEditMode && (
-                      <button
-                        type="button"
-                        onClick={() => { setAddressMode("edit"); setShowAddressModal(true); }}
-                        className="shrink-0 px-3 py-2.5 text-xs font-medium text-purple-700 bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors"
-                      >
-                        주소 검색
-                      </button>
-                    )}
-                  </div>
+                  <input
+                    type="text"
+                    value={isEditMode ? editingChurch?.churchAddr || "" : selectedChurch.churchAddr}
+                    onChange={(e) => handleEditChange("churchAddr", e.target.value)}
+                    readOnly={!isEditMode}
+                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
+                      isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
+                    }`}
+                  />
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">이미지 URL</label>
@@ -1056,6 +1123,39 @@ const ChurchManagementPage = () => {
                 className="flex-1 px-4 py-2.5 bg-rose-600 text-white text-sm font-medium rounded-xl hover:bg-rose-700 transition-colors"
               >
                 취소하기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 이탈 확인 모달 */}
+      {showLeaveModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full mx-4">
+            <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-center text-gray-900 mb-2">
+              {isAddMode ? "추가 취소" : "수정 취소"}
+            </h3>
+            <p className="text-sm text-gray-500 text-center mb-5">
+              {isAddMode ? "현재 입력하신 부분이 취소됩니다." : "현재 수정이 취소됩니다."}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={handleLeaveConfirm}
+                className="flex-1 px-4 py-2.5 bg-rose-600 text-white text-sm font-medium rounded-xl hover:bg-rose-700 transition-colors"
+              >
+                확인
+              </button>
+              <button
+                onClick={() => { setShowLeaveModal(false); setPendingChurch(null); }}
+                className="flex-1 px-4 py-2.5 text-gray-600 text-sm font-medium bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+              >
+                취소
               </button>
             </div>
           </div>

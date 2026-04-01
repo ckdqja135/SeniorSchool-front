@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import AddressSearchModal, { AddressResult } from "@/components/common/AddressSearchModal";
+import { useNavigationGuard } from "@/components/common/NavigationGuard";
 
 interface CompanyData {
   compIdx: number;
@@ -40,6 +41,7 @@ interface ApiResponse {
 }
 
 const CompanyManagementPage = () => {
+  const { setDirty } = useNavigationGuard();
   const [searchKeyword, setSearchKeyword] = useState("");
   const [companies, setCompanies] = useState<CompanyData[]>([]);
   const [selectedCompany, setSelectedCompany] = useState<CompanyData | null>(null);
@@ -53,11 +55,15 @@ const CompanyManagementPage = () => {
   const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
   const [showBatchDeleteConfirmModal, setShowBatchDeleteConfirmModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [pendingCompany, setPendingCompany] = useState<CompanyData | null>(null);
   const [loading, setLoading] = useState(true);
   const [editingCompany, setEditingCompany] = useState<CompanyData | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [addressMode, setAddressMode] = useState<"add" | "edit">("add");
+  const [isDuplicateName, setIsDuplicateName] = useState(false);
+  const duplicateCheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasFetchedCompanies = useRef(false);
 
   // 새 회사 데이터 폼
@@ -77,6 +83,30 @@ const CompanyManagementPage = () => {
     compMapIMG: "",
     compStatus: 1
   });
+
+  // 주소 정규화 (서울특별시 → 서울, 부산광역시 → 부산 등)
+  const normalizeAddr = (addr: string) =>
+    addr.replace(/특별시|광역시|특별자치시|특별자치도/g, "").replace(/\s+/g, " ").trim();
+
+  // 회사 중복 체크 (이름 + 주소)
+  const checkDuplicate = (name: string, addr: string) => {
+    if (duplicateCheckTimer.current) clearTimeout(duplicateCheckTimer.current);
+    if (!name.trim() || !addr.trim()) { setIsDuplicateName(false); return; }
+    duplicateCheckTimer.current = setTimeout(async () => {
+      try {
+        const accessToken = localStorage.getItem("accessToken");
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/admin/comp/searchComp?compName=${encodeURIComponent(name.trim())}&page=1&rowsPerPage=100`,
+          { headers: { "Authorization": `Bearer ${accessToken}` } }
+        );
+        const data = await res.json();
+        const normAddr = normalizeAddr(addr);
+        setIsDuplicateName((data.data || []).some((c: CompanyData) =>
+          c.compName === name.trim() && normalizeAddr(c.compAddr || "") === normAddr
+        ));
+      } catch { setIsDuplicateName(false); }
+    }, 400);
+  };
 
   // 회사 검색
   const searchCompanies = async (keyword = "", page = 1, pageSize = rowsPerPage) => {
@@ -159,6 +189,11 @@ const CompanyManagementPage = () => {
     hasFetchedCompanies.current = true;
     searchCompanies("", 1, rowsPerPage);
   }, []);
+
+  useEffect(() => {
+    setDirty(isAddMode || isEditMode, isAddMode ? "add" : "edit");
+    return () => { if (!isAddMode && !isEditMode) setDirty(false); };
+  }, [isAddMode, isEditMode]);
 
   // 검색 실행
   const handleSearch = () => {
@@ -318,6 +353,44 @@ const CompanyManagementPage = () => {
     setShowCancelModal(false);
   };
 
+  const handleCompanyRowClick = (company: CompanyData) => {
+    if (isAddMode || isEditMode) {
+      setPendingCompany(company);
+      setShowLeaveModal(true);
+    } else {
+      setSelectedCompany(company);
+    }
+  };
+
+  const handleLeaveConfirm = () => {
+    if (isAddMode) {
+      setIsAddMode(false);
+      setNewCompany({
+        compName: "",
+        compLocation: "",
+        compLocate: "",
+        compType: "",
+        compIndustry: "",
+        compEstablish: "",
+        compCEO: "",
+        compLateX: 0,
+        compLateY: 0,
+        compURL: "",
+        compLotAddr: "",
+        compAddr: "",
+        compMapIMG: "",
+        compStatus: 1
+      });
+    } else if (isEditMode) {
+      setIsEditMode(false);
+      setEditingCompany(null);
+      setHasChanges(false);
+    }
+    setSelectedCompany(pendingCompany);
+    setPendingCompany(null);
+    setShowLeaveModal(false);
+  };
+
   // 편집 데이터 변경
   const handleEditChange = (field: keyof CompanyData, value: string | number) => {
     if (editingCompany && selectedCompany) {
@@ -334,14 +407,17 @@ const CompanyManagementPage = () => {
     if (addressMode === "add") {
       setNewCompany({
         ...newCompany,
+        ...(result.placeName ? { compName: result.placeName } : {}),
         compAddr: result.roadAddress,
         compLotAddr: result.jibunAddress,
         compLateX: result.latitude,
         compLateY: result.longitude,
       });
+      checkDuplicate(result.placeName || newCompany.compName, result.roadAddress);
     } else if (addressMode === "edit" && editingCompany) {
       const updated = {
         ...editingCompany,
+        ...(result.placeName ? { compName: result.placeName } : {}),
         compAddr: result.roadAddress,
         compLotAddr: result.jibunAddress,
         compLateX: result.latitude,
@@ -591,7 +667,7 @@ const CompanyManagementPage = () => {
                   <tr><td colSpan={6} className="px-3 py-10 text-center text-sm text-gray-400">검색 결과가 없습니다.</td></tr>
                 ) : (
                   companies.map((company) => (
-                    <tr key={company.compIdx} className={`border-t border-gray-50 cursor-pointer transition-colors ${selectedCompany?.compIdx === company.compIdx ? 'bg-amber-50/70' : 'hover:bg-gray-50/70'}`} onClick={() => setSelectedCompany(company)}>
+                    <tr key={company.compIdx} className={`border-t border-gray-50 cursor-pointer transition-colors ${selectedCompany?.compIdx === company.compIdx ? 'bg-amber-50/70' : 'hover:bg-gray-50/70'}`} onClick={() => handleCompanyRowClick(company)}>
                       <td className="px-3 py-2.5"><input type="checkbox" checked={selectedCompanies.includes(company.compIdx)} onChange={() => handleSelectCompany(company.compIdx)} onClick={(e) => e.stopPropagation()} className="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500" /></td>
                       <td className="px-3 py-2.5 text-xs text-gray-400 font-mono">{company.compIdx}</td>
                       <td className="px-3 py-2.5 text-sm font-medium text-gray-900">{company.compName}</td>
@@ -651,7 +727,11 @@ const CompanyManagementPage = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1.5">회사명</label>
-                  <input type="text" value={newCompany.compName} onChange={(e) => setNewCompany({...newCompany, compName: e.target.value})} className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400 transition-all" placeholder="회사명" />
+                  <div className="flex gap-2">
+                    <input type="text" value={newCompany.compName} onChange={(e) => { setNewCompany({...newCompany, compName: e.target.value}); checkDuplicate(e.target.value, newCompany.compAddr); }} className={`flex-1 px-3.5 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all ${isDuplicateName ? "border-rose-400 focus:ring-rose-500/20 focus:border-rose-400" : "border-gray-200 focus:ring-amber-500/20 focus:border-amber-400"}`} placeholder="회사명" />
+                    <button type="button" onClick={() => { setAddressMode("add"); setShowAddressModal(true); }} className="shrink-0 px-3 py-2.5 text-xs font-medium text-amber-700 bg-amber-50 rounded-xl hover:bg-amber-100 transition-colors">검색</button>
+                  </div>
+                  {isDuplicateName && <p className="mt-1.5 text-xs text-rose-500">동일한 이름과 주소의 회사가 이미 등록되어 있습니다.</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1.5">대표자</label>
@@ -684,16 +764,7 @@ const CompanyManagementPage = () => {
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 mb-1.5">도로명 주소</label>
-                <div className="flex gap-2">
-                  <input type="text" value={newCompany.compAddr} onChange={(e) => setNewCompany({...newCompany, compAddr: e.target.value})} className="flex-1 px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400 transition-all" placeholder="도로명 주소" />
-                  <button
-                    type="button"
-                    onClick={() => { setAddressMode("add"); setShowAddressModal(true); }}
-                    className="shrink-0 px-3 py-2.5 text-xs font-medium text-amber-700 bg-amber-50 rounded-xl hover:bg-amber-100 transition-colors"
-                  >
-                    주소 검색
-                  </button>
-                </div>
+                <input type="text" value={newCompany.compAddr} onChange={(e) => { setNewCompany({...newCompany, compAddr: e.target.value}); checkDuplicate(newCompany.compName, e.target.value); }} className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400 transition-all" placeholder="도로명 주소" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 mb-1.5">지번 주소</label>
@@ -761,7 +832,10 @@ const CompanyManagementPage = () => {
               <div className="grid grid-cols-2 gap-x-4 gap-y-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">회사명</label>
-                  <input type="text" value={isEditMode ? editingCompany?.compName || "" : selectedCompany.compName} onChange={(e) => handleEditChange("compName", e.target.value)} readOnly={!isEditMode} className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${isEditMode ? "bg-white border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400" : "bg-gray-50/80 border-gray-100 text-gray-700"}`} />
+                  <div className="flex gap-2">
+                    <input type="text" value={isEditMode ? editingCompany?.compName || "" : selectedCompany.compName} onChange={(e) => handleEditChange("compName", e.target.value)} readOnly={!isEditMode} className={`flex-1 px-3.5 py-2.5 border rounded-xl text-sm transition-all ${isEditMode ? "bg-white border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400" : "bg-gray-50/80 border-gray-100 text-gray-700"}`} />
+                    {isEditMode && <button type="button" onClick={() => { setAddressMode("edit"); setShowAddressModal(true); }} className="shrink-0 px-3 py-2.5 text-xs font-medium text-amber-700 bg-amber-50 rounded-xl hover:bg-amber-100 transition-colors">검색</button>}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">위치</label>
@@ -805,18 +879,7 @@ const CompanyManagementPage = () => {
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">주소</label>
-                  <div className="flex gap-2">
-                    <input type="text" value={isEditMode ? editingCompany?.compAddr || "" : selectedCompany.compAddr} onChange={(e) => handleEditChange("compAddr", e.target.value)} readOnly={!isEditMode} className={`flex-1 px-3.5 py-2.5 border rounded-xl text-sm transition-all ${isEditMode ? "bg-white border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400" : "bg-gray-50/80 border-gray-100 text-gray-700"}`} />
-                    {isEditMode && (
-                      <button
-                        type="button"
-                        onClick={() => { setAddressMode("edit"); setShowAddressModal(true); }}
-                        className="shrink-0 px-3 py-2.5 text-xs font-medium text-amber-700 bg-amber-50 rounded-xl hover:bg-amber-100 transition-colors"
-                      >
-                        주소 검색
-                      </button>
-                    )}
-                  </div>
+                  <input type="text" value={isEditMode ? editingCompany?.compAddr || "" : selectedCompany.compAddr} onChange={(e) => handleEditChange("compAddr", e.target.value)} readOnly={!isEditMode} className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${isEditMode ? "bg-white border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400" : "bg-gray-50/80 border-gray-100 text-gray-700"}`} />
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">이미지 URL</label>
@@ -918,6 +981,39 @@ const CompanyManagementPage = () => {
             <div className="flex gap-2">
               <button onClick={() => setShowCancelModal(false)} className="flex-1 px-4 py-2.5 text-gray-600 text-sm font-medium bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">돌아가기</button>
               <button onClick={handleCancelConfirm} className="flex-1 px-4 py-2.5 bg-rose-600 text-white text-sm font-medium rounded-xl hover:bg-rose-700 transition-colors">취소하기</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 이탈 확인 모달 */}
+      {showLeaveModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full mx-4">
+            <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-center text-gray-900 mb-2">
+              {isAddMode ? "추가 취소" : "수정 취소"}
+            </h3>
+            <p className="text-sm text-gray-500 text-center mb-5">
+              {isAddMode ? "현재 입력하신 부분이 취소됩니다." : "현재 수정이 취소됩니다."}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={handleLeaveConfirm}
+                className="flex-1 px-4 py-2.5 bg-rose-600 text-white text-sm font-medium rounded-xl hover:bg-rose-700 transition-colors"
+              >
+                확인
+              </button>
+              <button
+                onClick={() => { setShowLeaveModal(false); setPendingCompany(null); }}
+                className="flex-1 px-4 py-2.5 text-gray-600 text-sm font-medium bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+              >
+                취소
+              </button>
             </div>
           </div>
         </div>

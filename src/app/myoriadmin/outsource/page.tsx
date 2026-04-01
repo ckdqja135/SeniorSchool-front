@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import AddressSearchModal, { AddressResult } from "@/components/common/AddressSearchModal";
+import { useNavigationGuard } from "@/components/common/NavigationGuard";
 
 interface OutsourceData {
   outsourceIdx: number;
@@ -39,6 +41,7 @@ interface ApiResponse {
 }
 
 const OutsourceManagementPage = () => {
+  const { setDirty } = useNavigationGuard();
   const [searchKeyword, setSearchKeyword] = useState("");
   const [outsources, setOutsources] = useState<OutsourceData[]>([]);
   const [selectedOutsource, setSelectedOutsource] = useState<OutsourceData | null>(null);
@@ -50,6 +53,10 @@ const OutsourceManagementPage = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [pendingOutsource, setPendingOutsource] = useState<OutsourceData | null>(null);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [addressMode, setAddressMode] = useState<"add" | "edit">("add");
   const [loading, setLoading] = useState(true);
   const [editingOutsource, setEditingOutsource] = useState<OutsourceData | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
@@ -128,6 +135,11 @@ const OutsourceManagementPage = () => {
     hasFetchedOutsources.current = true;
     searchOutsources("", 1, rowsPerPage);
   }, []);
+
+  useEffect(() => {
+    setDirty(isAddMode || isEditMode, isAddMode ? "add" : "edit");
+    return () => { if (!isAddMode && !isEditMode) setDirty(false); };
+  }, [isAddMode, isEditMode]);
 
   // 검색 실행
   const handleSearch = () => {
@@ -266,6 +278,66 @@ const OutsourceManagementPage = () => {
     setEditingOutsource(null);
     setHasChanges(false);
     setShowCancelModal(false);
+  };
+
+  const handleOutsourceRowClick = (outsource: OutsourceData) => {
+    if (isAddMode || isEditMode) {
+      setPendingOutsource(outsource);
+      setShowLeaveModal(true);
+    } else {
+      setSelectedOutsource(outsource);
+    }
+  };
+
+  const handleLeaveConfirm = () => {
+    if (isAddMode) {
+      setIsAddMode(false);
+      setNewOutsource({
+        outsourceName: "",
+        outsourceLocation: "",
+        outsourceType: "",
+        outsourceEstablished: "",
+        outsourceCEO: "",
+        outsourceLatX: 0,
+        outsourceLatY: 0,
+        outsourceURL: "",
+        outsourceLotAddr: "",
+        outsourceAddr: "",
+        outsourceMapIMG: "",
+        outsourceStatus: 1
+      });
+    } else if (isEditMode) {
+      setIsEditMode(false);
+      setEditingOutsource(null);
+      setHasChanges(false);
+    }
+    setSelectedOutsource(pendingOutsource);
+    setPendingOutsource(null);
+    setShowLeaveModal(false);
+  };
+
+  // 주소 검색 결과 처리
+  const handleAddressSelect = (result: AddressResult) => {
+    if (addressMode === "add") {
+      setNewOutsource({
+        ...newOutsource,
+        ...(result.placeName ? { outsourceName: result.placeName } : {}),
+        outsourceAddr: result.roadAddress,
+        outsourceLotAddr: result.jibunAddress,
+        outsourceLatX: result.latitude,
+        outsourceLatY: result.longitude,
+      });
+    } else if (addressMode === "edit" && editingOutsource) {
+      setEditingOutsource({
+        ...editingOutsource,
+        ...(result.placeName ? { outsourceName: result.placeName } : {}),
+        outsourceAddr: result.roadAddress,
+        outsourceLotAddr: result.jibunAddress,
+        outsourceLatX: result.latitude,
+        outsourceLatY: result.longitude,
+      });
+      setHasChanges(true);
+    }
   };
 
   // 편집 데이터 변경
@@ -453,7 +525,7 @@ const OutsourceManagementPage = () => {
                           ? 'bg-purple-50/70'
                           : 'hover:bg-gray-50/70'
                       }`}
-                      onClick={() => setSelectedOutsource(outsource)}
+                      onClick={() => handleOutsourceRowClick(outsource)}
                     >
                       <td className="px-3 py-2.5">
                         <input
@@ -574,20 +646,29 @@ const OutsourceManagementPage = () => {
                 <p className="text-xs text-gray-400">새 외주업체 정보를 입력하세요</p>
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto space-y-4 pr-1">
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1.5">외주업체명</label>
-                <input
-                  type="text"
-                  value={newOutsource.outsourceName}
-                  onChange={(e) => setNewOutsource({...newOutsource, outsourceName: e.target.value})}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
-                  placeholder="외주업체명을 입력하세요"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
+            <div className="flex-1 overflow-y-auto pr-1">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">위치</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">외주업체명</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newOutsource.outsourceName}
+                      onChange={(e) => setNewOutsource({...newOutsource, outsourceName: e.target.value})}
+                      className="flex-1 px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
+                      placeholder="외주업체명을 입력하세요"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => { setAddressMode("add"); setShowAddressModal(true); }}
+                      className="shrink-0 px-3 py-2.5 text-xs font-medium text-purple-700 bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors"
+                    >
+                      검색
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">위치</label>
                   <input
                     type="text"
                     value={newOutsource.outsourceLocation}
@@ -596,7 +677,7 @@ const OutsourceManagementPage = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">업체 종류</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">업체 종류</label>
                   <input
                     type="text"
                     value={newOutsource.outsourceType}
@@ -604,10 +685,8 @@ const OutsourceManagementPage = () => {
                     className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
                   />
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">설립년도</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">설립년도</label>
                   <input
                     type="text"
                     value={newOutsource.outsourceEstablished}
@@ -616,7 +695,7 @@ const OutsourceManagementPage = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">대표자</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">대표자</label>
                   <input
                     type="text"
                     value={newOutsource.outsourceCEO}
@@ -624,10 +703,8 @@ const OutsourceManagementPage = () => {
                     className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
                   />
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">위도</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">위도</label>
                   <input
                     type="number"
                     value={newOutsource.outsourceLatX}
@@ -637,7 +714,7 @@ const OutsourceManagementPage = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">경도</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">경도</label>
                   <input
                     type="number"
                     value={newOutsource.outsourceLatY}
@@ -646,42 +723,42 @@ const OutsourceManagementPage = () => {
                     step="any"
                   />
                 </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1.5">웹사이트 URL</label>
-                <input
-                  type="url"
-                  value={newOutsource.outsourceURL}
-                  onChange={(e) => setNewOutsource({...newOutsource, outsourceURL: e.target.value})}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1.5">지번</label>
-                <input
-                  type="text"
-                  value={newOutsource.outsourceLotAddr}
-                  onChange={(e) => setNewOutsource({...newOutsource, outsourceLotAddr: e.target.value})}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1.5">주소</label>
-                <input
-                  type="text"
-                  value={newOutsource.outsourceAddr}
-                  onChange={(e) => setNewOutsource({...newOutsource, outsourceAddr: e.target.value})}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1.5">이미지 URL</label>
-                <input
-                  type="url"
-                  value={newOutsource.outsourceMapIMG}
-                  onChange={(e) => setNewOutsource({...newOutsource, outsourceMapIMG: e.target.value})}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
-                />
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">웹사이트 URL</label>
+                  <input
+                    type="url"
+                    value={newOutsource.outsourceURL}
+                    onChange={(e) => setNewOutsource({...newOutsource, outsourceURL: e.target.value})}
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">지번</label>
+                  <input
+                    type="text"
+                    value={newOutsource.outsourceLotAddr}
+                    onChange={(e) => setNewOutsource({...newOutsource, outsourceLotAddr: e.target.value})}
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">주소</label>
+                  <input
+                    type="text"
+                    value={newOutsource.outsourceAddr}
+                    onChange={(e) => setNewOutsource({...newOutsource, outsourceAddr: e.target.value})}
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">이미지 URL</label>
+                  <input
+                    type="url"
+                    value={newOutsource.outsourceMapIMG}
+                    onChange={(e) => setNewOutsource({...newOutsource, outsourceMapIMG: e.target.value})}
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
+                  />
+                </div>
               </div>
             </div>
             <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
@@ -759,15 +836,22 @@ const OutsourceManagementPage = () => {
               <div className="grid grid-cols-2 gap-x-4 gap-y-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">외주업체명</label>
-                  <input
-                    type="text"
-                    value={isEditMode ? editingOutsource?.outsourceName || "" : selectedOutsource.outsourceName}
-                    onChange={(e) => handleEditChange("outsourceName", e.target.value)}
-                    readOnly={!isEditMode}
-                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
-                      isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
-                    }`}
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={isEditMode ? editingOutsource?.outsourceName || "" : selectedOutsource.outsourceName}
+                      onChange={(e) => handleEditChange("outsourceName", e.target.value)}
+                      readOnly={!isEditMode}
+                      className={`flex-1 px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
+                        isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
+                      }`}
+                    />
+                    {isEditMode && (
+                      <button type="button" onClick={() => { setAddressMode("edit"); setShowAddressModal(true); }} className="shrink-0 px-3 py-2.5 text-xs font-medium text-purple-700 bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors">
+                        검색
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">위치</label>
@@ -1026,6 +1110,46 @@ const OutsourceManagementPage = () => {
           </div>
         </div>
       )}
+
+      {/* 이탈 확인 모달 */}
+      {showLeaveModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full mx-4">
+            <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-center text-gray-900 mb-2">
+              {isAddMode ? "추가 취소" : "수정 취소"}
+            </h3>
+            <p className="text-sm text-gray-500 text-center mb-5">
+              {isAddMode ? "현재 입력하신 부분이 취소됩니다." : "현재 수정이 취소됩니다."}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={handleLeaveConfirm}
+                className="flex-1 px-4 py-2.5 bg-rose-600 text-white text-sm font-medium rounded-xl hover:bg-rose-700 transition-colors"
+              >
+                확인
+              </button>
+              <button
+                onClick={() => { setShowLeaveModal(false); setPendingOutsource(null); }}
+                className="flex-1 px-4 py-2.5 text-gray-600 text-sm font-medium bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 주소 검색 모달 */}
+      <AddressSearchModal
+        isOpen={showAddressModal}
+        onClose={() => setShowAddressModal(false)}
+        onSelect={handleAddressSelect}
+      />
     </div>
   );
 };

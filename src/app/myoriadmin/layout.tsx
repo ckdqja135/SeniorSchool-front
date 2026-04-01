@@ -3,6 +3,7 @@
 import "@/styles/globals.css";
 import DashboardLayout from "@/components/feature/admin/DashboardLayout";
 import AuthGuard from "@/components/feature/admin/AuthGuard";
+import { NavigationGuardProvider } from "@/components/common/NavigationGuard";
 import { usePathname } from "next/navigation";
 import React from "react";
 import Script from "next/script";
@@ -25,9 +26,11 @@ export default function AdminLayout({
         src={`https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=${process.env.NEXT_PUBLIC_NAVER_CLIENT_ID}&submodules=geocoder`}
         strategy="afterInteractive"
       />
-      <DashboardLayout>
-        {children}
-      </DashboardLayout>
+      <NavigationGuardProvider>
+        <DashboardLayout>
+          {children}
+        </DashboardLayout>
+      </NavigationGuardProvider>
     </AuthGuard>
   );
 }

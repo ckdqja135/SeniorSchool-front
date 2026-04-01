@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import AddressSearchModal, { AddressResult } from "@/components/common/AddressSearchModal";
+import { useNavigationGuard } from "@/components/common/NavigationGuard";
 
 interface RestaurantData {
   restaurantIdx: number;
@@ -52,6 +53,7 @@ const getImageUrl = (imagePath: string | undefined | null): string | null => {
 };
 
 const RestaurantManagementPage: React.FC = () => {
+  const { setDirty } = useNavigationGuard();
   const [searchKeyword, setSearchKeyword] = useState("");
   const [restaurants, setRestaurants] = useState<RestaurantData[]>([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState<RestaurantData | null>(null);
@@ -71,7 +73,9 @@ const RestaurantManagementPage: React.FC = () => {
   const [hasChanges, setHasChanges] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [addressMode, setAddressMode] = useState<"add" | "edit">("add");
+  const [isDuplicateName, setIsDuplicateName] = useState(false);
   const hasFetched = useRef(false);
+  const duplicateCheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [newRestaurant, setNewRestaurant] = useState({
     restaurantName: "",
@@ -140,6 +144,11 @@ const RestaurantManagementPage: React.FC = () => {
     hasFetched.current = true;
     searchRestaurants("", 1, rowsPerPage);
   }, []);
+
+  useEffect(() => {
+    setDirty(isAddMode || isEditMode, isAddMode ? "add" : "edit");
+    return () => { if (!isAddMode && !isEditMode) setDirty(false); };
+  }, [isAddMode, isEditMode]);
 
   const handleSearch = () => {
     setCurrentPage(1);
@@ -317,7 +326,14 @@ const RestaurantManagementPage: React.FC = () => {
   };
 
   const handleSwitchConfirm = () => {
-    setIsEditMode(false); setEditingRestaurant(null); setHasChanges(false); setEditSelectedImage(null); setEditImagePreview(null);
+    if (isAddMode) {
+      setIsAddMode(false);
+      setNewRestaurant({ restaurantName: "", restaurantLocation: "", restaurantType: "", restaurantEstablished: "", restaurantOwner: "", restaurantLatX: 0, restaurantLatY: 0, restaurantURL: "", restaurantLotAddr: "", restaurantAddr: "", restaurantMapIMG: "", restaurantImage: "" });
+      setSelectedImage(null);
+      setImagePreview(null);
+    } else if (isEditMode) {
+      setIsEditMode(false); setEditingRestaurant(null); setHasChanges(false); setEditSelectedImage(null); setEditImagePreview(null);
+    }
     if (pendingRestaurant) { setSelectedRestaurant(pendingRestaurant); }
     setPendingRestaurant(null); setShowSwitchConfirmModal(false);
   };
@@ -333,19 +349,47 @@ const RestaurantManagementPage: React.FC = () => {
     }
   };
 
+  // 주소 정규화 (서울특별시 → 서울, 부산광역시 → 부산 등)
+  const normalizeAddr = (addr: string) =>
+    addr.replace(/특별시|광역시|특별자치시|특별자치도/g, "").replace(/\s+/g, " ").trim();
+
+  // 식당 중복 체크 (이름 + 주소)
+  const checkDuplicate = (name: string, addr: string) => {
+    if (duplicateCheckTimer.current) clearTimeout(duplicateCheckTimer.current);
+    if (!name.trim() || !addr.trim()) { setIsDuplicateName(false); return; }
+    duplicateCheckTimer.current = setTimeout(async () => {
+      try {
+        const accessToken = localStorage.getItem("accessToken");
+        const res = await fetch(
+          `${API_BASE_URL}/admin/restaurant/searchRestaurant?restaurantName=${encodeURIComponent(name.trim())}&page=1&rowsPerPage=100`,
+          { headers: { "Authorization": `Bearer ${accessToken}` } }
+        );
+        const data = await res.json();
+        const list = data.data || data.restaurants || [];
+        const normAddr = normalizeAddr(addr);
+        setIsDuplicateName(list.some((r: RestaurantData) =>
+          r.restaurantName === name.trim() && normalizeAddr(r.restaurantAddr || "") === normAddr
+        ));
+      } catch { setIsDuplicateName(false); }
+    }, 400);
+  };
+
   // 주소 검색 결과 처리
   const handleAddressSelect = (result: AddressResult) => {
     if (addressMode === "add") {
       setNewRestaurant({
         ...newRestaurant,
+        ...(result.placeName ? { restaurantName: result.placeName } : {}),
         restaurantAddr: result.roadAddress,
         restaurantLotAddr: result.jibunAddress,
         restaurantLatX: result.latitude,
         restaurantLatY: result.longitude,
       });
+      checkDuplicate(result.placeName || newRestaurant.restaurantName, result.roadAddress);
     } else if (addressMode === "edit" && editingRestaurant) {
       const updated = {
         ...editingRestaurant,
+        ...(result.placeName ? { restaurantName: result.placeName } : {}),
         restaurantAddr: result.roadAddress,
         restaurantLotAddr: result.jibunAddress,
         restaurantLatX: result.latitude,
@@ -497,7 +541,7 @@ const RestaurantManagementPage: React.FC = () => {
                           : 'hover:bg-gray-50/70'
                       }`}
                       onClick={() => {
-                        if (isEditMode && selectedRestaurant?.restaurantIdx !== r.restaurantIdx) {
+                        if ((isAddMode || isEditMode) && selectedRestaurant?.restaurantIdx !== r.restaurantIdx) {
                           setPendingRestaurant(r);
                           setShowSwitchConfirmModal(true);
                         } else {
@@ -628,20 +672,26 @@ const RestaurantManagementPage: React.FC = () => {
                 <p className="text-xs text-gray-400">새 식당 정보를 입력하세요</p>
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto space-y-4 pr-1">
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1.5">식당명</label>
-                <input
-                  type="text"
-                  value={newRestaurant.restaurantName}
-                  onChange={(e) => setNewRestaurant({ ...newRestaurant, restaurantName: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
-                  placeholder="식당명을 입력하세요"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
+            <div className="flex-1 overflow-y-auto pr-1">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">위치</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">식당명</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newRestaurant.restaurantName}
+                      onChange={(e) => { setNewRestaurant({ ...newRestaurant, restaurantName: e.target.value }); checkDuplicate(e.target.value, newRestaurant.restaurantAddr); }}
+                      className={`flex-1 px-3.5 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all ${
+                        isDuplicateName ? "border-rose-400 focus:ring-rose-500/20 focus:border-rose-400" : "border-gray-200 focus:ring-purple-500/20 focus:border-purple-400"
+                      }`}
+                      placeholder="식당명을 입력하세요"
+                    />
+                    <button type="button" onClick={() => { setAddressMode("add"); setShowAddressModal(true); }} className="shrink-0 px-3 py-2.5 text-xs font-medium text-purple-700 bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors">검색</button>
+                  </div>
+                  {isDuplicateName && <p className="mt-1.5 text-xs text-rose-500">동일한 이름과 주소의 식당이 이미 등록되어 있습니다.</p>}
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">위치</label>
                   <input
                     type="text"
                     value={newRestaurant.restaurantLocation}
@@ -650,7 +700,7 @@ const RestaurantManagementPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">분류</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">분류</label>
                   <input
                     type="text"
                     value={newRestaurant.restaurantType}
@@ -658,10 +708,8 @@ const RestaurantManagementPage: React.FC = () => {
                     className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
                   />
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">설립년도</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">설립년도</label>
                   <input
                     type="text"
                     value={newRestaurant.restaurantEstablished}
@@ -670,7 +718,7 @@ const RestaurantManagementPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">대표자</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">대표자</label>
                   <input
                     type="text"
                     value={newRestaurant.restaurantOwner}
@@ -678,110 +726,99 @@ const RestaurantManagementPage: React.FC = () => {
                     className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
                   />
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">위도</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">위도</label>
                   <input
                     type="number"
                     value={newRestaurant.restaurantLatX}
                     readOnly
-                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50/80 text-gray-700"
                     step="any"
+                    className="w-full px-3.5 py-2.5 border rounded-xl text-sm bg-gray-50/80 border-gray-100 text-gray-700"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">경도</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">경도</label>
                   <input
                     type="number"
                     value={newRestaurant.restaurantLatY}
                     readOnly
-                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50/80 text-gray-700"
                     step="any"
+                    className="w-full px-3.5 py-2.5 border rounded-xl text-sm bg-gray-50/80 border-gray-100 text-gray-700"
                   />
                 </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1.5">웹사이트 URL</label>
-                <input
-                  type="url"
-                  value={newRestaurant.restaurantURL}
-                  onChange={(e) => setNewRestaurant({ ...newRestaurant, restaurantURL: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1.5">주소</label>
-                <div className="flex gap-2">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">웹사이트 URL</label>
+                  <input
+                    type="url"
+                    value={newRestaurant.restaurantURL}
+                    onChange={(e) => setNewRestaurant({ ...newRestaurant, restaurantURL: e.target.value })}
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">지번</label>
+                  <input
+                    type="text"
+                    value={newRestaurant.restaurantLotAddr}
+                    onChange={(e) => setNewRestaurant({ ...newRestaurant, restaurantLotAddr: e.target.value })}
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">주소</label>
                   <input
                     type="text"
                     value={newRestaurant.restaurantAddr}
-                    onChange={(e) => setNewRestaurant({ ...newRestaurant, restaurantAddr: e.target.value })}
-                    className="flex-1 px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => { setAddressMode("add"); setShowAddressModal(true); }}
-                    className="shrink-0 px-3 py-2.5 text-xs font-medium text-purple-700 bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors"
-                  >
-                    주소 검색
-                  </button>
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1.5">지번</label>
-                <input
-                  type="text"
-                  value={newRestaurant.restaurantLotAddr}
-                  onChange={(e) => setNewRestaurant({ ...newRestaurant, restaurantLotAddr: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1.5">지도 이미지 URL</label>
-                <input
-                  type="url"
-                  value={newRestaurant.restaurantMapIMG}
-                  onChange={(e) => setNewRestaurant({ ...newRestaurant, restaurantMapIMG: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1.5">식당 이미지</label>
-                <div className="space-y-2">
-                  {imagePreview ? (
-                    <div className="relative">
-                      <img src={imagePreview} alt="미리보기" className="w-full h-48 object-cover rounded-xl border border-gray-200" />
-                      <button
-                        type="button"
-                        onClick={handleRemoveImage}
-                        className="absolute top-2 right-2 w-7 h-7 rounded-lg bg-white/90 shadow-sm border border-gray-200 hover:bg-rose-50 hover:border-rose-300 flex items-center justify-center transition-all"
-                      >
-                        <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="border-2 border-dashed border-gray-200 rounded-xl p-4 hover:border-purple-300 transition-colors">
-                      <input type="file" accept="image/*" onChange={handleImageSelect} className="hidden" id="restaurant-image-upload" />
-                      <label htmlFor="restaurant-image-upload" className="flex flex-col items-center justify-center cursor-pointer">
-                        <svg className="w-10 h-10 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <span className="text-xs text-gray-500">이미지를 선택하세요</span>
-                        <span className="text-xs text-gray-400 mt-0.5">최대 5MB</span>
-                      </label>
-                    </div>
-                  )}
-                  <div className="text-xs text-gray-400">또는 이미지 URL을 직접 입력:</div>
-                  <input
-                    type="text"
-                    placeholder="/uploads/restaurants/image.jpg"
-                    value={newRestaurant.restaurantImage}
-                    onChange={(e) => setNewRestaurant({ ...newRestaurant, restaurantImage: e.target.value })}
+                    onChange={(e) => { setNewRestaurant({ ...newRestaurant, restaurantAddr: e.target.value }); checkDuplicate(newRestaurant.restaurantName, e.target.value); }}
                     className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
                   />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">지도 이미지 URL</label>
+                  <input
+                    type="url"
+                    value={newRestaurant.restaurantMapIMG}
+                    onChange={(e) => setNewRestaurant({ ...newRestaurant, restaurantMapIMG: e.target.value })}
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">식당 이미지</label>
+                  <div className="space-y-2">
+                    {imagePreview ? (
+                      <div className="relative">
+                        <img src={imagePreview} alt="미리보기" className="w-full h-48 object-cover rounded-xl border border-gray-200" />
+                        <button
+                          type="button"
+                          onClick={handleRemoveImage}
+                          className="absolute top-2 right-2 w-7 h-7 rounded-lg bg-white/90 shadow-sm border border-gray-200 hover:bg-rose-50 hover:border-rose-300 flex items-center justify-center transition-all"
+                        >
+                          <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="border-2 border-dashed border-gray-200 rounded-xl p-4 hover:border-purple-300 transition-colors">
+                        <input type="file" accept="image/*" onChange={handleImageSelect} className="hidden" id="restaurant-image-upload" />
+                        <label htmlFor="restaurant-image-upload" className="flex flex-col items-center justify-center cursor-pointer">
+                          <svg className="w-10 h-10 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <span className="text-xs text-gray-500">이미지를 선택하세요</span>
+                          <span className="text-xs text-gray-400 mt-0.5">최대 5MB</span>
+                        </label>
+                      </div>
+                    )}
+                    <div className="text-xs text-gray-400">또는 이미지 URL을 직접 입력:</div>
+                    <input
+                      type="text"
+                      placeholder="/uploads/restaurants/image.jpg"
+                      value={newRestaurant.restaurantImage}
+                      onChange={(e) => setNewRestaurant({ ...newRestaurant, restaurantImage: e.target.value })}
+                      className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 transition-all"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -850,7 +887,10 @@ const RestaurantManagementPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-x-4 gap-y-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">식당명</label>
-                  <input type="text" value={isEditMode ? editingRestaurant?.restaurantName || "" : selectedRestaurant.restaurantName} onChange={(e) => handleEditChange("restaurantName", e.target.value)} readOnly={!isEditMode} className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"}`} />
+                  <div className="flex gap-2">
+                    <input type="text" value={isEditMode ? editingRestaurant?.restaurantName || "" : selectedRestaurant.restaurantName} onChange={(e) => handleEditChange("restaurantName", e.target.value)} readOnly={!isEditMode} className={`flex-1 px-3.5 py-2.5 border rounded-xl text-sm transition-all ${isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"}`} />
+                    {isEditMode && <button type="button" onClick={() => { setAddressMode("edit"); setShowAddressModal(true); }} className="shrink-0 px-3 py-2.5 text-xs font-medium text-purple-700 bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors">검색</button>}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">위치</label>
@@ -886,18 +926,7 @@ const RestaurantManagementPage: React.FC = () => {
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">주소</label>
-                  <div className="flex gap-2">
-                    <input type="text" value={isEditMode ? editingRestaurant?.restaurantAddr || "" : selectedRestaurant.restaurantAddr} onChange={(e) => handleEditChange("restaurantAddr", e.target.value)} readOnly={!isEditMode} className={`flex-1 px-3.5 py-2.5 border rounded-xl text-sm transition-all ${isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"}`} />
-                    {isEditMode && (
-                      <button
-                        type="button"
-                        onClick={() => { setAddressMode("edit"); setShowAddressModal(true); }}
-                        className="shrink-0 px-3 py-2.5 text-xs font-medium text-purple-700 bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors"
-                      >
-                        주소 검색
-                      </button>
-                    )}
-                  </div>
+                  <input type="text" value={isEditMode ? editingRestaurant?.restaurantAddr || "" : selectedRestaurant.restaurantAddr} onChange={(e) => handleEditChange("restaurantAddr", e.target.value)} readOnly={!isEditMode} className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${isEditMode ? "bg-white border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400" : "bg-gray-50/80 border-gray-100 text-gray-700"}`} />
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">지도 이미지 URL</label>
@@ -1045,7 +1074,7 @@ const RestaurantManagementPage: React.FC = () => {
         </div>
       )}
 
-      {/* 수정 중 다른 식당 선택 확인 모달 */}
+      {/* 이탈 확인 모달 */}
       {showSwitchConfirmModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full mx-4">
@@ -1054,11 +1083,15 @@ const RestaurantManagementPage: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
               </svg>
             </div>
-            <h3 className="text-lg font-bold text-center text-gray-900 mb-2">수정 취소</h3>
-            <p className="text-sm text-gray-500 text-center mb-5">수정을 취소하고 다른 식당을 선택하시겠습니까?</p>
+            <h3 className="text-lg font-bold text-center text-gray-900 mb-2">
+              {isAddMode ? "추가 취소" : "수정 취소"}
+            </h3>
+            <p className="text-sm text-gray-500 text-center mb-5">
+              {isAddMode ? "현재 입력하신 부분이 취소됩니다." : "현재 수정이 취소됩니다."}
+            </p>
             <div className="flex gap-2">
-              <button onClick={handleSwitchCancel} className="flex-1 px-4 py-2.5 text-gray-600 text-sm font-medium bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">돌아가기</button>
-              <button onClick={handleSwitchConfirm} className="flex-1 px-4 py-2.5 bg-purple-600 text-white text-sm font-medium rounded-xl hover:bg-purple-700 transition-colors">확인</button>
+              <button onClick={handleSwitchConfirm} className="flex-1 px-4 py-2.5 bg-rose-600 text-white text-sm font-medium rounded-xl hover:bg-rose-700 transition-colors">확인</button>
+              <button onClick={handleSwitchCancel} className="flex-1 px-4 py-2.5 text-gray-600 text-sm font-medium bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">취소</button>
             </div>
           </div>
         </div>

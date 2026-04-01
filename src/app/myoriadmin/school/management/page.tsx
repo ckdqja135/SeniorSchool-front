@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import AddressSearchModal, { AddressResult } from "@/components/common/AddressSearchModal";
+import { useNavigationGuard } from "@/components/common/NavigationGuard";
 
 interface UnivData {
   univIdx: number;
@@ -32,6 +33,7 @@ interface ApiResponse {
 }
 
 const SchoolManagementPage = () => {
+  const { setDirty } = useNavigationGuard();
   const [searchKeyword, setSearchKeyword] = useState("");
   const [schools, setSchools] = useState<UnivData[]>([]);
   const [selectedSchool, setSelectedSchool] = useState<UnivData | null>(null);
@@ -43,12 +45,16 @@ const SchoolManagementPage = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [pendingSchool, setPendingSchool] = useState<UnivData | null>(null);
   const [loading, setLoading] = useState(true);
   const [editingSchool, setEditingSchool] = useState<UnivData | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [addressMode, setAddressMode] = useState<"add" | "edit">("add");
+  const [isDuplicateName, setIsDuplicateName] = useState(false);
   const hasFetchedSchools = useRef(false);
+  const duplicateCheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 새 학교 데이터 폼
   const [newSchool, setNewSchool] = useState({
@@ -66,6 +72,27 @@ const SchoolManagementPage = () => {
     univMapIMG: "",
     univStatus: 1
   });
+
+  // 학교명 중복 체크
+  const checkDuplicateName = (name: string) => {
+    if (duplicateCheckTimer.current) clearTimeout(duplicateCheckTimer.current);
+    if (!name.trim()) { setIsDuplicateName(false); return; }
+
+    duplicateCheckTimer.current = setTimeout(async () => {
+      try {
+        const accessToken = localStorage.getItem("accessToken");
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/admin/univ/searchUniv?keyword=${encodeURIComponent(name.trim())}&page=1&rowsPerPage=100`,
+          { headers: { "Authorization": `Bearer ${accessToken}` } }
+        );
+        const data = await res.json();
+        const exact = (data.data || []).some((s: UnivData) => s.univName === name.trim());
+        setIsDuplicateName(exact);
+      } catch {
+        setIsDuplicateName(false);
+      }
+    }, 400);
+  };
 
   // 학교 검색
   const searchSchools = async (keyword = "", page = 1, pageSize = rowsPerPage) => {
@@ -122,6 +149,11 @@ const SchoolManagementPage = () => {
     hasFetchedSchools.current = true;
     searchSchools("", 1, rowsPerPage);
   }, []);
+
+  useEffect(() => {
+    setDirty(isAddMode || isEditMode, isAddMode ? "add" : "edit");
+    return () => { if (!isAddMode && !isEditMode) setDirty(false); };
+  }, [isAddMode, isEditMode]);
 
   // 검색 실행
   const handleSearch = () => {
@@ -265,6 +297,43 @@ const SchoolManagementPage = () => {
     setShowCancelModal(false);
   };
 
+  const handleSchoolRowClick = (school: UnivData) => {
+    if (isAddMode || isEditMode) {
+      setPendingSchool(school);
+      setShowLeaveModal(true);
+    } else {
+      setSelectedSchool(school);
+    }
+  };
+
+  const handleLeaveConfirm = () => {
+    if (isAddMode) {
+      setIsAddMode(false);
+      setNewSchool({
+        univName: "",
+        univLocate: "",
+        univType: "",
+        univEstablish: "",
+        univPresident: "",
+        univCampos: "",
+        univLateX: 0,
+        univLateY: 0,
+        univURL: "",
+        univLotAddr: 0,
+        univAddr: "",
+        univMapIMG: "",
+        univStatus: 1
+      });
+    } else if (isEditMode) {
+      setIsEditMode(false);
+      setEditingSchool(null);
+      setHasChanges(false);
+    }
+    setSelectedSchool(pendingSchool);
+    setPendingSchool(null);
+    setShowLeaveModal(false);
+  };
+
   // 편집 데이터 변경
   const handleEditChange = (field: keyof UnivData, value: string | number) => {
     if (editingSchool && selectedSchool) {
@@ -282,13 +351,16 @@ const SchoolManagementPage = () => {
     if (addressMode === "add") {
       setNewSchool({
         ...newSchool,
+        ...(result.placeName ? { univName: result.placeName } : {}),
         univAddr: result.roadAddress,
         univLateX: result.latitude,
         univLateY: result.longitude,
       });
+      if (result.placeName) checkDuplicateName(result.placeName);
     } else if (addressMode === "edit" && editingSchool) {
       const updated = {
         ...editingSchool,
+        ...(result.placeName ? { univName: result.placeName } : {}),
         univAddr: result.roadAddress,
         univLateX: result.latitude,
         univLateY: result.longitude,
@@ -476,7 +548,7 @@ const SchoolManagementPage = () => {
                           ? 'bg-indigo-50/70'
                           : 'hover:bg-gray-50/70'
                       }`}
-                      onClick={() => setSelectedSchool(school)}
+                      onClick={() => handleSchoolRowClick(school)}
                     >
                       <td className="px-3 py-2.5">
                         <input
@@ -602,20 +674,34 @@ const SchoolManagementPage = () => {
                 <p className="text-xs text-gray-400">새 학교 정보를 입력하세요</p>
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto space-y-4 pr-1">
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1.5">학교명</label>
-                <input
-                  type="text"
-                  value={newSchool.univName}
-                  onChange={(e) => setNewSchool({...newSchool, univName: e.target.value})}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
-                  placeholder="학교명을 입력하세요"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
+            <div className="flex-1 overflow-y-auto pr-1">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">위치</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">학교명</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newSchool.univName}
+                      onChange={(e) => { setNewSchool({...newSchool, univName: e.target.value}); checkDuplicateName(e.target.value); }}
+                      className={`flex-1 px-3.5 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all ${
+                        isDuplicateName
+                          ? "border-rose-400 focus:ring-rose-500/20 focus:border-rose-400"
+                          : "border-gray-200 focus:ring-indigo-500/20 focus:border-indigo-400"
+                      }`}
+                      placeholder="학교명을 입력하세요"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => { setAddressMode("add"); setShowAddressModal(true); }}
+                      className="shrink-0 px-3 py-2.5 text-xs font-medium text-indigo-700 bg-indigo-50 rounded-xl hover:bg-indigo-100 transition-colors"
+                    >
+                      검색
+                    </button>
+                  </div>
+                  {isDuplicateName && <p className="mt-1.5 text-xs text-rose-500">학교명이 중복되었습니다.</p>}
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">위치</label>
                   <input
                     type="text"
                     value={newSchool.univLocate}
@@ -624,7 +710,7 @@ const SchoolManagementPage = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">학교 유형</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">학교 유형</label>
                   <input
                     type="text"
                     value={newSchool.univType}
@@ -632,10 +718,8 @@ const SchoolManagementPage = () => {
                     className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
                   />
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">설립연도</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">설립연도</label>
                   <input
                     type="text"
                     value={newSchool.univEstablish}
@@ -644,7 +728,7 @@ const SchoolManagementPage = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">총장</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">총장</label>
                   <input
                     type="text"
                     value={newSchool.univPresident}
@@ -652,82 +736,71 @@ const SchoolManagementPage = () => {
                     className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
                   />
                 </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1.5">캠퍼스</label>
-                <input
-                  type="text"
-                  value={newSchool.univCampos}
-                  onChange={(e) => setNewSchool({...newSchool, univCampos: e.target.value})}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">위도</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">캠퍼스</label>
+                  <input
+                    type="text"
+                    value={newSchool.univCampos}
+                    onChange={(e) => setNewSchool({...newSchool, univCampos: e.target.value})}
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">위도</label>
                   <input
                     type="number"
                     value={newSchool.univLateX}
                     readOnly
-                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50/80 text-gray-700"
                     step="any"
+                    className="w-full px-3.5 py-2.5 border rounded-xl text-sm bg-gray-50/80 border-gray-100 text-gray-700"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1.5">경도</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">경도</label>
                   <input
                     type="number"
                     value={newSchool.univLateY}
                     readOnly
-                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50/80 text-gray-700"
                     step="any"
+                    className="w-full px-3.5 py-2.5 border rounded-xl text-sm bg-gray-50/80 border-gray-100 text-gray-700"
                   />
                 </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1.5">웹사이트 URL</label>
-                <input
-                  type="url"
-                  value={newSchool.univURL}
-                  onChange={(e) => setNewSchool({...newSchool, univURL: e.target.value})}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1.5">우편번호</label>
-                <input
-                  type="number"
-                  value={newSchool.univLotAddr}
-                  onChange={(e) => setNewSchool({...newSchool, univLotAddr: parseInt(e.target.value)})}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1.5">주소</label>
-                <div className="flex gap-2">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">웹사이트 URL</label>
+                  <input
+                    type="url"
+                    value={newSchool.univURL}
+                    onChange={(e) => setNewSchool({...newSchool, univURL: e.target.value})}
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">우편번호</label>
+                  <input
+                    type="number"
+                    value={newSchool.univLotAddr}
+                    onChange={(e) => setNewSchool({...newSchool, univLotAddr: parseInt(e.target.value)})}
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">주소</label>
                   <input
                     type="text"
                     value={newSchool.univAddr}
                     onChange={(e) => setNewSchool({...newSchool, univAddr: e.target.value})}
-                    className="flex-1 px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
                   />
-                  <button
-                    type="button"
-                    onClick={() => { setAddressMode("add"); setShowAddressModal(true); }}
-                    className="shrink-0 px-3 py-2.5 text-xs font-medium text-indigo-700 bg-indigo-50 rounded-xl hover:bg-indigo-100 transition-colors"
-                  >
-                    주소 검색
-                  </button>
                 </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1.5">이미지 URL</label>
-                <input
-                  type="url"
-                  value={newSchool.univMapIMG}
-                  onChange={(e) => setNewSchool({...newSchool, univMapIMG: e.target.value})}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
-                />
+                <div className="col-span-2">
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">이미지 URL</label>
+                  <input
+                    type="url"
+                    value={newSchool.univMapIMG}
+                    onChange={(e) => setNewSchool({...newSchool, univMapIMG: e.target.value})}
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
+                  />
+                </div>
               </div>
             </div>
             <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
@@ -806,15 +879,26 @@ const SchoolManagementPage = () => {
               <div className="grid grid-cols-2 gap-x-4 gap-y-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">학교명</label>
-                  <input
-                    type="text"
-                    value={isEditMode ? editingSchool?.univName || "" : selectedSchool.univName}
-                    onChange={(e) => handleEditChange("univName", e.target.value)}
-                    readOnly={!isEditMode}
-                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
-                      isEditMode ? "bg-white border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
-                    }`}
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={isEditMode ? editingSchool?.univName || "" : selectedSchool.univName}
+                      onChange={(e) => handleEditChange("univName", e.target.value)}
+                      readOnly={!isEditMode}
+                      className={`flex-1 px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
+                        isEditMode ? "bg-white border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
+                      }`}
+                    />
+                    {isEditMode && (
+                      <button
+                        type="button"
+                        onClick={() => { setAddressMode("edit"); setShowAddressModal(true); }}
+                        className="shrink-0 px-3 py-2.5 text-xs font-medium text-indigo-700 bg-indigo-50 rounded-xl hover:bg-indigo-100 transition-colors"
+                      >
+                        검색
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">위치</label>
@@ -922,26 +1006,15 @@ const SchoolManagementPage = () => {
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">주소</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={isEditMode ? editingSchool?.univAddr || "" : selectedSchool.univAddr}
-                      onChange={(e) => handleEditChange("univAddr", e.target.value)}
-                      readOnly={!isEditMode}
-                      className={`flex-1 px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
-                        isEditMode ? "bg-white border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
-                      }`}
-                    />
-                    {isEditMode && (
-                      <button
-                        type="button"
-                        onClick={() => { setAddressMode("edit"); setShowAddressModal(true); }}
-                        className="shrink-0 px-3 py-2.5 text-xs font-medium text-indigo-700 bg-indigo-50 rounded-xl hover:bg-indigo-100 transition-colors"
-                      >
-                        주소 검색
-                      </button>
-                    )}
-                  </div>
+                  <input
+                    type="text"
+                    value={isEditMode ? editingSchool?.univAddr || "" : selectedSchool.univAddr}
+                    onChange={(e) => handleEditChange("univAddr", e.target.value)}
+                    readOnly={!isEditMode}
+                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${
+                      isEditMode ? "bg-white border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400" : "bg-gray-50/80 border-gray-100 text-gray-700"
+                    }`}
+                  />
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">이미지 URL</label>
@@ -1086,6 +1159,39 @@ const SchoolManagementPage = () => {
                 className="flex-1 px-4 py-2.5 bg-rose-600 text-white text-sm font-medium rounded-xl hover:bg-rose-700 transition-colors"
               >
                 취소하기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 이탈 확인 모달 */}
+      {showLeaveModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full mx-4">
+            <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-center text-gray-900 mb-2">
+              {isAddMode ? "추가 취소" : "수정 취소"}
+            </h3>
+            <p className="text-sm text-gray-500 text-center mb-5">
+              {isAddMode ? "현재 입력하신 부분이 취소됩니다." : "현재 수정이 취소됩니다."}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={handleLeaveConfirm}
+                className="flex-1 px-4 py-2.5 bg-rose-600 text-white text-sm font-medium rounded-xl hover:bg-rose-700 transition-colors"
+              >
+                확인
+              </button>
+              <button
+                onClick={() => { setShowLeaveModal(false); setPendingSchool(null); }}
+                className="flex-1 px-4 py-2.5 text-gray-600 text-sm font-medium bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+              >
+                취소
               </button>
             </div>
           </div>

@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { ServiceConfig } from "@/types/Services";
 import { fetchActiveServices } from "@/lib/services/serviceConfigAPI";
+import { useNavigationGuard } from "@/components/common/NavigationGuard";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -27,6 +27,7 @@ interface SubMenuItem {
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
   const pathname = usePathname();
+  const { requestNavigation } = useNavigationGuard();
   const [dynamicServices, setDynamicServices] = useState<ServiceConfig[]>([]);
 
   useEffect(() => {
@@ -208,7 +209,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
                     )}
                   </button>
                 ) : (
-                  <Link href={item.href}>
+                  <button onClick={() => requestNavigation(item.href)} className="w-full text-left">
                     <div
                       className={`flex items-center p-2 rounded-md transition-all duration-200 hover:bg-gray-700 ${
                         pathname === item.href ? "bg-gray-700 shadow-lg ring-2 ring-gray-500 ring-opacity-50" : ""
@@ -219,7 +220,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
                         <span className="text-sm">{item.label}</span>
                       )}
                     </div>
-                  </Link>
+                  </button>
                 )}
 
                 {/* Sub Items */}
@@ -248,7 +249,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
                                 <ul className="ml-4 mt-1 space-y-1">
                                   {subItem.subItems.map((thirdItem) => (
                                     <li key={thirdItem.href}>
-                                      <Link href={thirdItem.href}>
+                                      <button onClick={() => requestNavigation(thirdItem.href)} className="w-full text-left">
                                         <div
                                           className={`block p-2 text-xs rounded-md transition-all duration-200 hover:bg-gray-700 ${
                                             pathname === thirdItem.href ? "bg-gray-700 shadow-sm ring-1 ring-gray-500 ring-opacity-50" : ""
@@ -256,14 +257,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
                                         >
                                           {thirdItem.label}
                                         </div>
-                                      </Link>
+                                      </button>
                                     </li>
                                   ))}
                                 </ul>
                               )}
                             </div>
                           ) : (
-                            <Link href={subItem.href}>
+                            <button onClick={() => requestNavigation(subItem.href)} className="w-full text-left">
                               <div
                                 className={`block p-2 text-xs rounded-md transition-all duration-200 hover:bg-gray-700 ${
                                   pathname === subItem.href ? "bg-gray-700 shadow-md ring-1 ring-gray-500 ring-opacity-50" : ""
@@ -271,7 +272,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
                               >
                                 {subItem.label}
                               </div>
-                            </Link>
+                            </button>
                           )}
                         </li>
                       ))}
