@@ -12,6 +12,11 @@ interface DailyStat {
   count: string;
 }
 
+interface RefererStat {
+  pvReferer: string;
+  count: string;
+}
+
 interface LogEntry {
   pvIdx: number;
   pvPath: string;
@@ -25,7 +30,9 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 const AnalyticsPage = () => {
   const [tab, setTab] = useState<"chart" | "logs">("chart");
+  const [leftTab, setLeftTab] = useState<"path" | "referer">("path");
   const [pathStats, setPathStats] = useState<PathStat[]>([]);
+  const [refererStats, setRefererStats] = useState<RefererStat[]>([]);
   const [dailyStats, setDailyStats] = useState<DailyStat[]>([]);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -63,19 +70,24 @@ const AnalyticsPage = () => {
       if (startDate) params.set("startDate", startDate);
       if (endDate) params.set("endDate", endDate);
 
-      const [pathRes, dailyRes] = await Promise.all([
+      const [pathRes, dailyRes, refererRes] = await Promise.all([
         fetch(`${BASE_URL}/admin/pageview/path-stats?${params}`, {
           headers: { Authorization: `Bearer ${getToken()}` },
         }),
         fetch(`${BASE_URL}/admin/pageview/daily-stats?${params}`, {
           headers: { Authorization: `Bearer ${getToken()}` },
         }),
+        fetch(`${BASE_URL}/admin/pageview/referer-stats?${params}`, {
+          headers: { Authorization: `Bearer ${getToken()}` },
+        }),
       ]);
 
       const pathData = await pathRes.json();
       const dailyData = await dailyRes.json();
+      const refererData = await refererRes.json();
       if (pathData.success) setPathStats(pathData.data);
       if (dailyData.success) setDailyStats(dailyData.data);
+      if (refererData.success) setRefererStats(refererData.data);
     } catch (e) {
       console.error(e);
     } finally {
@@ -232,32 +244,74 @@ const AnalyticsPage = () => {
         </div>
       ) : (
         <div className="flex gap-4 flex-1 min-h-0">
-          {/* 좌: 인기 경로 TOP 20 */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 w-[30%] overflow-y-auto shrink-0">
-            <h2 className="text-sm font-semibold text-gray-800 mb-4">인기 경로 TOP 20</h2>
-            {pathStats.length === 0 ? (
-              <div className="text-sm text-gray-400 text-center py-10">데이터 없음</div>
-            ) : (
-              <div className="space-y-3">
-                {pathStats.map((p, i) => (
-                  <div key={p.pvPath} className="flex items-center gap-3">
-                    <span className="text-xs text-gray-400 w-5 text-right shrink-0">{i + 1}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs text-gray-700 truncate font-mono">{p.pvPath}</span>
-                        <span className="text-xs font-semibold text-indigo-600 ml-3 shrink-0">{parseInt(p.count).toLocaleString()}회</span>
+          {/* 좌: 인기 경로 / Referer 탭 */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 w-[30%] shrink-0 flex flex-col min-h-0">
+            {/* 탭 */}
+            <div className="flex gap-1 bg-gray-100 rounded-lg p-1 mb-4 shrink-0">
+              <button
+                onClick={() => setLeftTab("path")}
+                className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${leftTab === "path" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+              >
+                인기 경로
+              </button>
+              <button
+                onClick={() => setLeftTab("referer")}
+                className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${leftTab === "referer" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+              >
+                인기 Referer
+              </button>
+            </div>
+
+            <div className="overflow-y-auto flex-1">
+              {leftTab === "path" ? (
+                pathStats.length === 0 ? (
+                  <div className="text-sm text-gray-400 text-center py-10">데이터 없음</div>
+                ) : (
+                  <div className="space-y-3">
+                    {pathStats.map((p, i) => (
+                      <div key={p.pvPath} className="flex items-center gap-3">
+                        <span className="text-xs text-gray-400 w-5 text-right shrink-0">{i + 1}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs text-gray-700 truncate font-mono">{decodeURIComponent(p.pvPath)}</span>
+                            <span className="text-xs font-semibold text-indigo-600 ml-3 shrink-0">{parseInt(p.count).toLocaleString()}회</span>
+                          </div>
+                          <div className="w-full bg-gray-100 rounded-full h-1.5">
+                            <div className="bg-indigo-400 h-1.5 rounded-full" style={{ width: `${(parseInt(p.count) / maxCount) * 100}%` }} />
+                          </div>
+                        </div>
                       </div>
-                      <div className="w-full bg-gray-100 rounded-full h-1.5">
-                        <div
-                          className="bg-indigo-400 h-1.5 rounded-full"
-                          style={{ width: `${(parseInt(p.count) / maxCount) * 100}%` }}
-                        />
-                      </div>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
+                )
+              ) : (
+                refererStats.length === 0 ? (
+                  <div className="text-sm text-gray-400 text-center py-10">데이터 없음</div>
+                ) : (
+                  <div className="space-y-3">
+                    {refererStats.map((r, i) => {
+                      const maxRef = Math.max(...refererStats.map((x) => parseInt(x.count)), 1);
+                      let label = r.pvReferer;
+                      try { label = new URL(r.pvReferer).hostname; } catch {}
+                      return (
+                        <div key={r.pvReferer} className="flex items-center gap-3">
+                          <span className="text-xs text-gray-400 w-5 text-right shrink-0">{i + 1}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs text-gray-700 truncate" title={r.pvReferer}>{label}</span>
+                              <span className="text-xs font-semibold text-indigo-600 ml-3 shrink-0">{parseInt(r.count).toLocaleString()}회</span>
+                            </div>
+                            <div className="w-full bg-gray-100 rounded-full h-1.5">
+                              <div className="bg-purple-400 h-1.5 rounded-full" style={{ width: `${(parseInt(r.count) / maxRef) * 100}%` }} />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )
+              )}
+            </div>
           </div>
 
           {/* 우: 방문자 로그 */}

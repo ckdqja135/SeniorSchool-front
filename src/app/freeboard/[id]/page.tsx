@@ -974,9 +974,9 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
           </div>
 
           {/* 댓글 작성 폼 */}
-          <div className="p-4 sm:p-6 border-t border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
+          <div className="p-4 sm:p-6 border-t border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-800">
             <div className="mb-4">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 flex items-center">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center">
                 <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
                   <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -985,13 +985,13 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                 </div>
                 댓글 작성
               </h3>
-              <p className="text-xs sm:text-sm text-gray-600">의견을 공유해주세요</p>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">의견을 공유해주세요</p>
             </div>
             
             <form onSubmit={handleSubmitComment} className="space-y-4 sm:space-y-6">
               {/* 댓글 내용 */}
               <div className="relative">
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   댓글 내용 *
                 </label>
                 <div className="relative">
@@ -1003,7 +1003,7 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                       }
                     }}
                     placeholder="댓글을 작성해주세요... (최대 500자)"
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none transition-all duration-200 shadow-sm hover:shadow-md"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none transition-all duration-200 shadow-sm hover:shadow-md"
                     rows={4}
                     maxLength={500}
                     disabled={isSubmittingComment}
@@ -1017,7 +1017,7 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
               {/* 작성자 정보 */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                 <div className="space-y-2">
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                     작성자명 *
                   </label>
                   <div className="relative">
@@ -1031,12 +1031,12 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                       value={commentWriter}
                       onChange={(e) => setCommentWriter(e.target.value)}
                       placeholder="닉네임을 입력해주세요"
-                      className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                      className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md"
                       maxLength={20}
                       disabled={isSubmittingComment}
                     />
                   </div>
-                  <p className="text-xs text-gray-500 flex items-center">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center">
                     <svg className="w-3 h-3 mr-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                     </svg>
@@ -1045,7 +1045,7 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                     비밀번호 *
                   </label>
                   <div className="relative">
@@ -1059,13 +1059,13 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                       value={commentPassword}
                       onChange={(e) => setCommentPassword(e.target.value)}
                       placeholder="4~20자 비밀번호"
-                      className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                      className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-500 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm hover:shadow-md"
                       minLength={4}
                       maxLength={20}
                       disabled={isSubmittingComment}
                     />
                   </div>
-                  <p className="text-xs text-gray-500 flex items-center">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center">
                     <svg className="w-3 h-3 mr-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                     </svg>
@@ -1079,7 +1079,7 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                 <button
                   type="submit"
                   disabled={!newComment.trim() || !commentWriter.trim() || !commentPassword.trim() || isSubmittingComment}
-                  className="group relative px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-medium rounded-xl hover:from-indigo-600 hover:to-purple-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:transform-none"
+                  className="group relative px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-medium rounded-xl hover:from-indigo-600 hover:to-purple-700 disabled:from-gray-300 disabled:to-gray-400 dark:disabled:from-gray-600 dark:disabled:to-gray-700 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:transform-none"
                 >
                   <div className="flex items-center space-x-2">
                     {isSubmittingComment ? (
@@ -1362,7 +1362,7 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                     setShowReportModal(false);
                     setReportForm({ reportReason: '', reporterId: '' });
                   }}
-                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                  className="px-6 py-2 bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors"
                 >
                   취소
                 </button>

@@ -1316,7 +1316,7 @@ export default function BoardDetailPage() {
               <div className="flex space-x-3 justify-center">
                 <button 
                   onClick={() => setShowDeleteModal(false)}
-                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                  className="px-6 py-2 bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors"
                 >
                   취소
                 </button>
@@ -1356,7 +1356,7 @@ export default function BoardDetailPage() {
                     setShowDeleteConfirmModal(false);
                     setPassword('');
                   }}
-                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                  className="px-6 py-2 bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors"
                 >
                   취소
                 </button>
@@ -1432,7 +1432,7 @@ export default function BoardDetailPage() {
                      setShowEditModal(false);
                      setPassword('');
                    }}
-                   className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                   className="px-6 py-2 bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors"
                  >
                    취소
                  </button>
@@ -1496,7 +1496,7 @@ export default function BoardDetailPage() {
                      setShowEditCommentModal(false);
                      setActiveCommentMenu(null);
                    }}
-                   className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                   className="px-6 py-2 bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors"
                  >
                    취소
                  </button>
@@ -1535,7 +1535,7 @@ export default function BoardDetailPage() {
                      setShowDeleteCommentModal(false);
                      setActiveCommentMenu(null);
                    }}
-                   className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                   className="px-6 py-2 bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors"
                  >
                    취소
                  </button>
@@ -1614,7 +1614,7 @@ export default function BoardDetailPage() {
                     setShowReportModal(false);
                     setReportForm({ reportReason: '', reporterId: '' });
                   }}
-                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                  className="px-6 py-2 bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors"
                 >
                   취소
                 </button>
