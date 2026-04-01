@@ -8,7 +8,7 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="fixed top-3 right-4 z-[9999] p-2.5 rounded-full bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm shadow-lg hover:shadow-xl border border-gray-200 dark:border-gray-600 hover:scale-110 transition-all duration-200"
+      className="fixed bottom-6 md:bottom-auto md:top-3 right-4 z-[9999] p-2 md:p-2.5 rounded-full bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm shadow-lg hover:shadow-xl border border-gray-200 dark:border-gray-600 hover:scale-110 transition-all duration-200"
       aria-label={theme === 'dark' ? '라이트 모드로 전환' : '다크 모드로 전환'}
       title={theme === 'dark' ? '라이트 모드' : '다크 모드'}
     >
