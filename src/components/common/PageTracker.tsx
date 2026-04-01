@@ -7,8 +7,9 @@ const PageTracker = () => {
   const pathname = usePathname();
 
   useEffect(() => {
-    // 어드민 페이지는 추적 제외
+    // 어드민 페이지 및 로컬 환경은 추적 제외
     if (pathname.startsWith("/myoriadmin")) return;
+    if (typeof window !== "undefined" && window.location.hostname === "localhost") return;
 
     fetch("/api/track", {
       method: "POST",
