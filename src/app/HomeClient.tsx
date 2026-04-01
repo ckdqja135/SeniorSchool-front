@@ -711,7 +711,7 @@ export default function HomeClient({
             <span className="text-xl font-black text-indigo-900">Ori</span>
           </div>
           <div className="flex flex-wrap justify-center gap-8">
-            <a href="#" className="text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors">광고문의</a>
+            {/* <a href="#" className="text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors">광고문의</a> */}
           </div>
           <p className="text-xs text-gray-400 text-center">
             © 2025 Ori Platform. The Modern Oracle of Reviews.
