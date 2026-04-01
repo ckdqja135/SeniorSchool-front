@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "../styles/globals.css";
 import ThemeProvider from "@/components/common/ThemeProvider";
+import PageTracker from "@/components/common/PageTracker";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://ori.blue"),
@@ -117,7 +118,10 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <PageTracker />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

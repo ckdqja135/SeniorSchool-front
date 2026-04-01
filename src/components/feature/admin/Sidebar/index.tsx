@@ -126,6 +126,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
       ],
     },
     {
+      icon: "📈",
+      label: "접속 분석",
+      href: "/myoriadmin/analytics",
+      subItems: [],
+    },
+    {
       icon: "👥",
       label: "관리자 관리",
       href: "/myoriadmin/admin",
