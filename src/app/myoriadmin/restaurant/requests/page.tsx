@@ -116,7 +116,7 @@ const RestaurantRequestsPage: React.FC = () => {
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ status, adminNote }),
+      body: JSON.stringify({ requestStatus: status, adminNote }),
     });
     if (!res.ok) throw new Error(`요청 ${requestIdx} 처리 실패`);
   };
