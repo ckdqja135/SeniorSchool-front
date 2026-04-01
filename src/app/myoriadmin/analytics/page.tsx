@@ -292,7 +292,10 @@ const AnalyticsPage = () => {
                     {refererStats.map((r, i) => {
                       const maxRef = Math.max(...refererStats.map((x) => parseInt(x.count)), 1);
                       let label = r.pvReferer;
-                      try { label = new URL(r.pvReferer).hostname; } catch {}
+                      try {
+                        const u = new URL(r.pvReferer);
+                        label = u.pathname && u.pathname !== "/" ? u.hostname + u.pathname : u.hostname;
+                      } catch {}
                       return (
                         <div key={r.pvReferer} className="flex items-center gap-3">
                           <span className="text-xs text-gray-400 w-5 text-right shrink-0">{i + 1}</span>
