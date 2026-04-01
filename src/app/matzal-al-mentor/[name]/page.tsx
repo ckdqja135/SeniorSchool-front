@@ -796,7 +796,7 @@ export default function RestaurantDetailPage() {
               {/* 평점 */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  회사 평점 <span className="text-red-500">*</span>
+                  식당 평점 <span className="text-red-500">*</span>
                 </label>
                 <div
                   className="flex flex-col gap-2"
