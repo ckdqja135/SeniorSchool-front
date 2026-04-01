@@ -126,10 +126,6 @@ const RestaurantRequestsPage: React.FC = () => {
       alert("처리할 요청을 선택해주세요.");
       return;
     }
-    if (!adminNote.trim()) {
-      alert("관리자 메모를 입력해주세요.");
-      return;
-    }
     try {
       setIsProcessing(true);
       for (const id of selectedRequests) {
@@ -149,10 +145,6 @@ const RestaurantRequestsPage: React.FC = () => {
 
   const handleProcessSingle = async (status: "completed" | "rejected") => {
     if (!selectedRequest) return;
-    if (!adminNote.trim()) {
-      alert("관리자 메모를 입력해주세요.");
-      return;
-    }
     try {
       setIsProcessing(true);
       await processRequest(selectedRequest.requestIdx, status);
