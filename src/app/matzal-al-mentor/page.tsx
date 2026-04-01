@@ -909,7 +909,7 @@ export default function MatzalAlMentorPage() {
                             <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-200 text-xs truncate">
                               {board.boardTitle}
                             </h3>
-                            <p className="text-xs text-gray-500 truncate">🍽️ {board.restaurantName || '맛집명 없음'}</p>
+                            <p className="text-xs text-gray-500 truncate">🍽️ {board.restaurant?.restaurantName || board.restaurantName || '맛집명 없음'}</p>
                             <p className="text-xs text-gray-400 truncate">❤️ {board.boardLike} • 👁️ {board.boardHits}</p>
                           </div>
                           <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
