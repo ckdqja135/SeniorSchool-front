@@ -147,7 +147,7 @@ export default function HomeClient({
         router.push(`/outsource-board/${post.boardIdx}`);
         break;
       case 'restaurant':
-        router.push(`/restaurant-board/${post.boardIdx}`);
+        router.push(`/matzal-al-board/${post.boardIdx}`);
         break;
       case 'university':
         router.push(`/univ-board/${post.boardIdx}`);
