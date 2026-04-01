@@ -18,13 +18,13 @@ export default async function HomePage() {
     servicesResult,
   ] = await Promise.allSettled([
     baseUrl
-      ? fetch(`${baseUrl}/board/recent`, { cache: 'no-store' }).then(r => r.json())
+      ? fetch(`${baseUrl}/board/recent`, { next: { revalidate: 60 } }).then(r => r.json())
       : Promise.resolve({ status: 0, data: [] }),
     baseUrl
-      ? fetch(`${baseUrl}/church/boards/recent`, { cache: 'no-store' }).then(r => r.json())
+      ? fetch(`${baseUrl}/church/boards/recent`, { next: { revalidate: 60 } }).then(r => r.json())
       : Promise.resolve({ status: 0, data: [] }),
     baseUrl
-      ? fetch(`${baseUrl}/comp/board/recent`, { cache: 'no-store' }).then(r => r.json())
+      ? fetch(`${baseUrl}/comp/board/recent`, { next: { revalidate: 60 } }).then(r => r.json())
       : Promise.resolve({ status: 0, data: [] }),
     fetchRecentFreeboardPosts(),
     fetchBestPosts(),

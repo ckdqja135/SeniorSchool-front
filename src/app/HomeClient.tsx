@@ -343,12 +343,6 @@ export default function HomeClient({
                 </div>
                 <h2 className="text-2xl font-extrabold tracking-tight text-gray-900">후기 베스트</h2>
               </div>
-              <button className="text-sm text-indigo-600 font-bold hover:underline flex items-center gap-1">
-                더보기
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
             </div>
             <p className="text-xs text-gray-400 mb-6">실시간으로 가장 인기 있는 최고의 리뷰들을 확인하세요</p>
 
@@ -432,11 +426,20 @@ export default function HomeClient({
                   : recentFreeBoardPosts.slice(0, 5).map((post) => (
                       <li key={post.boardIdx} onClick={() => handleFreeBoardPostClick(post)} className="flex items-center justify-between group cursor-pointer">
                         <span className="text-sm truncate text-gray-600 group-hover:text-indigo-600 transition-colors">{post.boardTitle}</span>
-                        <div className="flex items-center gap-1 text-xs text-gray-400 ml-2 whitespace-nowrap flex-shrink-0">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                          </svg>
-                          {post.boardLike}
+                        <div className="flex items-center gap-2 text-xs text-gray-400 ml-2 whitespace-nowrap flex-shrink-0">
+                          <span className="flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            {post.boardHits}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
+                            {post.boardLike}
+                          </span>
                         </div>
                       </li>
                     ))
@@ -462,11 +465,20 @@ export default function HomeClient({
                   : recentPosts.slice(0, 5).map((post) => (
                       <li key={post.boardIdx} onClick={() => handlePostClick(post)} className="flex items-center justify-between group cursor-pointer">
                         <span className="text-sm truncate text-gray-600 group-hover:text-indigo-600 transition-colors">{post.boardTitle}</span>
-                        <div className="flex items-center gap-1 text-xs text-gray-400 ml-2 whitespace-nowrap flex-shrink-0">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                          </svg>
-                          {post.boardLike}
+                        <div className="flex items-center gap-2 text-xs text-gray-400 ml-2 whitespace-nowrap flex-shrink-0">
+                          <span className="flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            {post.boardHits}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
+                            {post.boardLike}
+                          </span>
                         </div>
                       </li>
                     ))
@@ -492,11 +504,20 @@ export default function HomeClient({
                   : recentCompanyPosts.slice(0, 5).map((post) => (
                       <li key={post.boardIdx} onClick={() => handleCompanyPostClick(post)} className="flex items-center justify-between group cursor-pointer">
                         <span className="text-sm truncate text-gray-600 group-hover:text-indigo-600 transition-colors">{post.boardTitle}</span>
-                        <div className="flex items-center gap-1 text-xs text-gray-400 ml-2 whitespace-nowrap flex-shrink-0">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                          </svg>
-                          {post.boardLike}
+                        <div className="flex items-center gap-2 text-xs text-gray-400 ml-2 whitespace-nowrap flex-shrink-0">
+                          <span className="flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            {post.boardHits}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
+                            {post.boardLike}
+                          </span>
                         </div>
                       </li>
                     ))
@@ -522,11 +543,20 @@ export default function HomeClient({
                   : recentChurchPosts.slice(0, 5).map((post) => (
                       <li key={post.boardIdx} onClick={() => handleChurchPostClick(post)} className="flex items-center justify-between group cursor-pointer">
                         <span className="text-sm truncate text-gray-600 group-hover:text-indigo-600 transition-colors">{post.boardTitle}</span>
-                        <div className="flex items-center gap-1 text-xs text-gray-400 ml-2 whitespace-nowrap flex-shrink-0">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                          </svg>
-                          {post.boardLike}
+                        <div className="flex items-center gap-2 text-xs text-gray-400 ml-2 whitespace-nowrap flex-shrink-0">
+                          <span className="flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            {post.boardHits}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
+                            {post.boardLike}
+                          </span>
                         </div>
                       </li>
                     ))
@@ -560,11 +590,20 @@ export default function HomeClient({
                         className="flex items-center justify-between group cursor-pointer"
                       >
                         <span className="text-sm truncate text-gray-600 group-hover:text-indigo-600 transition-colors">{board.boardTitle}</span>
-                        <div className="flex items-center gap-1 text-xs text-gray-400 ml-2 whitespace-nowrap flex-shrink-0">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                          </svg>
-                          {board.boardLike || 0}
+                        <div className="flex items-center gap-2 text-xs text-gray-400 ml-2 whitespace-nowrap flex-shrink-0">
+                          <span className="flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            {board.boardHits || 0}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
+                            {board.boardLike || 0}
+                          </span>
                         </div>
                       </li>
                     ))
@@ -591,11 +630,20 @@ export default function HomeClient({
                   : recentMatzalAlBoards.slice(0, 5).map((board: MatzalAlBoard) => (
                       <li key={board.boardIdx} onClick={() => handleMatzalAlBoardClick(board)} className="flex items-center justify-between group cursor-pointer">
                         <span className="text-sm truncate text-gray-600 group-hover:text-indigo-600 transition-colors">{board.boardTitle}</span>
-                        <div className="flex items-center gap-1 text-xs text-gray-400 ml-2 whitespace-nowrap flex-shrink-0">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                          </svg>
-                          {board.boardLike}
+                        <div className="flex items-center gap-2 text-xs text-gray-400 ml-2 whitespace-nowrap flex-shrink-0">
+                          <span className="flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            {board.boardHits}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
+                            {board.boardLike}
+                          </span>
                         </div>
                       </li>
                     ))
@@ -663,13 +711,10 @@ export default function HomeClient({
             <span className="text-xl font-black text-indigo-900">Ori</span>
           </div>
           <div className="flex flex-wrap justify-center gap-8">
-            <a href="#" className="text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors">이용약관</a>
-            <a href="#" className="text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors">개인정보처리방침</a>
-            <a href="#" className="text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors">고객센터</a>
             <a href="#" className="text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors">광고문의</a>
           </div>
           <p className="text-xs text-gray-400 text-center">
-            © 2024 Ori Platform. The Modern Oracle of Reviews.
+            © 2025 Ori Platform. The Modern Oracle of Reviews.
           </p>
         </div>
       </footer>
@@ -737,11 +782,20 @@ function DynamicServiceSection({ service }: { service: ServiceConfig }) {
                 className="flex items-center justify-between group cursor-pointer"
               >
                 <span className="text-sm truncate text-gray-600 group-hover:text-indigo-600 transition-colors">{board.boardTitle}</span>
-                <div className="flex items-center gap-1 text-xs text-gray-400 ml-2 whitespace-nowrap flex-shrink-0">
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                  </svg>
-                  {board.boardLike || 0}
+                <div className="flex items-center gap-2 text-xs text-gray-400 ml-2 whitespace-nowrap flex-shrink-0">
+                  <span className="flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    {board.boardHits || 0}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                    {board.boardLike || 0}
+                  </span>
                 </div>
               </li>
             ))

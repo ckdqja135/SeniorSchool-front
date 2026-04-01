@@ -17,7 +17,7 @@ async function fetchJson(url: string, options: RequestInit = {}): Promise<any> {
   if (existing) return existing;
 
   const promise = (async () => {
-    const res = await fetch(url, { cache: 'no-store', ...options });
+    const res = await fetch(url, { next: { revalidate: 60 }, ...options });
     if (!res.ok) {
       let message = '요청에 실패했습니다.';
       try {
