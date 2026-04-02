@@ -223,26 +223,29 @@ const ChurchManagementPage = () => {
   // 교회 삭제
   const handleDeleteChurches = async () => {
     try {
-      const deleteData = selectedChurches.length === 1 
-        ? { churchIdx: selectedChurches[0] }
-        : { churchIdx: selectedChurches };
-
       const accessToken = localStorage.getItem("accessToken");
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/church/deleteChurch`, {
-        method: "DELETE",
-        headers: {
-          "Authorization": `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(deleteData),
-      });
-
-      if (response.ok) {
-        setShowDeleteModal(true);
-        setSelectedChurches([]);
-        searchChurches(searchKeyword);
+      if (selectedChurches.length === 1) {
+        await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/church/${selectedChurches[0]}`, {
+          method: "DELETE",
+          headers: {
+            "Authorization": `Bearer ${accessToken}`,
+          },
+        });
+      } else {
+        await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/church/bulk`, {
+          method: "DELETE",
+          headers: {
+            "Authorization": `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ churchIdxList: selectedChurches }),
+        });
       }
+
+      setShowDeleteModal(true);
+      setSelectedChurches([]);
+      searchChurches(searchKeyword);
     } catch (error) {
       console.error("교회 삭제 실패:", error);
       alert("교회 삭제에 실패했습니다.");
@@ -408,13 +411,11 @@ const ChurchManagementPage = () => {
     try {
       const accessToken = localStorage.getItem("accessToken");
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/church/deleteChurch`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/church/${selectedChurch.churchIdx}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ churchIdx: selectedChurch.churchIdx }),
       });
 
       if (response.ok) {
