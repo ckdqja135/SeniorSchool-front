@@ -619,6 +619,7 @@ const AdminMainPage = () => {
                   const typeLabels: Record<string, string> = {
                     church_post: "교회 게시글",
                     school_post: "학교 게시글",
+                    university_post: "학교 게시글",
                     company_post: "회사 게시글",
                     restaurant_post: "식당 게시글",
                     outsource_post: "외주 게시글",
@@ -640,6 +641,7 @@ const AdminMainPage = () => {
                   const typeIcons: Record<string, string> = {
                     church_post: "⛪",
                     school_post: "🏫",
+                    university_post: "🏫",
                     company_post: "🏢",
                     restaurant_post: "🍽️",
                     outsource_post: "🔧",
@@ -654,6 +656,7 @@ const AdminMainPage = () => {
                   const typeColors: Record<string, string> = {
                     church_post: "bg-purple-100 text-purple-600",
                     school_post: "bg-blue-100 text-blue-600",
+                    university_post: "bg-blue-100 text-blue-600",
                     company_post: "bg-amber-100 text-amber-600",
                     restaurant_post: "bg-orange-100 text-orange-600",
                     outsource_post: "bg-slate-100 text-slate-600",
