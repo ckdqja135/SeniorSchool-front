@@ -403,7 +403,7 @@ export default function OutsourceMentorPage() {
 
                 {/* 자동완성 드롭다운 */}
                 {showSuggestions && searchTerm.trim() && (
-                  <div className="absolute top-full left-2 right-2 sm:left-0 sm:right-0 mt-3 bg-white/95 backdrop-blur-sm border border-white/30 rounded-2xl shadow-2xl z-10 max-h-80 overflow-hidden">
+                  <div className="absolute top-full left-2 right-2 sm:left-0 sm:right-0 mt-3 bg-white/95 backdrop-blur-sm border border-white/30 rounded-2xl shadow-2xl z-10 max-h-80 overflow-y-auto">
                     {/* 로딩 표시 */}
                     {isLoading && (
                       <div className="px-6 py-8 text-center">
