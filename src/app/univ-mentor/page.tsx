@@ -99,16 +99,15 @@ export default function SchoolPage() {
       
       const response = await fetch(`${backendURL}/search/auto?keyword=${encodeURIComponent(keyword)}`);
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
       const data = await response.json();
-      
+
       if (Array.isArray(data)) {
         setSuggestions(data);
+      } else if (data.data !== undefined && Array.isArray(data.data)) {
+        setSuggestions(data.data);
+      } else if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       } else {
-        console.warn('예상하지 못한 응답 형식:', data);
         setSuggestions([]);
       }
     } catch (error) {

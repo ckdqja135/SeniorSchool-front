@@ -71,41 +71,30 @@ export default function MatzalAlMentorPage() {
     try {
       const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
       const response = await fetch(`${backendURL}/restaurant/auto?keyword=${encodeURIComponent(keyword)}`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
+
       const data = await response.json();
-      
+
       // API 응답 데이터 매핑 (restaurantName -> matzalAlName 등)
+      const mapItem = (item: any) => ({
+        restaurantName: item.restaurantName,
+        restaurantAddr: item.restaurantAddr,
+        restaurantOwner: item.restaurantOwner,
+        restaurantType: item.restaurantType,
+        matzalAlName: item.restaurantName,
+        matzalAlLocation: item.restaurantAddr,
+        matzalAlType: item.restaurantType,
+        restaurantIdx: item.restaurantIdx || null
+      });
+
       let mappedData: any[] = [];
       if (Array.isArray(data)) {
-        mappedData = data.map((item: any) => ({
-          restaurantName: item.restaurantName,
-          restaurantAddr: item.restaurantAddr,
-          restaurantOwner: item.restaurantOwner,
-          restaurantType: item.restaurantType,
-          // 호환성을 위한 필드 매핑
-          matzalAlName: item.restaurantName,
-          matzalAlLocation: item.restaurantAddr,
-          matzalAlType: item.restaurantType,
-          restaurantIdx: item.restaurantIdx || null
-        }));
-      } else if (data.data && Array.isArray(data.data)) {
-        mappedData = data.data.map((item: any) => ({
-          restaurantName: item.restaurantName,
-          restaurantAddr: item.restaurantAddr,
-          restaurantOwner: item.restaurantOwner,
-          restaurantType: item.restaurantType,
-          // 호환성을 위한 필드 매핑
-          matzalAlName: item.restaurantName,
-          matzalAlLocation: item.restaurantAddr,
-          matzalAlType: item.restaurantType,
-          restaurantIdx: item.restaurantIdx || null
-        }));
+        mappedData = data.map(mapItem);
+      } else if (data.data !== undefined && Array.isArray(data.data)) {
+        mappedData = data.data.map(mapItem);
+      } else if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       setSuggestions(mappedData);
     } catch (error) {
       console.error('자동완성 검색 오류:', error);
