@@ -56,7 +56,7 @@ const CommentItem = ({
                   year: 'numeric',
                   month: 'short',
                   day: 'numeric'
-                })}
+                })}{' '}
                 {new Date(comment.regDate).toLocaleTimeString('ko-KR', {
                   hour: '2-digit',
                   minute: '2-digit',
@@ -793,7 +793,7 @@ export default function ChurchBoardDetailPage() {
         modDate: new Date().toISOString()
       };
 
-      const response = await fetch(`${backendURL}/church/comments/modify`, {
+      const response = await fetch(`${backendURL}/church/comment/modify`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -92,7 +92,7 @@ const CommentItem = ({
                   year: 'numeric',
                   month: 'short',
                   day: 'numeric'
-                })}
+                })}{' '}
                 {new Date(comment.regDate).toLocaleTimeString('ko-KR', {
                   hour: '2-digit',
                   minute: '2-digit',

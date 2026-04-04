@@ -154,7 +154,7 @@ const RestaurantBoardManagementPage: React.FC = () => {
       const accessToken = getToken();
       const changedData: Partial<BoardData> = { boardIdx: editingBoard.boardIdx } as any;
       (Object.keys(editingBoard) as (keyof BoardData)[]).forEach((k) => { if (editingBoard[k] !== selectedBoard[k]) { (changedData as any)[k] = editingBoard[k]; } });
-      const body = { boardTitle: changedData.boardTitle, boardContent: changedData.boardContent };
+      const body = { boardTitle: changedData.boardTitle, boardContent: changedData.boardContent, boardID: changedData.boardID };
       const res = await fetch(`${API_BASE_URL}/admin/restaurantboard/${editingBoard.boardIdx}`, {
         method: "PUT", headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" }, body: JSON.stringify(body),
       });

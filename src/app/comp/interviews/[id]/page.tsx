@@ -25,7 +25,7 @@ const CommentItem = ({ comment, onEdit, onDelete, onReply }: {
     const ampm = hour < 12 ? '오전' : '오후';
     const displayHour = hour % 12 || 12;
     
-    return `${year}년 ${month}월 ${day}일${ampm} ${displayHour}:${minute.toString().padStart(2, '0')}`;
+    return `${year}년 ${month}월 ${day}일 ${ampm} ${displayHour}:${minute.toString().padStart(2, '0')}`;
   };
 
   return (
@@ -542,12 +542,13 @@ export default function InterviewDetailPage() {
 
     try {
       const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
-      const response = await fetch(`${backendURL}/comp/comment/${editCommentForm.commentIdx}`, {
+      const response = await fetch(`${backendURL}/comp/comment/modify`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          commentIdx: editCommentForm.commentIdx,
           commentContent: editCommentForm.content,
           commentPw: editCommentForm.password
         }),
