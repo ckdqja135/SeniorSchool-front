@@ -97,7 +97,7 @@ const CommentItem = ({
                   year: 'numeric',
                   month: 'short',
                   day: 'numeric'
-                })}
+                })}{' '}
                 {new Date(comment.regDate).toLocaleTimeString('ko-KR', {
                   hour: '2-digit',
                   minute: '2-digit',
@@ -817,7 +817,7 @@ export default function MatzalAlBoardDetailPage() {
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/restaurant/board/delete`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/restaurant/boards/delete`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
