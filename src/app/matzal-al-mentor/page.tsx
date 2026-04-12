@@ -1,11 +1,19 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useRestaurantCommentsTop } from '@/hooks/MatzalAl/useMatzalAl';
 import { requestMatzalAl } from '@/lib/matzalAl/matzalAlAPI';
+
+// 주요 카테고리 목록 (이외는 "기타"로 합산)
+const MAIN_CATEGORIES = [
+  '한식', '중식', '일식', '양식', '카페', '분식',
+  '패스트푸드', '치킨', '피자', '디저트', '아시안',
+  '고기', '해산물', '술집',
+];
 
 export default function MatzalAlMentorPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,15 +35,59 @@ export default function MatzalAlMentorPage() {
     matzalAlType: '맛집',
     requesterId: ''
   });
+
+  // 카테고리 필터 상태
+  const [categories, setCategories] = useState<{ restaurantType: string; count: number }[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState('전체');
+  const [filteredRestaurants, setFilteredRestaurants] = useState<any[]>([]);
+
+  // 랜덤 룰렛 상태
+  const [rouletteResult, setRouletteResult] = useState<any>(null);
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [showRouletteResult, setShowRouletteResult] = useState(false);
+
   const searchRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  
+
   // 중복 호출 방지를 위한 ref
   const hasFetchedPopularMatzalAl = useRef(false);
   const hasFetchedPopularBoards = useRef(false);
 
   // 새로운 식당 후기 API 훅
   const { topComments, loading: topCommentsLoading, error: topCommentsError, refetch: refetchTopComments } = useRestaurantCommentsTop(10);
+
+  // 카테고리 목록 로드 (주요 카테고리만 표시, 나머지는 "기타"로 합산)
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
+        const response = await fetch(`${backendURL}/restaurant/types`);
+        if (response.ok) {
+          const data: { restaurantType: string; count: number }[] = await response.json();
+          const mainTypes = MAIN_CATEGORIES;
+          const main: typeof data = [];
+          let etcCount = 0;
+
+          for (const cat of data) {
+            if (mainTypes.some(t => cat.restaurantType.includes(t))) {
+              main.push(cat);
+            } else {
+              etcCount += Number(cat.count);
+            }
+          }
+
+          if (etcCount > 0) {
+            main.push({ restaurantType: '기타', count: etcCount });
+          }
+
+          setCategories(main);
+        }
+      } catch (err) {
+        console.error('카테고리 로드 오류:', err);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   // 최근 검색 기록 로드
   useEffect(() => {
@@ -250,6 +302,54 @@ export default function MatzalAlMentorPage() {
     );
   };
 
+  // 카테고리 선택 시 필터링
+  useEffect(() => {
+    if (selectedCategory === '전체') {
+      setFilteredRestaurants(popularMatzalAl);
+    } else if (selectedCategory === '기타') {
+      const mainTypes = MAIN_CATEGORIES;
+      setFilteredRestaurants(
+        popularMatzalAl.filter((r: any) =>
+          !mainTypes.some(t => (r.matzalAlType || '').includes(t))
+        )
+      );
+    } else {
+      setFilteredRestaurants(
+        popularMatzalAl.filter((r: any) =>
+          (r.matzalAlType || '').includes(selectedCategory)
+        )
+      );
+    }
+  }, [selectedCategory, popularMatzalAl]);
+
+  // 랜덤 룰렛 실행
+  const handleRoulette = useCallback(async () => {
+    if (isSpinning) return;
+    setIsSpinning(true);
+    setShowRouletteResult(false);
+
+    try {
+      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
+      const typeParam = selectedCategory !== '전체' ? `?type=${encodeURIComponent(selectedCategory)}` : '';
+      const response = await fetch(`${backendURL}/restaurant/random${typeParam}`);
+
+      if (response.ok) {
+        const data = await response.json();
+        // 슬롯머신 효과를 위해 딜레이
+        setTimeout(() => {
+          setRouletteResult(data);
+          setShowRouletteResult(true);
+          setIsSpinning(false);
+        }, 1500);
+      } else {
+        setIsSpinning(false);
+      }
+    } catch (err) {
+      console.error('랜덤 추천 오류:', err);
+      setIsSpinning(false);
+    }
+  }, [isSpinning, selectedCategory]);
+
   // 인기 맛잘알 새로고침
   const handleRefresh = async () => {
     if (isRefreshing) return; // 이미 새로고침 중이면 중복 실행 방지
@@ -420,14 +520,14 @@ export default function MatzalAlMentorPage() {
   // 맛잘알 추가 요청 제출
   const handleRequestSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!requestForm.matzalAlName.trim() || !requestForm.matzalAlAddr.trim()) {
       alert('맛집명과 주소를 입력해주세요.');
       return;
     }
 
     setIsSubmitting(true);
-    
+
     try {
       const ok = await requestMatzalAl(requestForm);
       if (ok) {
@@ -583,7 +683,7 @@ export default function MatzalAlMentorPage() {
                               📍 {suggestion.restaurantAddr || suggestion.matzalAlLocation}
                             </div>
                             <div className="text-xs text-gray-400">
-                              🍽️ {suggestion.restaurantType || suggestion.matzalAlType}
+                              {suggestion.restaurantType || suggestion.matzalAlType}
                             </div>
                           </div>
                           <div className="text-blue-400 opacity-0 group-hover:opacity-100 transition-all duration-200">
@@ -677,15 +777,123 @@ export default function MatzalAlMentorPage() {
         </div>
       </div>
 
+      {/* 카테고리 필터 + 랜덤 룰렛 섹션 */}
+      <div className="bg-gray-50 py-6 border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* 카테고리 이모지 필터 */}
+          <div className="mb-6">
+            <h3 className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">카테고리</h3>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedCategory('전체')}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                  selectedCategory === '전체'
+                    ? 'bg-blue-600 text-white shadow-md scale-105'
+                    : 'bg-white text-gray-700 border border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                }`}
+              >
+                전체
+              </button>
+              {categories.map((cat) => (
+                <button
+                  key={cat.restaurantType}
+                  onClick={() => setSelectedCategory(cat.restaurantType)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                    selectedCategory === cat.restaurantType
+                      ? 'bg-blue-600 text-white shadow-md scale-105'
+                      : 'bg-white text-gray-700 border border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                  }`}
+                >
+                  {cat.restaurantType} <span className="text-xs opacity-60">({cat.count})</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 오늘 뭐 먹지? 랜덤 룰렛 */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <div className="flex-1 text-center sm:text-left">
+                <h3 className="text-lg font-bold text-gray-900 mb-1">
+                  오늘 뭐 먹지?
+                </h3>
+                <p className="text-sm text-gray-500">
+                  {selectedCategory !== '전체' ? `${selectedCategory} 중에서` : '전체 맛집 중에서'} 랜덤 추천!
+                </p>
+              </div>
+              <button
+                onClick={handleRoulette}
+                disabled={isSpinning}
+                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 ${
+                  isSpinning
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 hover:scale-105 hover:shadow-lg'
+                }`}
+              >
+                <span>{isSpinning ? '추천 중...' : '랜덤 추천!'}</span>
+              </button>
+            </div>
+
+            {/* 룰렛 결과 */}
+            <AnimatePresence>
+              {showRouletteResult && rouletteResult && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{ duration: 0.4, ease: 'easeOut' }}
+                  className="mt-4 p-4 bg-gradient-to-r from-orange-50 to-pink-50 rounded-xl border border-orange-200"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-white rounded-xl shadow-sm flex items-center justify-center text-sm font-bold text-gray-500 flex-shrink-0">
+                      {rouletteResult.restaurantType || '맛집'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-orange-600 font-semibold mb-0.5">오늘의 추천</p>
+                      <h4 className="text-lg font-bold text-gray-900 truncate">{rouletteResult.restaurantName}</h4>
+                      <p className="text-sm text-gray-500 truncate">📍 {rouletteResult.restaurantAddr || rouletteResult.restaurantLocation}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs bg-white px-2 py-0.5 rounded-full text-gray-600">{rouletteResult.restaurantType}</span>
+                        {rouletteResult.averageRating > 0 && (
+                          <span className="text-xs text-yellow-600">⭐ {rouletteResult.averageRating.toFixed(1)}</span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const params = new URLSearchParams();
+                        if (rouletteResult.restaurantIdx) params.append('restaurantIdx', rouletteResult.restaurantIdx);
+                        if (rouletteResult.restaurantAddr) params.append('restaurantAddr', rouletteResult.restaurantAddr);
+                        router.push(`/matzal-al-mentor/${encodeURIComponent(rouletteResult.restaurantName)}?${params.toString()}`);
+                      }}
+                      className="px-4 py-2 bg-orange-500 text-white text-sm font-semibold rounded-lg hover:bg-orange-600 transition-colors flex-shrink-0"
+                    >
+                      상세보기
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      </div>
+
       {/* 검색창 밑 컨텐츠 */}
       <div className="bg-white py-6">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
           {/* 3×3 맛집 카드 그리드 섹션 */}
           <div className="mb-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">오늘의 맛잘알 추천</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">
+                {selectedCategory === '전체' ? '오늘의 맛잘알 추천' : `${selectedCategory} 맛집`}
+              </h2>
+              {selectedCategory !== '전체' && (
+                <span className="text-sm text-gray-500">{filteredRestaurants.length}개의 맛집</span>
+              )}
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {popularMatzalAl.slice(0, 9).map((matzalAl, index) => (
+              {(selectedCategory === '전체' ? popularMatzalAl : filteredRestaurants).slice(0, 9).map((matzalAl, index) => (
                 <div
                   key={matzalAl.matzalAlIdx}
                   onClick={() => handlePopularMatzalAlClick(matzalAl)}
@@ -831,7 +1039,7 @@ export default function MatzalAlMentorPage() {
                                   </>
                                 )}
                                 <span className="text-xs text-gray-400">•</span>
-                                <p className="text-xs text-gray-400 truncate">🍽️ {matzalAl.matzalAlType} • 👁️ {matzalAl.viewCount || 0}</p>
+                                <p className="text-xs text-gray-400 truncate">{matzalAl.matzalAlType} • 조회 {matzalAl.viewCount || 0}</p>
                               </div>
                             </div>
                             <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
@@ -898,8 +1106,8 @@ export default function MatzalAlMentorPage() {
                             <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-200 text-xs truncate">
                               {board.boardTitle}
                             </h3>
-                            <p className="text-xs text-gray-500 truncate">🍽️ {board.restaurant?.restaurantName || board.restaurantName || '맛집명 없음'}</p>
-                            <p className="text-xs text-gray-400 truncate">❤️ {board.boardLike} • 👁️ {board.boardHits}</p>
+                            <p className="text-xs text-gray-500 truncate">{board.restaurant?.restaurantName || board.restaurantName || '맛집명 없음'}</p>
+                            <p className="text-xs text-gray-400 truncate">좋아요 {board.boardLike} • 조회 {board.boardHits}</p>
                           </div>
                           <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
                             <svg className="w-2.5 h-2.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
