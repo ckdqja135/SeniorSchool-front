@@ -76,7 +76,7 @@ const SUB_REGIONS: Record<string, string[]> = {
 const STATIC_SOURCES: { name: string; label: string; desc: string; envKey: string; bg: string; text: string; border: string }[] = [
   { name: "kakao", label: "카카오", desc: "Kakao Local API (카테고리 + 키워드)", envKey: "KAKAO_REST_API_KEY", bg: "bg-yellow-50", text: "text-yellow-700", border: "border-yellow-300" },
   { name: "naver", label: "네이버", desc: "Naver 지역 검색 API", envKey: "NAVER_CLIENT_ID / SECRET", bg: "bg-green-50", text: "text-green-700", border: "border-green-300" },
-  { name: "siksin", label: "식신", desc: "웹 크롤링 (API 키 불필요)", envKey: "", bg: "bg-red-50", text: "text-red-700", border: "border-red-300" },
+  { name: "siksin", label: "식신", desc: "", envKey: "", bg: "bg-red-50", text: "text-red-700", border: "border-red-300" },
 ];
 
 const SOURCE_LABELS: Record<string, { color: string; bg: string; text: string }> = {
