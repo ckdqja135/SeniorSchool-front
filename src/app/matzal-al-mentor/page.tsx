@@ -46,6 +46,15 @@ export default function MatzalAlMentorPage() {
   const [isSpinning, setIsSpinning] = useState(false);
   const [showRouletteResult, setShowRouletteResult] = useState(false);
 
+  // 탭 상태 (오늘의 추천 / 지도)
+  const [viewTab, setViewTab] = useState<'grid' | 'map'>('grid');
+  const [isKakaoMapLoaded, setIsKakaoMapLoaded] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const markersRef = useRef<any[]>([]);
+  const overlaysRef = useRef<any[]>([]);
+
   const searchRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -218,39 +227,34 @@ export default function MatzalAlMentorPage() {
       };
 
       // API 응답에서 식당 정보 추출
+      const mapItem = (item: any) => ({
+        matzalAlIdx: item.restaurantIdx || item.matzalAlIdx,
+        matzalAlName: item.restaurantName || item.matzalAlName || '맛집명 없음',
+        matzalAlLocation: item.restaurantAddr || item.matzalAlLocation || '위치 정보 없음',
+        matzalAlType: item.restaurantType || item.matzalAlType || '맛집',
+        viewCount: item.restaurantViewCount || item.boardHits || item.viewCount || 0,
+        restaurantImage: item.restaurantImage || null,
+        restaurantLatX: item.restaurantLatX || null,
+        restaurantLatY: item.restaurantLatY || null,
+        restaurantIdx: item.restaurantIdx || null,
+        restaurantAddr: item.restaurantAddr || null,
+        averageRating: item.averageRating !== null && item.averageRating !== undefined
+          ? (typeof item.averageRating === 'string' ? parseFloat(item.averageRating) : Number(item.averageRating))
+          : null,
+        ratingCount: item.ratingCount || 0,
+      });
+
       if (Array.isArray(data)) {
         const restaurants = data
-          .map((item: any) => ({
-            matzalAlIdx: item.restaurantIdx || item.matzalAlIdx,
-            matzalAlName: item.restaurantName || item.matzalAlName || '맛집명 없음',
-            matzalAlLocation: item.restaurantAddr || item.matzalAlLocation || '위치 정보 없음',
-            matzalAlType: item.restaurantType || item.matzalAlType || '맛집',
-            viewCount: item.restaurantViewCount || item.boardHits || item.viewCount || 0,
-            restaurantImage: item.restaurantImage || null,
-            averageRating: item.averageRating !== null && item.averageRating !== undefined 
-              ? (typeof item.averageRating === 'string' ? parseFloat(item.averageRating) : Number(item.averageRating))
-              : null,
-            ratingCount: item.ratingCount || 0
-          }))
+          .map(mapItem)
           .filter((item: any) => item.matzalAlIdx && item.matzalAlName);
-        
+
         setPopularMatzalAl(restaurants.slice(0, 10));
       } else if (data.data && Array.isArray(data.data)) {
         const restaurants = data.data
-          .map((item: any) => ({
-            matzalAlIdx: item.restaurantIdx || item.matzalAlIdx,
-            matzalAlName: item.restaurantName || item.matzalAlName || '맛집명 없음',
-            matzalAlLocation: item.restaurantAddr || item.matzalAlLocation || '위치 정보 없음',
-            matzalAlType: item.restaurantType || item.matzalAlType || '맛집',
-            viewCount: item.restaurantViewCount || item.boardHits || item.viewCount || 0,
-            restaurantImage: item.restaurantImage || null,
-            averageRating: item.averageRating !== null && item.averageRating !== undefined 
-              ? (typeof item.averageRating === 'string' ? parseFloat(item.averageRating) : Number(item.averageRating))
-              : null,
-            ratingCount: item.ratingCount || 0
-          }))
+          .map(mapItem)
           .filter((item: any) => item.matzalAlIdx && item.matzalAlName);
-        
+
         setPopularMatzalAl(restaurants.slice(0, 10));
       }
     } catch (error) {
@@ -321,6 +325,152 @@ export default function MatzalAlMentorPage() {
       );
     }
   }, [selectedCategory, popularMatzalAl]);
+
+  // 카카오맵 SDK 로드
+  useEffect(() => {
+    if (viewTab !== 'map') return;
+
+    if (window.kakao && window.kakao.maps && window.kakao.maps.Map) {
+      setIsKakaoMapLoaded(true);
+      return;
+    }
+    if ((window as any).kakaoMapLoading) {
+      const check = setInterval(() => {
+        if (window.kakao?.maps?.Map) {
+          setIsKakaoMapLoaded(true);
+          clearInterval(check);
+        }
+      }, 200);
+      return () => clearInterval(check);
+    }
+
+    const script = document.createElement('script');
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_MAP_KEY}&autoload=false&libraries=services`;
+    script.async = true;
+    (window as any).kakaoMapLoading = true;
+
+    script.onload = () => {
+      if (window.kakao?.maps?.load) {
+        window.kakao.maps.load(() => {
+          setIsKakaoMapLoaded(true);
+          (window as any).kakaoMapLoading = false;
+        });
+      }
+    };
+    script.onerror = () => { (window as any).kakaoMapLoading = false; };
+    document.head.appendChild(script);
+  }, [viewTab]);
+
+  // 현재 위치 가져오기 (지도 탭 선택 시)
+  useEffect(() => {
+    if (viewTab !== 'map' || userLocation) return;
+    if (!navigator.geolocation) return;
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {
+        // 위치 권한 거부 시 서울 시청 기본값
+        setUserLocation({ lat: 37.5665, lng: 126.978 });
+      },
+      { enableHighAccuracy: true, timeout: 5000 }
+    );
+  }, [viewTab, userLocation]);
+
+  // 탭 전환 시 지도 인스턴스 리셋 (DOM이 재생성되므로)
+  useEffect(() => {
+    if (viewTab !== 'map') {
+      mapInstanceRef.current = null;
+    }
+  }, [viewTab]);
+
+  // 카카오맵 초기화 및 마커 표시
+  useEffect(() => {
+    if (viewTab !== 'map' || !isKakaoMapLoaded || !mapContainerRef.current || !userLocation) return;
+
+    const restaurants = selectedCategory === '전체' ? popularMatzalAl : filteredRestaurants;
+    if (restaurants.length === 0) return;
+
+    // 기존 오버레이·마커 정리
+    overlaysRef.current.forEach((o: any) => o.setMap(null));
+    overlaysRef.current = [];
+    markersRef.current.forEach((m: any) => m.setMap(null));
+    markersRef.current = [];
+
+    // 유효 좌표가 있는 식당만 필터
+    const withCoords = restaurants.filter((r: any) => r.restaurantLatX && r.restaurantLatY);
+    if (withCoords.length === 0) return;
+
+    // 현재 위치 기준으로 거리 계산 후 가까운 순 정렬
+    const getDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    };
+
+    const sorted = [...withCoords].sort((a: any, b: any) =>
+      getDistance(userLocation.lat, userLocation.lng, a.restaurantLatX, a.restaurantLatY)
+      - getDistance(userLocation.lat, userLocation.lng, b.restaurantLatX, b.restaurantLatY)
+    );
+
+    // 지도 생성 — 현재 위치 중심
+    const center = new window.kakao.maps.LatLng(userLocation.lat, userLocation.lng);
+    mapInstanceRef.current = new window.kakao.maps.Map(mapContainerRef.current, { center, level: 2 });
+    const zoomControl = new window.kakao.maps.ZoomControl();
+    mapInstanceRef.current.addControl(zoomControl, window.kakao.maps.ControlPosition.RIGHT);
+
+    const map = mapInstanceRef.current;
+
+    // 현재 위치 마커 (파란 원)
+    const myOverlay = new window.kakao.maps.CustomOverlay({
+      content: `<div style="width:16px;height:16px;background:#3B82F6;border:3px solid white;border-radius:50%;box-shadow:0 0 6px rgba(59,130,246,0.5);"></div>`,
+      position: center,
+      yAnchor: 0.5,
+      zIndex: 10,
+      map,
+    });
+
+    const bounds = new window.kakao.maps.LatLngBounds();
+    bounds.extend(center);
+
+    sorted.slice(0, 50).forEach((r: any) => {
+      const pos = new window.kakao.maps.LatLng(r.restaurantLatX, r.restaurantLatY);
+      bounds.extend(pos);
+      const dist = getDistance(userLocation.lat, userLocation.lng, r.restaurantLatX, r.restaurantLatY);
+
+      const marker = new window.kakao.maps.Marker({ position: pos, map });
+      markersRef.current.push(marker);
+
+      const overlayContent = `
+        <div style="padding:8px 12px;background:white;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);border:1px solid #e5e7eb;font-size:13px;max-width:220px;cursor:pointer;">
+          <div style="font-weight:700;color:#111;margin-bottom:2px;">${r.matzalAlName}</div>
+          <div style="color:#6b7280;font-size:11px;">${r.matzalAlType || '맛집'}${r.averageRating > 0 ? ' · ⭐ ' + r.averageRating.toFixed(1) : ''}</div>
+          <div style="color:#3B82F6;font-size:11px;margin-top:2px;">${dist < 1 ? Math.round(dist * 1000) + 'm' : dist.toFixed(1) + 'km'}</div>
+        </div>`;
+
+      const overlay = new window.kakao.maps.CustomOverlay({
+        content: overlayContent,
+        position: pos,
+        yAnchor: 1.3,
+        map: null,
+      });
+      overlaysRef.current.push(overlay);
+
+      window.kakao.maps.event.addListener(marker, 'mouseover', () => overlay.setMap(map));
+      window.kakao.maps.event.addListener(marker, 'mouseout', () => overlay.setMap(null));
+      window.kakao.maps.event.addListener(marker, 'click', () => {
+        const params = new URLSearchParams();
+        if (r.restaurantIdx) params.append('restaurantIdx', r.restaurantIdx);
+        if (r.restaurantAddr) params.append('restaurantAddr', r.restaurantAddr);
+        router.push(`/matzal-al-mentor/${encodeURIComponent(r.matzalAlName)}?${params.toString()}`);
+      });
+    });
+
+    // 현재 위치 중심 유지, 줌 레벨 2로 고정 (setBounds 대신)
+    map.setCenter(center);
+    map.setLevel(2);
+  }, [viewTab, isKakaoMapLoaded, userLocation, popularMatzalAl, filteredRestaurants, selectedCategory, router]);
 
   // 랜덤 룰렛 실행
   const handleRoulette = useCallback(async () => {
@@ -757,7 +907,7 @@ export default function MatzalAlMentorPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex-1 text-center md:text-left">
               <h3 className="text-xl md:text-2xl font-bold text-white mb-1">
-                맛집을 추가하고 싶으신가요?
+                숨겨져 있는 나만의 맛집을 알고 계신가요?
               </h3>
               <p className="text-blue-50 text-sm md:text-base">
                 지금 요청하고 더 많은 맛집 정보를 공유해보세요
@@ -827,7 +977,7 @@ export default function MatzalAlMentorPage() {
                 className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 ${
                   isSpinning
                     ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 hover:scale-105 hover:shadow-lg'
+                    : 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 hover:scale-105 hover:shadow-lg'
                 }`}
               >
                 <span>{isSpinning ? '추천 중...' : '랜덤 추천!'}</span>
@@ -842,14 +992,14 @@ export default function MatzalAlMentorPage() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -10, scale: 0.95 }}
                   transition={{ duration: 0.4, ease: 'easeOut' }}
-                  className="mt-4 p-4 bg-gradient-to-r from-orange-50 to-pink-50 rounded-xl border border-orange-200"
+                  className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200"
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-14 h-14 bg-white rounded-xl shadow-sm flex items-center justify-center text-sm font-bold text-gray-500 flex-shrink-0">
                       {rouletteResult.restaurantType || '맛집'}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-orange-600 font-semibold mb-0.5">오늘의 추천</p>
+                      <p className="text-xs text-blue-600 font-semibold mb-0.5">오늘의 추천</p>
                       <h4 className="text-lg font-bold text-gray-900 truncate">{rouletteResult.restaurantName}</h4>
                       <p className="text-sm text-gray-500 truncate">📍 {rouletteResult.restaurantAddr || rouletteResult.restaurantLocation}</p>
                       <div className="flex items-center gap-2 mt-1">
@@ -866,7 +1016,7 @@ export default function MatzalAlMentorPage() {
                         if (rouletteResult.restaurantAddr) params.append('restaurantAddr', rouletteResult.restaurantAddr);
                         router.push(`/matzal-al-mentor/${encodeURIComponent(rouletteResult.restaurantName)}?${params.toString()}`);
                       }}
-                      className="px-4 py-2 bg-orange-500 text-white text-sm font-semibold rounded-lg hover:bg-orange-600 transition-colors flex-shrink-0"
+                      className="px-4 py-2 bg-blue-500 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors flex-shrink-0"
                     >
                       상세보기
                     </button>
@@ -882,91 +1032,131 @@ export default function MatzalAlMentorPage() {
       <div className="bg-white py-6">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
-          {/* 3×3 맛집 카드 그리드 섹션 */}
+          {/* 탭 헤더 + 맛집 카드/지도 섹션 */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900">
-                {selectedCategory === '전체' ? '오늘의 맛잘알 추천' : `${selectedCategory} 맛집`}
+                {viewTab === 'map'
+                  ? (selectedCategory === '전체' ? '내 주변 맛집' : `내 주변 ${selectedCategory} 맛집`)
+                  : (selectedCategory === '전체' ? '오늘의 맛잘알 추천' : `${selectedCategory} 맛집`)}
               </h2>
-              {selectedCategory !== '전체' && (
-                <span className="text-sm text-gray-500">{filteredRestaurants.length}개의 맛집</span>
-              )}
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {(selectedCategory === '전체' ? popularMatzalAl : filteredRestaurants).slice(0, 9).map((matzalAl, index) => (
-                <div
-                  key={matzalAl.matzalAlIdx}
-                  onClick={() => handlePopularMatzalAlClick(matzalAl)}
-                  className="group bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-blue-300 transition-all duration-300 cursor-pointer overflow-hidden"
+              <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setViewTab('grid')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                    viewTab === 'grid'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
                 >
-                  {/* 이미지 영역 */}
-                  <div className="relative w-full h-40 bg-gradient-to-br from-orange-100 via-amber-50 to-yellow-100 overflow-hidden">
-                    {/* 실제 이미지 또는 플레이스홀더 */}
-                    {(() => {
-                      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
-                      const getImageUrl = (imagePath: string | undefined | null): string | null => {
-                        if (!imagePath) return null;
-                        if (imagePath.startsWith('http://') || imagePath.startsWith('https://') || imagePath.startsWith('data:')) {
-                          return imagePath;
-                        }
-                        if (imagePath.startsWith('/')) {
-                          return `${backendURL}${imagePath}`;
-                        }
-                        return `${backendURL}/${imagePath}`;
-                      };
-                      const imageUrl = getImageUrl((matzalAl as any).restaurantImage);
-                      const hasError = imageErrors.has(matzalAl.matzalAlIdx);
-                      
-                      return imageUrl && !hasError ? (
-                        <img
-                          src={imageUrl}
-                          alt={matzalAl.matzalAlName}
-                          className="w-full h-full object-cover"
-                          onError={() => {
-                            setImageErrors(prev => new Set(prev).add(matzalAl.matzalAlIdx));
-                          }}
-                        />
-                      ) : (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-orange-50 via-red-50 to-pink-50">
-                          <svg className="w-20 h-20 text-orange-400 mb-2" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M8.1 13.34l2.83-2.83L3.91 3.5c-1.56 1.56-1.56 4.09 0 5.66l4.19 4.18zm6.78-1.81c1.53.71 3.68.21 5.27-1.38 1.91-1.91 2.28-4.65.81-6.12-1.46-1.46-4.20-1.10-6.12.81-1.59 1.59-2.09 3.74-1.38 5.27L3.7 19.87l1.41 1.41L12 14.41l6.88 6.88 1.41-1.41L13.41 13l1.47-1.47z"/>
-                          </svg>
-                          <span className="text-xs text-orange-600 font-medium">맛잘알 오빠</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                  </svg>
+                  카드
+                </button>
+                <button
+                  onClick={() => setViewTab('map')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                    viewTab === 'map'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  지도
+                </button>
+              </div>
+            </div>
+
+            {/* 카드 뷰 */}
+            {viewTab === 'grid' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {(selectedCategory === '전체' ? popularMatzalAl : filteredRestaurants).slice(0, 9).map((matzalAl, index) => (
+                  <div
+                    key={matzalAl.matzalAlIdx}
+                    onClick={() => handlePopularMatzalAlClick(matzalAl)}
+                    className="group bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-blue-300 transition-all duration-300 cursor-pointer overflow-hidden"
+                  >
+                    <div className="relative w-full h-40 bg-gradient-to-br from-orange-100 via-amber-50 to-yellow-100 overflow-hidden">
+                      {(() => {
+                        const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
+                        const getImageUrl = (imagePath: string | undefined | null): string | null => {
+                          if (!imagePath) return null;
+                          if (imagePath.startsWith('http://') || imagePath.startsWith('https://') || imagePath.startsWith('data:')) {
+                            return imagePath;
+                          }
+                          if (imagePath.startsWith('/')) {
+                            return `${backendURL}${imagePath}`;
+                          }
+                          return `${backendURL}/${imagePath}`;
+                        };
+                        const imageUrl = getImageUrl((matzalAl as any).restaurantImage);
+                        const hasError = imageErrors.has(matzalAl.matzalAlIdx);
+
+                        return imageUrl && !hasError ? (
+                          <img
+                            src={imageUrl}
+                            alt={matzalAl.matzalAlName}
+                            className="w-full h-full object-cover"
+                            onError={() => {
+                              setImageErrors(prev => new Set(prev).add(matzalAl.matzalAlIdx));
+                            }}
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-orange-50 via-red-50 to-pink-50">
+                            <svg className="w-20 h-20 text-orange-400 mb-2" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M8.1 13.34l2.83-2.83L3.91 3.5c-1.56 1.56-1.56 4.09 0 5.66l4.19 4.18zm6.78-1.81c1.53.71 3.68.21 5.27-1.38 1.91-1.91 2.28-4.65.81-6.12-1.46-1.46-4.20-1.10-6.12.81-1.59 1.59-2.09 3.74-1.38 5.27L3.7 19.87l1.41 1.41L12 14.41l6.88 6.88 1.41-1.41L13.41 13l1.47-1.47z"/>
+                            </svg>
+                            <span className="text-xs text-orange-600 font-medium">맛잘알 오빠</span>
+                          </div>
+                        );
+                      })()}
+                      {(matzalAl as any).averageRating !== null && (matzalAl as any).averageRating !== undefined && (matzalAl as any).averageRating > 0 ? (
+                        <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full shadow-sm">
+                          <span className="text-xs font-semibold text-gray-700">
+                            {((matzalAl as any).averageRating as number).toFixed(1)}
+                          </span>
                         </div>
-                      );
-                    })()}
-                    {/* 평점 뱃지 - 우측 상단 */}
-                    {(matzalAl as any).averageRating !== null && (matzalAl as any).averageRating !== undefined && (matzalAl as any).averageRating > 0 ? (
-                      <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full shadow-sm">
-                        <span className="text-xs font-semibold text-gray-700">
-                          {((matzalAl as any).averageRating as number).toFixed(1)}
+                      ) : null}
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-bold text-gray-900 text-sm mb-2 line-clamp-1 group-hover:text-blue-600 transition-colors">
+                        {matzalAl.matzalAlName}
+                      </h3>
+                      <p className="text-xs text-gray-500 mb-3 line-clamp-2">
+                        {matzalAl.matzalAlLocation}
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                          {matzalAl.matzalAlType || '맛집'}
                         </span>
                       </div>
-                    ) : null}
-                  </div>
-                  
-                  {/* 카드 내용 영역 */}
-                  <div className="p-4">
-                    {/* 가게명 */}
-                    <h3 className="font-bold text-gray-900 text-sm mb-2 line-clamp-1 group-hover:text-blue-600 transition-colors">
-                      {matzalAl.matzalAlName}
-                    </h3>
-                    
-                    {/* 주소 */}
-                    <p className="text-xs text-gray-500 mb-3 line-clamp-2">
-                      {matzalAl.matzalAlLocation}
-                    </p>
-                    
-                    {/* 카테고리 뱃지 */}
-                    <div className="flex items-center justify-between">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
-                        {matzalAl.matzalAlType || '맛집'}
-                      </span>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
+
+            {/* 지도 뷰 */}
+            {viewTab === 'map' && (
+              <div className="rounded-xl border border-gray-200 overflow-hidden relative" style={{ height: '500px' }}>
+                <div
+                  ref={mapContainerRef}
+                  className="w-full h-full"
+                />
+                {!isKakaoMapLoaded && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
+                    <div className="text-center">
+                      <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-3" />
+                      <p className="text-sm text-gray-500">지도를 불러오는 중...</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* 인기 식당 TOP 10 및 인기 후기 TOP 10 섹션 */}

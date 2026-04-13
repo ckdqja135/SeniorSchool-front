@@ -52,6 +52,26 @@ const REGION_OPTIONS = [
   "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주",
 ];
 
+const SUB_REGIONS: Record<string, string[]> = {
+  서울: ["전체","강남구","강동구","강북구","강서구","관악구","광진구","구로구","금천구","노원구","도봉구","동대문구","동작구","마포구","서대문구","서초구","성동구","성북구","송파구","양천구","영등포구","용산구","은평구","종로구","중구","중랑구"],
+  부산: ["전체","강서구","금정구","기장군","남구","동구","동래구","부산진구","북구","사상구","사하구","서구","수영구","연제구","영도구","중구","해운대구"],
+  대구: ["전체","남구","달서구","달성군","동구","북구","서구","수성구","중구"],
+  인천: ["전체","강화군","계양구","남동구","동구","미추홀구","부평구","서구","연수구","옹진군","중구"],
+  광주: ["전체","광산구","남구","동구","북구","서구"],
+  대전: ["전체","대덕구","동구","서구","유성구","중구"],
+  울산: ["전체","남구","동구","북구","울주군","중구"],
+  세종: ["전체"],
+  경기: ["전체","가평군","고양시","과천시","광명시","광주시","구리시","군포시","김포시","남양주시","동두천시","부천시","성남시","수원시","시흥시","안산시","안성시","안양시","양주시","양평군","여주시","연천군","오산시","용인시","의왕시","의정부시","이천시","파주시","평택시","포천시","하남시","화성시"],
+  강원: ["전체","강릉시","고성군","동해시","삼척시","속초시","양구군","양양군","영월군","원주시","인제군","정선군","철원군","춘천시","태백시","평창군","홍천군","화천군","횡성군"],
+  충북: ["전체","괴산군","단양군","보은군","영동군","옥천군","음성군","제천시","증평군","진천군","청주시","충주시"],
+  충남: ["전체","계룡시","공주시","금산군","논산시","당진시","보령시","부여군","서산시","서천군","아산시","예산군","천안시","청양군","태안군","홍성군"],
+  전북: ["전체","고창군","군산시","김제시","남원시","무주군","부안군","순창군","완주군","익산시","임실군","장수군","전주시","정읍시","진안군"],
+  전남: ["전체","강진군","고흥군","곡성군","광양시","구례군","나주시","담양군","목포시","무안군","보성군","순천시","신안군","여수시","영광군","영암군","완도군","장성군","장흥군","진도군","함평군","해남군","화순군"],
+  경북: ["전체","경산시","경주시","고령군","구미시","군위군","김천시","문경시","봉화군","상주시","성주군","안동시","영덕군","영양군","영주시","영천시","예천군","울릉군","울진군","의성군","청도군","청송군","칠곡군","포항시"],
+  경남: ["전체","거제시","거창군","고성군","김해시","남해군","밀양시","사천시","산청군","양산시","의령군","진주시","창녕군","창원시","통영시","하동군","함안군","함양군","합천군"],
+  제주: ["전체","제주시","서귀포시"],
+};
+
 // 정적 소스 정의 (API 무관하게 항상 표시)
 const STATIC_SOURCES: { name: string; label: string; desc: string; envKey: string; bg: string; text: string; border: string }[] = [
   { name: "kakao", label: "카카오", desc: "Kakao Local API (카테고리 + 키워드)", envKey: "KAKAO_REST_API_KEY", bg: "bg-yellow-50", text: "text-yellow-700", border: "border-yellow-300" },
@@ -85,6 +105,7 @@ const RestaurantCrawlerPage: React.FC = () => {
   // 크롤링 옵션 (통합)
   const [query, setQuery] = useState("맛집");
   const [region, setRegion] = useState("서울");
+  const [subRegion, setSubRegion] = useState("전체");
   const [countPerSource, setCountPerSource] = useState(30);
   const [dryRun, setDryRun] = useState(true);
 
@@ -102,6 +123,7 @@ const RestaurantCrawlerPage: React.FC = () => {
   const [singleSource, setSingleSource] = useState("");
   const [singleQuery, setSingleQuery] = useState("맛집");
   const [singleRegion, setSingleRegion] = useState("서울");
+  const [singleSubRegion, setSingleSubRegion] = useState("전체");
   const [singleCount, setSingleCount] = useState(10);
   const [singleDryRun, setSingleDryRun] = useState(true);
   const [singleRunning, setSingleRunning] = useState(false);
@@ -155,6 +177,9 @@ const RestaurantCrawlerPage: React.FC = () => {
     );
   };
 
+  // 지역 + 하위 행정구역 조합
+  const fullRegion = subRegion === "전체" ? region : `${region} ${subRegion}`;
+
   // 크롤링 실행
   const handleRun = useCallback(async () => {
     if (selectedSources.length === 0) {
@@ -179,7 +204,7 @@ const RestaurantCrawlerPage: React.FC = () => {
         body: JSON.stringify({
           sources: selectedSources,
           query,
-          region,
+          region: fullRegion,
           countPerSource,
           dryRun,
         }),
@@ -199,7 +224,7 @@ const RestaurantCrawlerPage: React.FC = () => {
           id: Date.now(),
           time: new Date().toLocaleString("ko-KR"),
           sources: selectedSources,
-          region,
+          region: fullRegion,
           query,
           result: data,
         },
@@ -214,7 +239,7 @@ const RestaurantCrawlerPage: React.FC = () => {
       setIsRunning(false);
       fetchDbStats();
     }
-  }, [selectedSources, query, region, countPerSource, dryRun]);
+  }, [selectedSources, query, fullRegion, countPerSource, dryRun]);
 
   // 미리보기 데이터를 실제 저장
   const handleSavePreview = useCallback(async () => {
@@ -234,7 +259,7 @@ const RestaurantCrawlerPage: React.FC = () => {
         body: JSON.stringify({
           sources: selectedSources,
           query,
-          region,
+          region: fullRegion,
           countPerSource,
           dryRun: false,
         }),
@@ -252,7 +277,7 @@ const RestaurantCrawlerPage: React.FC = () => {
     } finally {
       setIsRunning(false);
     }
-  }, [selectedSources, query, region, countPerSource, previewData.length]);
+  }, [selectedSources, query, fullRegion, countPerSource, previewData.length]);
 
   // ─── 개별 크롤링 실행 ────────────────────────────────────
   const handleSingleRun = useCallback(async () => {
@@ -269,9 +294,10 @@ const RestaurantCrawlerPage: React.FC = () => {
 
     try {
       const accessToken = localStorage.getItem("accessToken");
+      const singleFullRegion = singleSubRegion === "전체" ? singleRegion : `${singleRegion} ${singleSubRegion}`;
       const params = new URLSearchParams({
         query: singleQuery,
-        region: singleRegion,
+        region: singleFullRegion,
         count: String(singleCount),
         dryRun: String(singleDryRun),
       });
@@ -294,7 +320,7 @@ const RestaurantCrawlerPage: React.FC = () => {
           id: Date.now(),
           time: new Date().toLocaleString("ko-KR"),
           sources: [singleSource],
-          region: singleRegion,
+          region: singleFullRegion,
           query: singleQuery,
           result: data,
         },
@@ -308,7 +334,7 @@ const RestaurantCrawlerPage: React.FC = () => {
     } finally {
       setSingleRunning(false);
     }
-  }, [singleSource, singleQuery, singleRegion, singleCount, singleDryRun]);
+  }, [singleSource, singleQuery, singleRegion, singleSubRegion, singleCount, singleDryRun]);
 
   // 개별 미리보기 → DB 저장
   const handleSaveSinglePreview = useCallback(async () => {
@@ -319,9 +345,10 @@ const RestaurantCrawlerPage: React.FC = () => {
 
     try {
       const accessToken = localStorage.getItem("accessToken");
+      const singleFullRegion = singleSubRegion === "전체" ? singleRegion : `${singleRegion} ${singleSubRegion}`;
       const params = new URLSearchParams({
         query: singleQuery,
-        region: singleRegion,
+        region: singleFullRegion,
         count: String(singleCount),
         dryRun: "false",
       });
@@ -342,7 +369,7 @@ const RestaurantCrawlerPage: React.FC = () => {
     } finally {
       setSingleRunning(false);
     }
-  }, [singleSource, singleQuery, singleRegion, singleCount, singlePreview.length]);
+  }, [singleSource, singleQuery, singleRegion, singleSubRegion, singleCount, singlePreview.length]);
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -454,15 +481,26 @@ const RestaurantCrawlerPage: React.FC = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">지역</label>
-                <select
-                  value={region}
-                  onChange={(e) => setRegion(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {REGION_OPTIONS.map((r) => (
-                    <option key={r} value={r}>{r}</option>
-                  ))}
-                </select>
+                <div className="flex gap-2">
+                  <select
+                    value={region}
+                    onChange={(e) => { setRegion(e.target.value); setSubRegion("전체"); }}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {REGION_OPTIONS.map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={subRegion}
+                    onChange={(e) => setSubRegion(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {(SUB_REGIONS[region] || ["전체"]).map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">검색 키워드</label>
@@ -742,15 +780,26 @@ const RestaurantCrawlerPage: React.FC = () => {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">지역</label>
-                    <select
-                      value={singleRegion}
-                      onChange={(e) => setSingleRegion(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      {REGION_OPTIONS.map((r) => (
-                        <option key={r} value={r}>{r}</option>
-                      ))}
-                    </select>
+                    <div className="flex gap-2">
+                      <select
+                        value={singleRegion}
+                        onChange={(e) => { setSingleRegion(e.target.value); setSingleSubRegion("전체"); }}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        {REGION_OPTIONS.map((r) => (
+                          <option key={r} value={r}>{r}</option>
+                        ))}
+                      </select>
+                      <select
+                        value={singleSubRegion}
+                        onChange={(e) => setSingleSubRegion(e.target.value)}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        {(SUB_REGIONS[singleRegion] || ["전체"]).map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
 
                   <div>
