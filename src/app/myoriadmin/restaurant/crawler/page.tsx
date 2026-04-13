@@ -73,8 +73,14 @@ const RestaurantCrawlerPage: React.FC = () => {
   const [sources, setSources] = useState<SourceInfo[]>([]);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
 
-  // DB 현황
-  const [dbStats, setDbStats] = useState<DbStats | null>(null);
+  // DB 현황 (기본값 0으로 초기화 → 페이지 로드 즉시 카드 표시)
+  const [dbStats, setDbStats] = useState<DbStats>({
+    totalRestaurants: 0,
+    withMenu: 0,
+    withImage: 0,
+    withRating: 0,
+    recentAdded: 0,
+  });
 
   // 크롤링 옵션 (통합)
   const [query, setQuery] = useState("맛집");
@@ -346,31 +352,29 @@ const RestaurantCrawlerPage: React.FC = () => {
         <p className="text-gray-500 mt-1">맛집 데이터를 수집합니다.</p>
       </div>
 
-      {/* DB 현황 */}
-      {dbStats && (
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
-            <p className="text-2xl font-bold text-blue-600">{dbStats.totalRestaurants.toLocaleString()}</p>
-            <p className="text-xs text-gray-500 mt-1">총 등록 식당</p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
-            <p className="text-2xl font-bold text-green-600">+{dbStats.recentAdded.toLocaleString()}</p>
-            <p className="text-xs text-gray-500 mt-1">최근 7일 추가</p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
-            <p className="text-2xl font-bold text-orange-600">{dbStats.withMenu.toLocaleString()}</p>
-            <p className="text-xs text-gray-500 mt-1">메뉴 보유</p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
-            <p className="text-2xl font-bold text-purple-600">{dbStats.withImage.toLocaleString()}</p>
-            <p className="text-xs text-gray-500 mt-1">이미지 보유</p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
-            <p className="text-2xl font-bold text-yellow-600">{dbStats.withRating.toLocaleString()}</p>
-            <p className="text-xs text-gray-500 mt-1">평점 보유</p>
-          </div>
+      {/* DB 현황 - 항상 표시 */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
+          <p className="text-2xl font-bold text-blue-600">{dbStats.totalRestaurants.toLocaleString()}</p>
+          <p className="text-xs text-gray-500 mt-1">총 등록 식당</p>
         </div>
-      )}
+        <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
+          <p className="text-2xl font-bold text-green-600">+{dbStats.recentAdded.toLocaleString()}</p>
+          <p className="text-xs text-gray-500 mt-1">최근 7일 추가</p>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
+          <p className="text-2xl font-bold text-orange-600">{dbStats.withMenu.toLocaleString()}</p>
+          <p className="text-xs text-gray-500 mt-1">메뉴 보유</p>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
+          <p className="text-2xl font-bold text-purple-600">{dbStats.withImage.toLocaleString()}</p>
+          <p className="text-xs text-gray-500 mt-1">이미지 보유</p>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
+          <p className="text-2xl font-bold text-yellow-600">{dbStats.withRating.toLocaleString()}</p>
+          <p className="text-xs text-gray-500 mt-1">평점 보유</p>
+        </div>
+      </div>
 
       {/* 탭 네비게이션 */}
       <div className="flex border-b border-gray-200 mb-6">
