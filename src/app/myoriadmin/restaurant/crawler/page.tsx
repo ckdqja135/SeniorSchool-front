@@ -314,7 +314,7 @@ const RestaurantCrawlerPage: React.FC = () => {
       {/* 헤더 */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">맛집 크롤러 관리</h1>
-        <p className="text-gray-500 mt-1">카카오, 네이버, 식신에서 맛집 데이터를 수집합니다.</p>
+        <p className="text-gray-500 mt-1">맛집 데이터를 수집합니다.</p>
       </div>
 
       {/* 탭 네비게이션 */}
