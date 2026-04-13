@@ -19,6 +19,15 @@ interface CrawlStats {
   coordFixed: number;
   saved: number;
   failed: number;
+  alreadyInDB?: number;
+}
+
+interface DbStats {
+  totalRestaurants: number;
+  withMenu: number;
+  withImage: number;
+  withRating: number;
+  recentAdded: number;
 }
 
 interface CrawlResult {
@@ -64,6 +73,9 @@ const RestaurantCrawlerPage: React.FC = () => {
   const [sources, setSources] = useState<SourceInfo[]>([]);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
 
+  // DB 현황
+  const [dbStats, setDbStats] = useState<DbStats | null>(null);
+
   // 크롤링 옵션 (통합)
   const [query, setQuery] = useState("맛집");
   const [region, setRegion] = useState("서울");
@@ -92,10 +104,26 @@ const RestaurantCrawlerPage: React.FC = () => {
   const [singlePreview, setSinglePreview] = useState<any[]>([]);
   const [showSinglePreview, setShowSinglePreview] = useState(false);
 
-  // 소스 목록 조회
+  // 소스 목록 + DB 현황 조회
   useEffect(() => {
     fetchSources();
+    fetchDbStats();
   }, []);
+
+  const fetchDbStats = async () => {
+    try {
+      const accessToken = localStorage.getItem("accessToken");
+      const res = await fetch(`${API_BASE_URL}/admin/crawler/stats`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (res.ok) {
+        const data: DbStats = await res.json();
+        setDbStats(data);
+      }
+    } catch (err) {
+      console.error("DB 현황 조회 실패:", err);
+    }
+  };
 
   const fetchSources = async () => {
     try {
@@ -178,6 +206,7 @@ const RestaurantCrawlerPage: React.FC = () => {
       setProgress("실행 중 오류가 발생했습니다.");
     } finally {
       setIsRunning(false);
+      fetchDbStats();
     }
   }, [selectedSources, query, region, countPerSource, dryRun]);
 
@@ -316,6 +345,32 @@ const RestaurantCrawlerPage: React.FC = () => {
         <h1 className="text-2xl font-bold text-gray-900">맛집 크롤러 관리</h1>
         <p className="text-gray-500 mt-1">맛집 데이터를 수집합니다.</p>
       </div>
+
+      {/* DB 현황 */}
+      {dbStats && (
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
+            <p className="text-2xl font-bold text-blue-600">{dbStats.totalRestaurants.toLocaleString()}</p>
+            <p className="text-xs text-gray-500 mt-1">총 등록 식당</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
+            <p className="text-2xl font-bold text-green-600">+{dbStats.recentAdded.toLocaleString()}</p>
+            <p className="text-xs text-gray-500 mt-1">최근 7일 추가</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
+            <p className="text-2xl font-bold text-orange-600">{dbStats.withMenu.toLocaleString()}</p>
+            <p className="text-xs text-gray-500 mt-1">메뉴 보유</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
+            <p className="text-2xl font-bold text-purple-600">{dbStats.withImage.toLocaleString()}</p>
+            <p className="text-xs text-gray-500 mt-1">이미지 보유</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
+            <p className="text-2xl font-bold text-yellow-600">{dbStats.withRating.toLocaleString()}</p>
+            <p className="text-xs text-gray-500 mt-1">평점 보유</p>
+          </div>
+        </div>
+      )}
 
       {/* 탭 네비게이션 */}
       <div className="flex border-b border-gray-200 mb-6">
@@ -497,6 +552,12 @@ const RestaurantCrawlerPage: React.FC = () => {
                     <p className="text-2xl font-bold text-green-600">{result.stats.saved}</p>
                     <p className="text-xs text-gray-500">DB 저장</p>
                   </div>
+                  {result.stats.alreadyInDB != null && (
+                    <div className="bg-white rounded-lg p-3 text-center">
+                      <p className="text-2xl font-bold text-gray-600">{result.stats.alreadyInDB}</p>
+                      <p className="text-xs text-gray-500">기존 데이터</p>
+                    </div>
+                  )}
                   <div className="bg-white rounded-lg p-3 text-center">
                     <p className="text-2xl font-bold text-yellow-600">{result.stats.duplicateSkipped}</p>
                     <p className="text-xs text-gray-500">중복 스킵</p>
