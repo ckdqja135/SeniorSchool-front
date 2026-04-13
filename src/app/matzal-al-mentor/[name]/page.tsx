@@ -535,6 +535,25 @@ export default function RestaurantDetailPage() {
               </div>
             </div>
 
+            {/* 메뉴 */}
+            {restaurant.restaurantMenu && restaurant.restaurantMenu.length > 0 && (
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">메뉴</h3>
+                <div className="divide-y divide-gray-100">
+                  {restaurant.restaurantMenu.map((item, idx) => (
+                    <div key={idx} className="flex justify-between items-center py-3">
+                      <span className="text-gray-700">{item.name}</span>
+                      {item.price > 0 && (
+                        <span className="text-gray-900 font-medium">
+                          {item.price.toLocaleString()}원
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* 지도 */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">위치</h3>

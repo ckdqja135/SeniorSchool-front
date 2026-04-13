@@ -10,6 +10,11 @@ export interface MatzalAl {
 }
 
 // 식당 상세 정보
+export interface RestaurantMenuItem {
+  name: string;
+  price: number;
+}
+
 export interface Restaurant {
   restaurantIdx: number;
   restaurantName: string;
@@ -23,6 +28,7 @@ export interface Restaurant {
   restaurantLotAddr: string;
   restaurantAddr: string;
   restaurantMapIMG: string;
+  restaurantMenu?: RestaurantMenuItem[] | null;
   restaurantStatus: number;
   restaurantViewCount: number;
   averageRating?: number | null;
