@@ -39,6 +39,9 @@ export default function MatzalAlMentorPage() {
   // 카테고리 필터 상태
   const [categories, setCategories] = useState<{ restaurantType: string; count: number }[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('전체');
+  const [locations, setLocations] = useState<{ city: string; count: number; districts: { district: string; count: number }[] }[]>([]);
+  const [selectedCity, setSelectedCity] = useState('전체');
+  const [selectedDistrict, setSelectedDistrict] = useState('전체');
   const [filteredRestaurants, setFilteredRestaurants] = useState<any[]>([]);
 
   // 랜덤 룰렛 상태
@@ -100,6 +103,23 @@ export default function MatzalAlMentorPage() {
       }
     };
     fetchCategories();
+  }, []);
+
+  // 지역 목록 로드
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
+        const res = await fetch(`${backendURL}/restaurant/locations`);
+        if (res.ok) {
+          const data = await res.json();
+          setLocations(data);
+        }
+      } catch (err) {
+        console.error('지역 로드 오류:', err);
+      }
+    };
+    fetchLocations();
   }, []);
 
   // 최근 검색 기록 로드
@@ -310,25 +330,31 @@ export default function MatzalAlMentorPage() {
     );
   };
 
-  // 카테고리 선택 시 필터링
+  // 카테고리 + 지역 선택 시 필터링
   useEffect(() => {
-    if (selectedCategory === '전체') {
-      setFilteredRestaurants(popularMatzalAl);
-    } else if (selectedCategory === '기타') {
+    let result = popularMatzalAl;
+
+    // 카테고리 필터
+    if (selectedCategory === '기타') {
       const mainTypes = MAIN_CATEGORIES;
-      setFilteredRestaurants(
-        popularMatzalAl.filter((r: any) =>
-          !mainTypes.some(t => (r.matzalAlType || '').includes(t))
-        )
-      );
-    } else {
-      setFilteredRestaurants(
-        popularMatzalAl.filter((r: any) =>
-          (r.matzalAlType || '').includes(selectedCategory)
-        )
-      );
+      result = result.filter((r: any) => !mainTypes.some(t => (r.matzalAlType || '').includes(t)));
+    } else if (selectedCategory !== '전체') {
+      result = result.filter((r: any) => (r.matzalAlType || '').includes(selectedCategory));
     }
-  }, [selectedCategory, popularMatzalAl]);
+
+    // 지역 필터
+    if (selectedCity !== '전체') {
+      result = result.filter((r: any) => {
+        const addr = r.matzalAlLocation || '';
+        if (selectedDistrict !== '전체') {
+          return addr.includes(selectedDistrict);
+        }
+        return addr.includes(selectedCity) || addr.replace(/특별시|광역시|특별자치시|도$|시$/, '').startsWith(selectedCity);
+      });
+    }
+
+    setFilteredRestaurants(result);
+  }, [selectedCategory, selectedCity, selectedDistrict, popularMatzalAl]);
 
   // 카카오맵 SDK 로드
   useEffect(() => {
@@ -425,14 +451,19 @@ export default function MatzalAlMentorPage() {
   useEffect(() => {
     if (viewTab !== 'map' || !isKakaoMapLoaded || !mapContainerRef.current) return;
 
-    // 지도용 데이터: 전체 식당, 카테고리 필터 적용
-    const allMapData = mapRestaurants.length > 0 ? mapRestaurants : popularMatzalAl;
-    const restaurants = selectedCategory === '전체'
-      ? allMapData
-      : allMapData.filter((r: any) => {
-          const type = r.matzalAlType || '';
-          return type.includes(selectedCategory);
-        });
+    // 지도용 데이터: 전체 식당, 카테고리 + 지역 필터 적용
+    let allMapData = mapRestaurants.length > 0 ? mapRestaurants : popularMatzalAl;
+    if (selectedCategory !== '전체') {
+      allMapData = allMapData.filter((r: any) => (r.matzalAlType || '').includes(selectedCategory));
+    }
+    if (selectedCity !== '전체') {
+      allMapData = allMapData.filter((r: any) => {
+        const addr = r.matzalAlLocation || '';
+        if (selectedDistrict !== '전체') return addr.includes(selectedDistrict);
+        return addr.includes(selectedCity) || addr.replace(/특별시|광역시|특별자치시|도$|시$/, '').startsWith(selectedCity);
+      });
+    }
+    const restaurants = allMapData;
     if (restaurants.length === 0) return;
 
     // 기존 클러스터러·오버레이·마커 정리
@@ -576,35 +607,42 @@ export default function MatzalAlMentorPage() {
 
     // 모든 마커가 보이도록 자동 줌 맞춤
     map.setBounds(bounds, 50);
-  }, [viewTab, isKakaoMapLoaded, userLocation, mapRestaurants, popularMatzalAl, filteredRestaurants, selectedCategory, mapRadius, router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewTab, isKakaoMapLoaded, userLocation, mapRestaurants.length, popularMatzalAl.length, selectedCategory, selectedCity, selectedDistrict, mapRadius]);
 
-  // 랜덤 룰렛 실행
-  const handleRoulette = useCallback(async () => {
+  // 랜덤 룰렛 실행 (현재 필터 기준)
+  const handleRoulette = useCallback(() => {
     if (isSpinning) return;
     setIsSpinning(true);
     setShowRouletteResult(false);
 
-    try {
-      const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
-      const typeParam = selectedCategory !== '전체' ? `?type=${encodeURIComponent(selectedCategory)}` : '';
-      const response = await fetch(`${backendURL}/restaurant/random${typeParam}`);
+    // 현재 필터된 목록에서 랜덤 선택
+    const pool = selectedCategory === '전체' && selectedCity === '전체'
+      ? popularMatzalAl
+      : filteredRestaurants;
 
-      if (response.ok) {
-        const data = await response.json();
-        // 슬롯머신 효과를 위해 딜레이
-        setTimeout(() => {
-          setRouletteResult(data);
-          setShowRouletteResult(true);
-          setIsSpinning(false);
-        }, 1500);
-      } else {
-        setIsSpinning(false);
-      }
-    } catch (err) {
-      console.error('랜덤 추천 오류:', err);
+    if (pool.length === 0) {
       setIsSpinning(false);
+      return;
     }
-  }, [isSpinning, selectedCategory]);
+
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+
+    setTimeout(() => {
+      setRouletteResult({
+        restaurantIdx: pick.matzalAlIdx || pick.restaurantIdx,
+        restaurantName: pick.matzalAlName,
+        restaurantAddr: pick.matzalAlLocation || pick.restaurantAddr,
+        restaurantType: pick.matzalAlType,
+        restaurantImage: pick.restaurantImage,
+        averageRating: pick.averageRating,
+        ratingCount: pick.ratingCount,
+        restaurantLocation: pick.matzalAlLocation,
+      });
+      setShowRouletteResult(true);
+      setIsSpinning(false);
+    }, 1500);
+  }, [isSpinning, selectedCategory, selectedCity, popularMatzalAl, filteredRestaurants]);
 
   // 인기 맛잘알 새로고침
   const handleRefresh = async () => {
@@ -1033,37 +1071,58 @@ export default function MatzalAlMentorPage() {
         </div>
       </div>
 
-      {/* 카테고리 필터 + 랜덤 룰렛 섹션 */}
+      {/* 필터 + 랜덤 룰렛 섹션 */}
       <div className="bg-gray-50 py-6 border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* 카테고리 이모지 필터 */}
-          <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">카테고리</h3>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setSelectedCategory('전체')}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                  selectedCategory === '전체'
-                    ? 'bg-blue-600 text-white shadow-md scale-105'
-                    : 'bg-white text-gray-700 border border-gray-200 hover:border-blue-300 hover:bg-blue-50'
-                }`}
+          {/* 카테고리 + 지역 필터 (컴팩트) */}
+          <div className="mb-6 flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-semibold text-gray-500 whitespace-nowrap">카테고리</label>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer min-w-[140px]"
               >
-                전체
-              </button>
-              {categories.map((cat) => (
-                <button
-                  key={cat.restaurantType}
-                  onClick={() => setSelectedCategory(cat.restaurantType)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                    selectedCategory === cat.restaurantType
-                      ? 'bg-blue-600 text-white shadow-md scale-105'
-                      : 'bg-white text-gray-700 border border-gray-200 hover:border-blue-300 hover:bg-blue-50'
-                  }`}
-                >
-                  {cat.restaurantType} <span className="text-xs opacity-60">({cat.count})</span>
-                </button>
-              ))}
+                <option value="전체">전체</option>
+                {categories.map((cat) => (
+                  <option key={cat.restaurantType} value={cat.restaurantType}>
+                    {cat.restaurantType} ({cat.count})
+                  </option>
+                ))}
+              </select>
             </div>
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-semibold text-gray-500 whitespace-nowrap">시/도</label>
+              <select
+                value={selectedCity}
+                onChange={(e) => { setSelectedCity(e.target.value); setSelectedDistrict('전체'); }}
+                className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+              >
+                <option value="전체">전체</option>
+                {locations.map((loc) => (
+                  <option key={loc.city} value={loc.city}>
+                    {loc.city} ({loc.count})
+                  </option>
+                ))}
+              </select>
+            </div>
+            {selectedCity !== '전체' && (
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-semibold text-gray-500 whitespace-nowrap">구/군</label>
+                <select
+                  value={selectedDistrict}
+                  onChange={(e) => setSelectedDistrict(e.target.value)}
+                  className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+                >
+                  <option value="전체">전체</option>
+                  {locations.find(l => l.city === selectedCity)?.districts.map((d) => (
+                    <option key={d.district} value={d.district}>
+                      {d.district} ({d.count})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           {/* 오늘 뭐 먹지? 랜덤 룰렛 */}
@@ -1074,7 +1133,10 @@ export default function MatzalAlMentorPage() {
                   오늘 뭐 먹지?
                 </h3>
                 <p className="text-sm text-gray-500">
-                  {selectedCategory !== '전체' ? `${selectedCategory} 중에서` : '전체 맛집 중에서'} 랜덤 추천!
+                  {[
+                    selectedCity !== '전체' ? (selectedDistrict !== '전체' ? `${selectedCity} ${selectedDistrict}` : selectedCity) : '',
+                    selectedCategory !== '전체' ? selectedCategory : '',
+                  ].filter(Boolean).join(' ') || '전체 맛집'} 중에서 랜덤 추천!
                 </p>
               </div>
               <button
@@ -1101,9 +1163,6 @@ export default function MatzalAlMentorPage() {
                   className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-white rounded-xl shadow-sm flex items-center justify-center text-sm font-bold text-gray-500 flex-shrink-0">
-                      {rouletteResult.restaurantType || '맛집'}
-                    </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-blue-600 font-semibold mb-0.5">오늘의 추천</p>
                       <h4 className="text-lg font-bold text-gray-900 truncate">{rouletteResult.restaurantName}</h4>
@@ -1143,17 +1202,13 @@ export default function MatzalAlMentorPage() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-bold text-gray-900">
-                  {viewTab === 'map'
-                    ? (selectedCategory === '전체'
-                        ? (mapRadius > 0 ? `내 주변 ${mapRadius}km 맛집` : '전체 맛집')
-                        : (mapRadius > 0 ? `내 주변 ${mapRadius}km ${selectedCategory} 맛집` : `전체 ${selectedCategory} 맛집`))
-                    : (selectedCategory === '전체' ? '오늘의 맛잘알 추천' : `${selectedCategory} 맛집`)}
+                  {viewTab === 'map' ? '내 주변 맛집' : (selectedCategory === '전체' ? '오늘의 맛잘알 추천' : `${selectedCategory} 맛집`)}
                 </h2>
                 {viewTab === 'map' && (
                   <select
                     value={mapRadius}
                     onChange={(e) => setMapRadius(Number(e.target.value))}
-                    className="text-sm border border-gray-300 rounded-lg px-2 py-1 bg-white text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer"
+                    className="text-sm border border-gray-300 rounded-lg px-2 py-1 bg-white text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
                   >
                     <option value={3}>3km</option>
                     <option value={5}>5km</option>
