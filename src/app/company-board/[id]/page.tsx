@@ -1159,13 +1159,13 @@ export default function CompanyBoardDetailPage() {
                               {replyForm.content.length}/200
                             </div>
                             <div className="space-y-3">
-                              <div className="flex space-x-1 sm:space-x-2">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 <input
                                   type="text"
                                   value={replyForm.writer}
                                   onChange={(e) => setReplyForm({...replyForm, writer: e.target.value})}
                                   placeholder="작성자"
-                                  className="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                                  className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
                                   required
                                 />
                                 <input
@@ -1173,7 +1173,7 @@ export default function CompanyBoardDetailPage() {
                                   value={replyForm.password}
                                   onChange={(e) => setReplyForm({...replyForm, password: e.target.value})}
                                   placeholder="비밀번호"
-                                  className="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                                  className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
                                   required
                                 />
                               </div>
@@ -1233,13 +1233,13 @@ export default function CompanyBoardDetailPage() {
                 </div>
               </div>
               <div className="space-y-3">
-                <div className="flex space-x-2 sm:space-x-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <input
                     type="text"
                     value={commentForm.writer}
                     onChange={(e) => setCommentForm({...commentForm, writer: e.target.value})}
                     placeholder="아이디"
-                    className="flex-1 p-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                     required
                   />
                   <input
@@ -1247,7 +1247,7 @@ export default function CompanyBoardDetailPage() {
                     value={commentForm.password}
                     onChange={(e) => setCommentForm({...commentForm, password: e.target.value})}
                     placeholder="비밀번호"
-                    className="flex-1 p-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                     required
                   />
                 </div>
