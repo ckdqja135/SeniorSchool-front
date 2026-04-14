@@ -51,10 +51,12 @@ export default function MatzalAlMentorPage() {
   const [isKakaoMapLoaded, setIsKakaoMapLoaded] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [mapRestaurants, setMapRestaurants] = useState<any[]>([]);
+  const [mapRadius, setMapRadius] = useState<number>(0); // 0 = 전체
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
   const overlaysRef = useRef<any[]>([]);
+  const clustererRef = useRef<any>(null);
   const hasFetchedMapRestaurants = useRef(false);
 
   const searchRef = useRef<HTMLDivElement>(null);
@@ -347,7 +349,7 @@ export default function MatzalAlMentorPage() {
     }
 
     const script = document.createElement('script');
-    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_MAP_KEY}&autoload=false&libraries=services`;
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_MAP_KEY}&autoload=false&libraries=services,clusterer`;
     script.async = true;
     (window as any).kakaoMapLoading = true;
 
@@ -385,21 +387,15 @@ export default function MatzalAlMentorPage() {
     }
   }, [viewTab]);
 
-  // 지도 뷰 전환 시 주변 식당 조회
+  // 지도 뷰 전환 시 전체 식당 조회
   useEffect(() => {
-    if (viewTab !== 'map' || !userLocation || hasFetchedMapRestaurants.current) return;
+    if (viewTab !== 'map' || hasFetchedMapRestaurants.current) return;
     hasFetchedMapRestaurants.current = true;
 
-    const fetchNearby = async () => {
+    const fetchAllRestaurants = async () => {
       try {
         const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
-        const params = new URLSearchParams({
-          lat: String(userLocation.lat),
-          lng: String(userLocation.lng),
-          radius: '5',
-          limit: '200',
-        });
-        const res = await fetch(`${backendURL}/restaurant/nearby?${params}`);
+        const res = await fetch(`${backendURL}/restaurant`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
 
@@ -419,22 +415,17 @@ export default function MatzalAlMentorPage() {
         }));
         setMapRestaurants(mapped);
       } catch (err) {
-        console.error('주변 식당 조회 실패:', err);
+        console.error('식당 목록 조회 실패:', err);
       }
     };
-    fetchNearby();
-  }, [viewTab, userLocation]);
-
-  // 위치 변경 시 재조회 허용
-  useEffect(() => {
-    hasFetchedMapRestaurants.current = false;
-  }, [userLocation]);
+    fetchAllRestaurants();
+  }, [viewTab]);
 
   // 카카오맵 초기화 및 마커 표시
   useEffect(() => {
-    if (viewTab !== 'map' || !isKakaoMapLoaded || !mapContainerRef.current || !userLocation) return;
+    if (viewTab !== 'map' || !isKakaoMapLoaded || !mapContainerRef.current) return;
 
-    // 지도용 데이터: nearby API 결과 사용, 카테고리 필터 적용
+    // 지도용 데이터: 전체 식당, 카테고리 필터 적용
     const allMapData = mapRestaurants.length > 0 ? mapRestaurants : popularMatzalAl;
     const restaurants = selectedCategory === '전체'
       ? allMapData
@@ -444,17 +435,17 @@ export default function MatzalAlMentorPage() {
         });
     if (restaurants.length === 0) return;
 
-    // 기존 오버레이·마커 정리
+    // 기존 클러스터러·오버레이·마커 정리
+    if (clustererRef.current) {
+      clustererRef.current.clear();
+      clustererRef.current = null;
+    }
     overlaysRef.current.forEach((o: any) => o.setMap(null));
     overlaysRef.current = [];
     markersRef.current.forEach((m: any) => m.setMap(null));
     markersRef.current = [];
 
-    // 유효 좌표가 있는 식당만 필터
-    const withCoords = restaurants.filter((r: any) => r.restaurantLatX && r.restaurantLatY);
-    if (withCoords.length === 0) return;
-
-    // 현재 위치 기준으로 거리 계산 후 가까운 순 정렬
+    // 거리 계산 함수
     const getDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
       const R = 6371;
       const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -463,44 +454,64 @@ export default function MatzalAlMentorPage() {
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     };
 
-    const sorted = [...withCoords].sort((a: any, b: any) =>
-      getDistance(userLocation.lat, userLocation.lng, a.restaurantLatX, a.restaurantLatY)
-      - getDistance(userLocation.lat, userLocation.lng, b.restaurantLatX, b.restaurantLatY)
-    );
+    // 유효 좌표가 있는 식당만 필터 + 반경 필터
+    const withCoords = restaurants.filter((r: any) => {
+      if (!r.restaurantLatX || !r.restaurantLatY) return false;
+      if (mapRadius > 0 && userLocation) {
+        const dist = getDistance(userLocation.lat, userLocation.lng, r.restaurantLatX, r.restaurantLatY);
+        return dist <= mapRadius;
+      }
+      return true;
+    });
+    if (withCoords.length === 0) return;
 
-    // 지도 생성 — 현재 위치 중심
-    const center = new window.kakao.maps.LatLng(userLocation.lat, userLocation.lng);
-    mapInstanceRef.current = new window.kakao.maps.Map(mapContainerRef.current, { center, level: 2 });
+    // 초기 지도 중심: 사용자 위치 또는 첫 식당 좌표
+    const initLat = userLocation?.lat || withCoords[0].restaurantLatX;
+    const initLng = userLocation?.lng || withCoords[0].restaurantLatY;
+    const center = new window.kakao.maps.LatLng(initLat, initLng);
+
+    mapInstanceRef.current = new window.kakao.maps.Map(mapContainerRef.current, { center, level: 7 });
     const zoomControl = new window.kakao.maps.ZoomControl();
     mapInstanceRef.current.addControl(zoomControl, window.kakao.maps.ControlPosition.RIGHT);
 
     const map = mapInstanceRef.current;
 
-    // 현재 위치 마커 (파란 원)
-    const myOverlay = new window.kakao.maps.CustomOverlay({
-      content: `<div style="width:16px;height:16px;background:#3B82F6;border:3px solid white;border-radius:50%;box-shadow:0 0 6px rgba(59,130,246,0.5);"></div>`,
-      position: center,
-      yAnchor: 0.5,
-      zIndex: 10,
-      map,
-    });
+    // 현재 위치 마커 (파란 원) — 위치 있을 때만
+    if (userLocation) {
+      const myPos = new window.kakao.maps.LatLng(userLocation.lat, userLocation.lng);
+      new window.kakao.maps.CustomOverlay({
+        content: `<div style="width:16px;height:16px;background:#3B82F6;border:3px solid white;border-radius:50%;box-shadow:0 0 6px rgba(59,130,246,0.5);"></div>`,
+        position: myPos,
+        yAnchor: 0.5,
+        zIndex: 10,
+        map,
+      });
+    }
 
     const bounds = new window.kakao.maps.LatLngBounds();
-    bounds.extend(center);
+    if (userLocation) {
+      bounds.extend(new window.kakao.maps.LatLng(userLocation.lat, userLocation.lng));
+    }
 
-    sorted.slice(0, 50).forEach((r: any) => {
+    // 마커 생성 (map에 직접 추가하지 않음 — 클러스터러가 관리)
+    const markers = withCoords.map((r: any) => {
       const pos = new window.kakao.maps.LatLng(r.restaurantLatX, r.restaurantLatY);
       bounds.extend(pos);
-      const dist = getDistance(userLocation.lat, userLocation.lng, r.restaurantLatX, r.restaurantLatY);
 
-      const marker = new window.kakao.maps.Marker({ position: pos, map });
-      markersRef.current.push(marker);
+      const marker = new window.kakao.maps.Marker({ position: pos });
+
+      const distText = userLocation
+        ? (() => {
+            const dist = getDistance(userLocation.lat, userLocation.lng, r.restaurantLatX, r.restaurantLatY);
+            return `<div style="color:#3B82F6;font-size:11px;margin-top:2px;">${dist < 1 ? Math.round(dist * 1000) + 'm' : dist.toFixed(1) + 'km'}</div>`;
+          })()
+        : '';
 
       const overlayContent = `
         <div style="padding:8px 12px;background:white;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);border:1px solid #e5e7eb;font-size:13px;max-width:220px;cursor:pointer;">
           <div style="font-weight:700;color:#111;margin-bottom:2px;">${r.matzalAlName}</div>
           <div style="color:#6b7280;font-size:11px;">${r.matzalAlType || '맛집'}${r.averageRating > 0 ? ' · ⭐ ' + r.averageRating.toFixed(1) : ''}</div>
-          <div style="color:#3B82F6;font-size:11px;margin-top:2px;">${dist < 1 ? Math.round(dist * 1000) + 'm' : dist.toFixed(1) + 'km'}</div>
+          ${distText}
         </div>`;
 
       const overlay = new window.kakao.maps.CustomOverlay({
@@ -519,12 +530,53 @@ export default function MatzalAlMentorPage() {
         if (r.restaurantAddr) params.append('restaurantAddr', r.restaurantAddr);
         router.push(`/matzal-al-mentor/${encodeURIComponent(r.matzalAlName)}?${params.toString()}`);
       });
+
+      return marker;
     });
 
-    // 현재 위치 중심 유지, 줌 레벨 2로 고정 (setBounds 대신)
-    map.setCenter(center);
-    map.setLevel(2);
-  }, [viewTab, isKakaoMapLoaded, userLocation, mapRestaurants, popularMatzalAl, filteredRestaurants, selectedCategory, router]);
+    markersRef.current = markers;
+
+    // MarkerClusterer로 마커 관리 (가까운 마커끼리 묶어 표시)
+    clustererRef.current = new window.kakao.maps.MarkerClusterer({
+      map,
+      markers,
+      gridSize: 60,
+      averageCenter: true,
+      minLevel: 4,
+      minClusterSize: 2,
+      styles: [{
+        width: '40px', height: '40px',
+        background: 'rgba(99,102,241,0.85)',
+        borderRadius: '50%',
+        color: '#fff',
+        textAlign: 'center',
+        fontWeight: 'bold',
+        lineHeight: '40px',
+        fontSize: '14px',
+      }, {
+        width: '50px', height: '50px',
+        background: 'rgba(79,70,229,0.85)',
+        borderRadius: '50%',
+        color: '#fff',
+        textAlign: 'center',
+        fontWeight: 'bold',
+        lineHeight: '50px',
+        fontSize: '15px',
+      }, {
+        width: '60px', height: '60px',
+        background: 'rgba(67,56,202,0.9)',
+        borderRadius: '50%',
+        color: '#fff',
+        textAlign: 'center',
+        fontWeight: 'bold',
+        lineHeight: '60px',
+        fontSize: '16px',
+      }],
+    });
+
+    // 모든 마커가 보이도록 자동 줌 맞춤
+    map.setBounds(bounds, 50);
+  }, [viewTab, isKakaoMapLoaded, userLocation, mapRestaurants, popularMatzalAl, filteredRestaurants, selectedCategory, mapRadius, router]);
 
   // 랜덤 룰렛 실행
   const handleRoulette = useCallback(async () => {
@@ -1089,11 +1141,27 @@ export default function MatzalAlMentorPage() {
           {/* 탭 헤더 + 맛집 카드/지도 섹션 */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">
-                {viewTab === 'map'
-                  ? (selectedCategory === '전체' ? '내 주변 맛집' : `내 주변 ${selectedCategory} 맛집`)
-                  : (selectedCategory === '전체' ? '오늘의 맛잘알 추천' : `${selectedCategory} 맛집`)}
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-bold text-gray-900">
+                  {viewTab === 'map'
+                    ? (selectedCategory === '전체'
+                        ? (mapRadius > 0 ? `내 주변 ${mapRadius}km 맛집` : '전체 맛집')
+                        : (mapRadius > 0 ? `내 주변 ${mapRadius}km ${selectedCategory} 맛집` : `전체 ${selectedCategory} 맛집`))
+                    : (selectedCategory === '전체' ? '오늘의 맛잘알 추천' : `${selectedCategory} 맛집`)}
+                </h2>
+                {viewTab === 'map' && (
+                  <select
+                    value={mapRadius}
+                    onChange={(e) => setMapRadius(Number(e.target.value))}
+                    className="text-sm border border-gray-300 rounded-lg px-2 py-1 bg-white text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer"
+                  >
+                    <option value={3}>3km</option>
+                    <option value={5}>5km</option>
+                    <option value={10}>10km</option>
+                    <option value={0}>전체</option>
+                  </select>
+                )}
+              </div>
               <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
                 <button
                   onClick={() => setViewTab('grid')}

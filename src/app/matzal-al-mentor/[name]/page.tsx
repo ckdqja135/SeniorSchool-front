@@ -180,7 +180,7 @@ export default function RestaurantDetailPage() {
       }
 
       const script = document.createElement('script');
-      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_MAP_KEY}&autoload=false&libraries=services`;
+      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_MAP_KEY}&autoload=false&libraries=services,clusterer`;
       script.async = true;
       
       script.onload = () => {
@@ -540,12 +540,12 @@ export default function RestaurantDetailPage() {
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">메뉴</h3>
                 <div className="divide-y divide-gray-100">
-                  {restaurant.restaurantMenu.map((item, idx) => (
+                  {(Array.isArray(restaurant.restaurantMenu) ? restaurant.restaurantMenu : (() => { try { return JSON.parse(restaurant.restaurantMenu as any); } catch { return []; } })()).map((item: any, idx: number) => (
                     <div key={idx} className="flex justify-between items-center py-3">
                       <span className="text-gray-700">{item.name}</span>
                       {item.price > 0 && (
                         <span className="text-gray-900 font-medium">
-                          {item.price.toLocaleString()}원
+                          {Number(item.price).toLocaleString()}원
                         </span>
                       )}
                     </div>

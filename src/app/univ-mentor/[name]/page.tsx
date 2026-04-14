@@ -104,7 +104,7 @@ export default function SchoolPage() {
       
       // ChatGPT 제안 방법: autoload=false + kakao.maps.load() 사용
       const script = document.createElement('script');
-      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_MAP_KEY}&autoload=false&libraries=services`;
+      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_MAP_KEY}&autoload=false&libraries=services,clusterer`;
       script.async = true;
       
       script.onload = () => {
