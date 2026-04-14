@@ -931,12 +931,12 @@ export default function CompanyBoardDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 overflow-x-hidden">
       {/* 헤더 */}
       <nav className="bg-gray-800 text-white shadow-lg">
-        <div className="w-full sm:max-w-7xl sm:mx-auto sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:max-w-7xl sm:mx-auto sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <Link href="/company-mentor" className="text-2xl font-bold text-purple-400">
+            <Link href="/company-mentor" className="text-xl sm:text-2xl font-bold text-purple-400">
               회사 오빠
             </Link>
             <div className="text-gray-300">
@@ -946,7 +946,7 @@ export default function CompanyBoardDetailPage() {
         </div>
       </nav>
 
-      <div className="w-full py-4 sm:max-w-4xl sm:mx-auto sm:px-6 lg:px-8 sm:py-8">
+      <div className="w-full px-4 py-4 sm:max-w-4xl sm:mx-auto sm:px-6 lg:px-8 sm:py-8">
         {/* 뒤로가기 버튼 */}
         <div className="mb-6">
           <button 
@@ -1086,7 +1086,7 @@ export default function CompanyBoardDetailPage() {
           {/* 게시글 내용 */}
           <div className="border-t border-gray-200 pt-6">
             <div className="prose max-w-none">
-              <div className="text-gray-800 leading-relaxed whitespace-pre-wrap">
+              <div className="text-gray-800 leading-relaxed whitespace-pre-wrap break-words overflow-hidden">
                 {board.boardContent}
               </div>
             </div>
