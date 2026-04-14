@@ -136,7 +136,7 @@ const RestaurantCrawlerPage: React.FC = () => {
   const [missingStats, setMissingStats] = useState<{ key: string; label: string; total: number; missing: number; filled: number }[]>([]);
   const [enriching, setEnriching] = useState<string | null>(null);
   const [enrichResult, setEnrichResult] = useState<any>(null);
-  const [enrichBatchSize, setEnrichBatchSize] = useState(20);
+  const [enrichBatchSize, setEnrichBatchSize] = useState(10);
 
   // 소스 목록 + DB 현황 조회
   useEffect(() => {

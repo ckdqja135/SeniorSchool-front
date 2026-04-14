@@ -974,7 +974,7 @@ export default function MatzalAlMentorPage() {
                               {suggestion.restaurantName || suggestion.matzalAlName}
                             </div>
                             <div className="text-sm text-gray-500">
-                              📍 {suggestion.restaurantAddr || suggestion.matzalAlLocation}
+                              {suggestion.restaurantAddr || suggestion.matzalAlLocation}
                             </div>
                             <div className="text-xs text-gray-400">
                               {suggestion.restaurantType || suggestion.matzalAlType}
@@ -1166,7 +1166,7 @@ export default function MatzalAlMentorPage() {
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-blue-600 font-semibold mb-0.5">오늘의 추천</p>
                       <h4 className="text-lg font-bold text-gray-900 truncate">{rouletteResult.restaurantName}</h4>
-                      <p className="text-sm text-gray-500 truncate">📍 {rouletteResult.restaurantAddr || rouletteResult.restaurantLocation}</p>
+                      <p className="text-sm text-gray-500 truncate">{rouletteResult.restaurantAddr || rouletteResult.restaurantLocation}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-xs bg-white px-2 py-0.5 rounded-full text-gray-600">{rouletteResult.restaurantType}</span>
                         {rouletteResult.averageRating > 0 && (
@@ -1387,7 +1387,7 @@ export default function MatzalAlMentorPage() {
                               <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-200 text-xs truncate">
                                 {matzalAl.matzalAlName}
                               </h3>
-                              <p className="text-xs text-gray-500 truncate">📍 {matzalAl.matzalAlLocation}</p>
+                              <p className="text-xs text-gray-500 truncate">{matzalAl.matzalAlLocation}</p>
                               <div className="flex items-center gap-2 mt-0.5">
                                 {matzalAl.averageRating !== null && matzalAl.averageRating !== undefined && matzalAl.averageRating > 0 ? (
                                   <>
