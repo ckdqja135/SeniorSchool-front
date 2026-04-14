@@ -50,10 +50,12 @@ export default function MatzalAlMentorPage() {
   const [viewTab, setViewTab] = useState<'grid' | 'map'>('grid');
   const [isKakaoMapLoaded, setIsKakaoMapLoaded] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [mapRestaurants, setMapRestaurants] = useState<any[]>([]);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
   const overlaysRef = useRef<any[]>([]);
+  const hasFetchedMapRestaurants = useRef(false);
 
   const searchRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -383,11 +385,63 @@ export default function MatzalAlMentorPage() {
     }
   }, [viewTab]);
 
+  // 지도 뷰 전환 시 주변 식당 조회
+  useEffect(() => {
+    if (viewTab !== 'map' || !userLocation || hasFetchedMapRestaurants.current) return;
+    hasFetchedMapRestaurants.current = true;
+
+    const fetchNearby = async () => {
+      try {
+        const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
+        const params = new URLSearchParams({
+          lat: String(userLocation.lat),
+          lng: String(userLocation.lng),
+          radius: '5',
+          limit: '200',
+        });
+        const res = await fetch(`${backendURL}/restaurant/nearby?${params}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        const mapped = (Array.isArray(data) ? data : data.data || []).map((item: any) => ({
+          matzalAlIdx: item.restaurantIdx,
+          matzalAlName: item.restaurantName || '맛집명 없음',
+          matzalAlLocation: item.restaurantAddr || '위치 정보 없음',
+          matzalAlType: item.restaurantType || '맛집',
+          viewCount: item.restaurantViewCount || 0,
+          restaurantImage: item.restaurantImage || null,
+          restaurantLatX: item.restaurantLatX || null,
+          restaurantLatY: item.restaurantLatY || null,
+          restaurantIdx: item.restaurantIdx || null,
+          restaurantAddr: item.restaurantAddr || null,
+          averageRating: item.averageRating != null ? parseFloat(Number(item.averageRating).toFixed(1)) : null,
+          ratingCount: item.ratingCount || 0,
+        }));
+        setMapRestaurants(mapped);
+      } catch (err) {
+        console.error('주변 식당 조회 실패:', err);
+      }
+    };
+    fetchNearby();
+  }, [viewTab, userLocation]);
+
+  // 위치 변경 시 재조회 허용
+  useEffect(() => {
+    hasFetchedMapRestaurants.current = false;
+  }, [userLocation]);
+
   // 카카오맵 초기화 및 마커 표시
   useEffect(() => {
     if (viewTab !== 'map' || !isKakaoMapLoaded || !mapContainerRef.current || !userLocation) return;
 
-    const restaurants = selectedCategory === '전체' ? popularMatzalAl : filteredRestaurants;
+    // 지도용 데이터: nearby API 결과 사용, 카테고리 필터 적용
+    const allMapData = mapRestaurants.length > 0 ? mapRestaurants : popularMatzalAl;
+    const restaurants = selectedCategory === '전체'
+      ? allMapData
+      : allMapData.filter((r: any) => {
+          const type = r.matzalAlType || '';
+          return type.includes(selectedCategory);
+        });
     if (restaurants.length === 0) return;
 
     // 기존 오버레이·마커 정리
@@ -470,7 +524,7 @@ export default function MatzalAlMentorPage() {
     // 현재 위치 중심 유지, 줌 레벨 2로 고정 (setBounds 대신)
     map.setCenter(center);
     map.setLevel(2);
-  }, [viewTab, isKakaoMapLoaded, userLocation, popularMatzalAl, filteredRestaurants, selectedCategory, router]);
+  }, [viewTab, isKakaoMapLoaded, userLocation, mapRestaurants, popularMatzalAl, filteredRestaurants, selectedCategory, router]);
 
   // 랜덤 룰렛 실행
   const handleRoulette = useCallback(async () => {

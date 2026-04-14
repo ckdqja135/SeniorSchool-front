@@ -663,16 +663,16 @@ export default function HomeClient({
 
 
       {/* Footer */}
-      <footer className="w-full py-12 px-6 mt-20 bg-slate-50 border-t border-gray-200">
+      <footer className="w-full py-12 px-6 mt-20 bg-slate-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto flex flex-col items-center gap-6">
           <div className="flex items-center gap-2">
             <img src="/images/duck.png" alt="Ori" width="28" height="28" className="w-7 h-7 opacity-70" />
-            <span className="text-xl font-black text-indigo-900">Ori</span>
+            <span className="text-xl font-black text-indigo-900 dark:text-indigo-300">Ori</span>
           </div>
           <div className="flex flex-wrap justify-center gap-8">
             {/* <a href="#" className="text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors">광고문의</a> */}
           </div>
-          <p className="text-xs text-gray-400 text-center">
+          <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
             © 2025 Ori Platform. The Modern Oracle of Reviews.
           </p>
         </div>
