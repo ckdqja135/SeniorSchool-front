@@ -423,17 +423,21 @@ const RestaurantCrawlerPage: React.FC = () => {
 
     try {
       const accessToken = localStorage.getItem("accessToken");
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 300000); // 5분 타임아웃
       const res = await fetch(`${API_BASE_URL}/admin/crawler/enrich`, {
         method: "POST",
         headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
         body: JSON.stringify({ field, limit: enrichBatchSize }),
+        signal: controller.signal,
       });
+      clearTimeout(timeout);
       const data = await res.json();
       setEnrichResult(data);
       fetchEnrichData(); // 목록 갱신
-    } catch (err) {
+    } catch (err: any) {
       console.error("보강 크롤링 실패:", err);
-      setEnrichResult({ success: false, message: "보강 중 오류가 발생했습니다." });
+      setEnrichResult({ success: false, message: err.name === 'AbortError' ? '타임아웃 (5분 초과). 배치 크기를 줄여주세요.' : `보강 중 오류: ${err.message}` });
     } finally {
       setEnriching(null);
     }
@@ -1115,8 +1119,43 @@ const RestaurantCrawlerPage: React.FC = () => {
 
         {/* 보강 결과 */}
         {enrichResult && (
-          <div className={`rounded-xl border p-4 ${enrichResult.success ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
-            <p className={`text-sm font-medium ${enrichResult.success ? "text-green-700" : "text-red-700"}`}>{enrichResult.message}</p>
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className={`p-4 ${enrichResult.success ? "bg-green-50 border-b border-green-200" : "bg-red-50 border-b border-red-200"}`}>
+              <p className={`text-sm font-semibold ${enrichResult.success ? "text-green-700" : "text-red-700"}`}>{enrichResult.message}</p>
+            </div>
+            {enrichResult.results && enrichResult.results.length > 0 && (
+              <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
+                <table className="w-full text-left">
+                  <thead className="bg-gray-50 sticky top-0 z-10">
+                    <tr>
+                      <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-widest text-gray-500">#</th>
+                      <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-widest text-gray-500">식당명</th>
+                      <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-widest text-gray-500">매칭된 이름</th>
+                      <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-widest text-gray-500">결과</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {enrichResult.results.map((r: any, i: number) => (
+                      <tr key={i} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-3 text-xs text-gray-400">{i + 1}</td>
+                        <td className="px-6 py-3 text-sm font-semibold text-gray-900">{r.name}</td>
+                        <td className="px-6 py-3 text-sm text-gray-600">{r.matched || '-'}</td>
+                        <td className="px-6 py-3">
+                          <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                            r.status === 'updated' ? 'bg-green-100 text-green-700' :
+                            r.status === 'no_data' ? 'bg-yellow-100 text-yellow-700' :
+                            r.status === 'not_found' ? 'bg-gray-100 text-gray-500' :
+                            'bg-red-100 text-red-600'
+                          }`}>
+                            {r.status === 'updated' ? '보강 완료' : r.status === 'no_data' ? '데이터 없음' : r.status === 'not_found' ? '미발견' : '오류'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
 
