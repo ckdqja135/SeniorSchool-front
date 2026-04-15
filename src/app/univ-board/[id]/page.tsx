@@ -197,13 +197,13 @@ const CommentItem = ({
               required
             />
             
-            {/* 아이디, 비밀번호, 버튼들을 한 줄에 배치 */}
-            <div className="flex items-center gap-0.5">
+            {/* 아이디, 비밀번호, 버튼들 세로 배치 */}
+            <div className="space-y-2">
               <input
                 type="text"
                 value={replyForm.writer}
                 onChange={(e) => setReplyForm({ ...replyForm, writer: e.target.value })}
-                className="w-12 md:w-20 px-1 md:px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                className="w-full px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
                 placeholder="아이디"
                 maxLength={10}
                 required
@@ -212,27 +212,29 @@ const CommentItem = ({
                 type="password"
                 value={replyForm.password}
                 onChange={(e) => setReplyForm({ ...replyForm, password: e.target.value })}
-                className="w-12 md:w-20 px-1 md:px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                className="w-full px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
                 placeholder="비밀번호"
                 maxLength={8}
                 required
               />
-              <button
-                type="submit"
-                className="px-1 md:px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs md:text-sm font-medium whitespace-nowrap"
-              >
-                답글 작성
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowReplyInput(null);
-                  setReplyForm({ content: '', writer: '', password: '', parentIdx: 0 });
-                }}
-                className="px-1 md:px-3 py-2 text-gray-600 hover:text-gray-800 transition-colors text-xs md:text-sm whitespace-nowrap"
-              >
-                취소
-              </button>
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  className="flex-1 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium whitespace-nowrap"
+                >
+                  답글 작성
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowReplyInput(null);
+                    setReplyForm({ content: '', writer: '', password: '', parentIdx: 0 });
+                  }}
+                  className="flex-1 px-3 py-2 text-gray-600 hover:text-gray-800 transition-colors text-sm whitespace-nowrap"
+                >
+                  취소
+                </button>
+              </div>
             </div>
             
             <p className="text-xs text-gray-500 text-right">
@@ -1267,33 +1269,31 @@ export default function BoardDetailPage() {
                />
                
                {/* 아이디, 비밀번호, 작성 버튼 */}
-               <div className="flex items-center gap-2">
-                    <input 
-                      type="text" 
-                 className="w-28 sm:w-32 px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+               <div className="space-y-2">
+                    <input
+                      type="text"
+                 className="w-full px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
                  placeholder="아이디"
                       maxLength={10}
                       value={commentForm.writer}
                       onChange={(e) => setCommentForm({ ...commentForm, writer: e.target.value })}
                       required
                     />
-               
-                    <input 
-                      type="password" 
-                 className="w-28 sm:w-32 px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                    <input
+                      type="password"
+                 className="w-full px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
                  placeholder="비밀번호"
                       maxLength={8}
                       value={commentForm.password}
                       onChange={(e) => setCommentForm({ ...commentForm, password: e.target.value })}
                       required
                     />
-               
-                               <button 
-                  type="submit" 
-                  className="px-4 sm:px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 text-sm font-medium shadow-md transform hover:scale-105 whitespace-nowrap"
-                >
-                  작성
-                      </button>
+                    <button
+                      type="submit"
+                      className="w-full px-4 sm:px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 text-sm font-medium shadow-md transform hover:scale-105 whitespace-nowrap"
+                    >
+                      작성
+                    </button>
                </div>
                 </form>
              <p className="text-xs text-gray-500 mt-1 text-right">

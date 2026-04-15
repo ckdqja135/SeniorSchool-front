@@ -1015,7 +1015,7 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
               </div>
 
               {/* 작성자 정보 */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+              <div className="space-y-4 sm:space-y-6">
                 <div className="space-y-2">
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                     작성자명 *

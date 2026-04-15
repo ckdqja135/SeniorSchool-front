@@ -1159,7 +1159,7 @@ export default function CompanyBoardDetailPage() {
                               {replyForm.content.length}/200
                             </div>
                             <div className="space-y-3">
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <div className="space-y-2">
                                 <input
                                   type="text"
                                   value={replyForm.writer}
@@ -1233,7 +1233,7 @@ export default function CompanyBoardDetailPage() {
                 </div>
               </div>
               <div className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="space-y-2">
                   <input
                     type="text"
                     value={commentForm.writer}

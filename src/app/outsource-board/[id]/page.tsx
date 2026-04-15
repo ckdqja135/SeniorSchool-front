@@ -158,24 +158,24 @@ const CommentItem = ({
             <div className="text-right text-xs text-gray-500">
               {replyForm.content.length}/200
             </div>
-            <div className="flex flex-col sm:flex-row gap-2">
+            <div className="space-y-2">
               <input
                 type="text"
                 value={replyForm.writerId}
                 onChange={(e) => setReplyForm({...replyForm, writerId: e.target.value})}
                 placeholder="아이디"
-                className="flex-1 p-2 border border-gray-300 rounded focus:ring-yellow-500 focus:border-yellow-500"
+                className="w-full p-2 border border-gray-300 rounded focus:ring-yellow-500 focus:border-yellow-500"
               />
               <input
                 type="password"
                 value={replyForm.password}
                 onChange={(e) => setReplyForm({...replyForm, password: e.target.value})}
                 placeholder="비밀번호"
-                className="flex-1 p-2 border border-gray-300 rounded focus:ring-yellow-500 focus:border-yellow-500"
+                className="w-full p-2 border border-gray-300 rounded focus:ring-yellow-500 focus:border-yellow-500"
               />
               <button
                 onClick={() => handleReplySubmit(comment.commentIdx)}
-                className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors whitespace-nowrap"
+                className="w-full px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors whitespace-nowrap"
               >
                 작성
               </button>
@@ -1156,28 +1156,24 @@ export default function OutsourceBoardDetailPage() {
                 rows={4}
                 maxLength={200}
               />
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-end">
-                <div className="flex-1">
-                  <input
-                    type="text"
-                    value={commentForm.writerId}
-                    onChange={(e) => setCommentForm({...commentForm, writerId: e.target.value})}
-                    placeholder="아이디"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500"
-                  />
-                </div>
-                <div className="flex-1">
-                  <input
-                    type="password"
-                    value={commentForm.password}
-                    onChange={(e) => setCommentForm({...commentForm, password: e.target.value})}
-                    placeholder="비밀번호"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500"
-                  />
-                </div>
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={commentForm.writerId}
+                  onChange={(e) => setCommentForm({...commentForm, writerId: e.target.value})}
+                  placeholder="아이디"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500"
+                />
+                <input
+                  type="password"
+                  value={commentForm.password}
+                  onChange={(e) => setCommentForm({...commentForm, password: e.target.value})}
+                  placeholder="비밀번호"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500"
+                />
                 <button
                   onClick={handleCommentSubmit}
-                  className="w-full sm:w-auto px-6 py-3 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition-colors whitespace-nowrap"
+                  className="w-full px-6 py-3 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition-colors whitespace-nowrap"
                 >
                   작성
                 </button>

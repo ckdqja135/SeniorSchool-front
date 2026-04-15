@@ -187,13 +187,13 @@ const CommentItem = ({
             <div className="text-right text-xs text-gray-500 mt-1">
               {replyForm.content.length}/200
             </div>
-            <div className="flex gap-2">
+            <div className="space-y-2">
               <input
                 type="text"
                 value={replyForm.writerId || ''}
                 onChange={(e) => setReplyForm({...replyForm, writerId: e.target.value, writer: e.target.value})}
                 placeholder="작성자"
-                className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
               <input
@@ -201,7 +201,7 @@ const CommentItem = ({
                 value={replyForm.password || ''}
                 onChange={(e) => setReplyForm({...replyForm, password: e.target.value})}
                 placeholder="비밀번호"
-                className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
@@ -1195,13 +1195,13 @@ export default function MatzalAlBoardDetailPage() {
                 </div>
               </div>
               <div className="space-y-3">
-                <div className="flex space-x-2 sm:space-x-3">
+                <div className="space-y-2">
                   <input
                     type="text"
                     value={commentForm.writer}
                     onChange={(e) => setCommentForm({...commentForm, writer: e.target.value})}
                     placeholder="아이디"
-                    className="flex-1 p-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   />
                   <input
@@ -1209,7 +1209,7 @@ export default function MatzalAlBoardDetailPage() {
                     value={commentForm.password}
                     onChange={(e) => setCommentForm({...commentForm, password: e.target.value})}
                     placeholder="비밀번호"
-                    className="flex-1 p-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   />
                 </div>
