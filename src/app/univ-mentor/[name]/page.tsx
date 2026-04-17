@@ -233,13 +233,14 @@ export default function SchoolPage() {
       const map = new window.kakao.maps.Map(mapRef.current, mapOption); // 지도를 생성합니다
       mapInstance.current = map;
 
-      // 일반 지도와 스카이뷰로 지도 타입을 전환할 수 있는 지도타입 컨트롤을 생성합니다
-      const mapTypeControl = new window.kakao.maps.MapTypeControl();
-      map.addControl(mapTypeControl, window.kakao.maps.ControlPosition.TOPRIGHT);
+      // PC에서만 지도 컨트롤 표시
+      if (window.innerWidth >= 640) {
+        const mapTypeControl = new window.kakao.maps.MapTypeControl();
+        map.addControl(mapTypeControl, window.kakao.maps.ControlPosition.TOPRIGHT);
 
-      // 지도 확대 축소를 제어할 수 있는 줌 컨트롤을 생성합니다
-      const zoomControl = new window.kakao.maps.ZoomControl();
-      map.addControl(zoomControl, window.kakao.maps.ControlPosition.RIGHT);
+        const zoomControl = new window.kakao.maps.ZoomControl();
+        map.addControl(zoomControl, window.kakao.maps.ControlPosition.RIGHT);
+      }
 
              // 지도에 마커를 표시합니다 (좌표 순서 수정됨)
        const marker = new window.kakao.maps.Marker({
@@ -269,6 +270,7 @@ export default function SchoolPage() {
 
       // 커스텀 오버레이에 표시할 컨텐츠를 DOM 노드로 생성
        const makeOverlayContent = (university: any) => {
+         const overlayWidth = Math.min(300, window.innerWidth - 40);
          const wrap = document.createElement('div');
          wrap.style.cssText = `
            background: white;
@@ -276,92 +278,21 @@ export default function SchoolPage() {
            border-radius: 8px;
            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
            padding: 0;
-           min-width: 300px;
-           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+           width: ${overlayWidth}px;
+           font-family: sans-serif;
+           margin-bottom: 40px;
          `;
 
          wrap.innerHTML = `
-           <div style="
-             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-             color: white;
-             padding: 15px 20px;
-             border-radius: 8px 8px 0 0;
-             position: relative;
-             font-weight: 600;
-             font-size: 16px;
-           ">
+           <div style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;padding:12px 16px;border-radius:8px 8px 0 0;position:relative;font-weight:600;font-size:14px;">
              ${university.univName}
-             <div data-close
-                  style="
-                    position: absolute;
-                    right: 15px;
-                    top: 50%;
-                    transform: translateY(-50%);
-                    cursor: pointer;
-                    width: 20px;
-                    height: 20px;
-                    background: rgba(255,255,255,0.3);
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 14px;
-                    color: white;
-                    user-select: none;
-                    transition: background 0.2s;
-                  ">×</div>
+             <div data-close style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;width:20px;height:20px;background:rgba(255,255,255,0.3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;color:white;user-select:none;">×</div>
            </div>
-           <div style="
-             padding: 20px;
-             background: white;
-             border-radius: 0 0 8px 8px;
-           ">
-             <div style="
-               display: flex;
-               gap: 15px;
-               align-items: flex-start;
-             ">
-               <div data-imgbox style="
-                 flex-shrink: 0;
-                 width: 80px;
-                 height: 80px;
-                 border-radius: 8px;
-                 overflow: hidden;
-                 background: #f8f9fa;
-                 display: flex;
-                 align-items: center;
-                 justify-content: center;
-               "></div>
-               <div style="flex: 1; min-width: 0;">
-                 <div style="
-                   margin-bottom: 8px;
-                   color: #333;
-                   font-size: 14px;
-                   line-height: 1.4;
-                   word-break: break-word;
-                 ">📍 ${university.univAddr}</div>
-                 <div style="
-                   margin-bottom: 12px;
-                   color: #666;
-                   font-size: 13px;
-                   line-height: 1.3;
-                 ">🏢 ${university.univLotAddr}</div>
-                 <a href="${university.univURL}" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    style="
-                      display: inline-block;
-                      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                      color: white;
-                      text-decoration: none;
-                      padding: 8px 16px;
-                      border-radius: 6px;
-                      font-size: 13px;
-                      font-weight: 500;
-                      transition: transform 0.2s, box-shadow 0.2s;
-                    ">🌐 학교 홈페이지</a>
-               </div>
-             </div>
+           <div style="padding:12px;background:white;border-radius:0 0 8px 8px;">
+             <div data-imgbox style="width:100%;height:80px;border-radius:6px;overflow:hidden;background:#f8f9fa;display:flex;align-items:center;justify-content:center;margin-bottom:10px;"></div>
+             <div style="font-size:12px;color:#333;margin-bottom:6px;line-height:1.4;word-break:break-word;">📍 ${university.univAddr}</div>
+             <div style="font-size:11px;color:#666;margin-bottom:10px;line-height:1.3;">🏢 ${university.univLotAddr}</div>
+             <div style="text-align:right;"><a href="${university.univURL}" target="_blank" rel="noopener noreferrer" style="display:inline-block;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;text-decoration:none;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:500;">학교 홈페이지</a></div>
            </div>
          `;
 
@@ -380,9 +311,17 @@ export default function SchoolPage() {
          });
          box.appendChild(img);
 
+         // 지도 이벤트가 오버레이 영역에서 발생하지 않도록 차단
+         ['mousedown', 'mousemove', 'touchstart', 'touchmove', 'dblclick'].forEach((evt) => {
+           wrap.addEventListener(evt, (e) => {
+             e.stopPropagation();
+           }, { passive: false });
+         });
+
          // 닫기 버튼 이벤트 (오버레이 인스턴스를 외부에서 주입)
          const closeBtn = wrap.querySelector('[data-close]') as HTMLDivElement;
-         closeBtn.addEventListener('click', () => {
+         closeBtn.addEventListener('click', (e) => {
+           e.stopPropagation();
            if ((wrap as any)['_overlay']) {
              ((wrap as any)['_overlay'] as any).setMap(null);
            }
@@ -407,7 +346,7 @@ export default function SchoolPage() {
            map: null, // 초기에는 지도에 표시하지 않음
            position: marker.getPosition(), // 마커 위치 기준
            // 오버레이 위치 조정 - 마커 위에 표시
-           yAnchor: 1.2,
+           yAnchor: 1.0,
            xAnchor: 0.5
          });
 
@@ -672,28 +611,28 @@ export default function SchoolPage() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-green-200 transition-all duration-200">
+                  <div className="flex flex-col gap-2 p-3 bg-white rounded-xl border border-gray-100 hover:border-green-200 transition-all duration-200">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0">
                         <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                         </svg>
                       </div>
                       <span className="text-xs text-gray-500 font-medium">구분</span>
                     </div>
-                    <span className="text-sm font-bold text-gray-900">{university.univType}</span>
+                    <span className="text-sm font-bold text-gray-900 truncate text-right">{university.univType}</span>
                   </div>
 
-                  <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-green-200 transition-all duration-200">
+                  <div className="flex flex-col gap-2 p-3 bg-white rounded-xl border border-gray-100 hover:border-green-200 transition-all duration-200">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
                         <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                       </div>
                       <span className="text-xs text-gray-500 font-medium">설립</span>
                     </div>
-                    <span className="text-sm font-bold text-gray-900">
+                    <span className="text-sm font-bold text-gray-900 text-right">
                       {university.univEstablish ? `${university.univEstablish}년` : '정보 없음'}
                     </span>
                   </div>
@@ -793,14 +732,14 @@ export default function SchoolPage() {
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xs sm:text-sm md:text-base lg:text-xl font-semibold text-gray-800">대학교 입학 후기</h2>
-                                 <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-3">
+                                 <div className="flex items-center gap-2 sm:gap-2 md:gap-3">
                    {/* 정렬 필터 버튼 - 단일 토글 */}
                    <button
                      onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
-                     className="p-0.5 sm:p-1 md:p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all duration-200 flex items-center space-x-0.5 sm:space-x-1 md:space-x-2"
+                     className="px-2 py-1.5 sm:p-1 md:p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all duration-200 flex items-center gap-1 sm:space-x-1 md:space-x-2"
                      title={sortOrder === 'desc' ? '최신순 (클릭시 오래된순으로 변경)' : '오래된순 (클릭시 최신순으로 변경)'}
                    >
-                     <svg className="w-2.5 h-2.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                        {sortOrder === 'desc' ? (
                          // 최신순일 때: 위쪽 화살표
                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 14l5-5 5 5" />
@@ -813,12 +752,12 @@ export default function SchoolPage() {
                        {sortOrder === 'desc' ? '최신순' : '오래된순'}
                      </span>
                    </button>
-                   
+
                    <button
                      onClick={() => setShowReviewModal(true)}
-                     className="px-1.5 sm:px-3 md:px-6 py-1 sm:py-1.5 md:py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center space-x-0.5 sm:space-x-1 md:space-x-2"
+                     className="px-3 py-1.5 sm:px-3 md:px-6 sm:py-1.5 md:py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center gap-1 sm:space-x-1 md:space-x-2"
                    >
-                     <svg className="w-2.5 h-2.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                      </svg>
                      <span className="text-xs sm:text-sm font-semibold">글쓰기</span>

@@ -612,6 +612,7 @@ export default function CompanyDetailPage() {
       marker.setMap(map);
 
       // 커스텀 오버레이 생성
+      const overlayWidth = Math.min(300, window.innerWidth - 40);
       const overlayContent = `
         <div style="
           background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%);
@@ -619,9 +620,7 @@ export default function CompanyDetailPage() {
           padding: 0;
           border-radius: 8px;
           box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-          min-width: 250px;
-          max-width: 350px;
-          width: 350px;
+          width: ${overlayWidth}px;
         ">
           <div style="
             padding: 12px 16px 8px 16px;
@@ -684,22 +683,20 @@ export default function CompanyDetailPage() {
                 <div style="
                   margin-bottom: 8px;
                   color: #333;
-                  font-size: 14px;
+                  font-size: 13px;
                   line-height: 1.4;
-                  word-break: break-word;
-                  overflow-wrap: break-word;
-                  white-space: normal;
-                  max-width: 100%;
+                  white-space: nowrap;
+                  overflow: hidden;
+                  text-overflow: ellipsis;
                 ">📍 ${company.compAddr || company.compLocate}</div>
                 <div style="
                   margin-bottom: 12px;
                   color: #666;
-                  font-size: 13px;
+                  font-size: 12px;
                   line-height: 1.3;
-                  word-break: break-word;
-                  overflow-wrap: break-word;
-                  white-space: normal;
-                  max-width: 100%;
+                  white-space: nowrap;
+                  overflow: hidden;
+                  text-overflow: ellipsis;
                 ">🏢 ${company.compLotAddr || ''}</div>
                 ${company.compURL ? `
                 <a href="${ensureProtocol(company.compURL)}"
@@ -725,12 +722,18 @@ export default function CompanyDetailPage() {
       `;
 
       const wrap = document.createElement('div');
+      wrap.style.marginBottom = '40px';
       wrap.innerHTML = overlayContent;
+
+      // 오버레이 터치 이벤트가 지도로 전파되지 않도록 차단
+      ['mousedown', 'mousemove', 'touchstart', 'touchmove', 'dblclick'].forEach((evt) => {
+        wrap.addEventListener(evt, (e) => { e.stopPropagation(); }, { passive: false });
+      });
 
       const overlay = new window.kakao.maps.CustomOverlay({
         content: wrap,
         position: markerPosition,
-        yAnchor: 1
+        yAnchor: 1.0
       });
 
       // 오버레이를 외부에서 접근할 수 있도록 저장
@@ -1438,14 +1441,14 @@ export default function CompanyDetailPage() {
                 <h2 className="text-xs sm:text-sm md:text-base lg:text-xl font-semibold text-gray-800">
                   {activeTab === 'company' ? '회사 후기' : activeTab === 'interview' ? '면접 후기' : '연봉 후기'}
                 </h2>
-                <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-3">
+                <div className="flex items-center gap-2 sm:gap-2 md:gap-3">
                   {/* 정렬 필터 버튼 - 단일 토글 */}
                   <button
                     onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
-                    className="p-0.5 sm:p-1 md:p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all duration-200 flex items-center space-x-0.5 sm:space-x-1 md:space-x-2"
+                    className="px-2 py-1.5 sm:p-1 md:p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all duration-200 flex items-center gap-1 sm:space-x-1 md:space-x-2"
                     title={sortOrder === 'desc' ? '최신순 (클릭시 오래된순으로 변경)' : '오래된순 (클릭시 최신순으로 변경)'}
                   >
-                    <svg className="w-2.5 h-2.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       {sortOrder === 'desc' ? (
                         // 최신순일 때: 위쪽 화살표
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 14l5-5 5 5" />
@@ -1458,12 +1461,12 @@ export default function CompanyDetailPage() {
                       {sortOrder === 'desc' ? '최신순' : '오래된순'}
                     </span>
                   </button>
-                  
+
                   <button
                     onClick={handleWriteBoard}
-                    className="px-1.5 sm:px-3 md:px-6 py-1 sm:py-1.5 md:py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center space-x-0.5 sm:space-x-1 md:space-x-2"
+                    className="px-3 py-1.5 sm:px-3 md:px-6 sm:py-1.5 md:py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center gap-1 sm:space-x-1 md:space-x-2"
                   >
-                    <svg className="w-2.5 h-2.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
                     <span className="text-xs sm:text-sm font-semibold">글쓰기</span>

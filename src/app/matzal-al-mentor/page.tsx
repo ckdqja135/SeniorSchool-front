@@ -48,13 +48,14 @@ export default function MatzalAlMentorPage() {
   const [rouletteResult, setRouletteResult] = useState<any>(null);
   const [isSpinning, setIsSpinning] = useState(false);
   const [showRouletteResult, setShowRouletteResult] = useState(false);
+  const [isLocationSpinning, setIsLocationSpinning] = useState(false);
 
   // 탭 상태 (오늘의 추천 / 지도)
   const [viewTab, setViewTab] = useState<'grid' | 'map'>('grid');
   const [isKakaoMapLoaded, setIsKakaoMapLoaded] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [mapRestaurants, setMapRestaurants] = useState<any[]>([]);
-  const [mapRadius, setMapRadius] = useState<number>(0); // 0 = 전체
+  const [mapRadius, setMapRadius] = useState<number>(3); // 기본 3km
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
@@ -605,8 +606,8 @@ export default function MatzalAlMentorPage() {
       }],
     });
 
-    // 모든 마커가 보이도록 자동 줌 맞춤
-    map.setBounds(bounds, 50);
+    // 초기 줌 level 7 고정 (setBounds 대신)
+    map.setLevel(7);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewTab, isKakaoMapLoaded, userLocation, mapRestaurants.length, popularMatzalAl.length, selectedCategory, selectedCity, selectedDistrict, mapRadius]);
 
@@ -643,6 +644,115 @@ export default function MatzalAlMentorPage() {
       setIsSpinning(false);
     }, 1500);
   }, [isSpinning, selectedCategory, selectedCity, popularMatzalAl, filteredRestaurants]);
+
+  // 내 위치 기반 랜덤 추천
+  const handleLocationRoulette = useCallback(async () => {
+    if (isLocationSpinning) return;
+    setIsLocationSpinning(true);
+    setShowRouletteResult(false);
+
+    const calcDist = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    };
+
+    // 전체 식당 목록 확보 (mapRestaurants가 비어있으면 직접 fetch)
+    const getAllRestaurants = async (): Promise<any[]> => {
+      if (mapRestaurants.length > 0) return mapRestaurants;
+      try {
+        const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
+        const res = await fetch(`${backendURL}/restaurant`);
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        const list = (Array.isArray(data) ? data : data.data || []).map((item: any) => ({
+          matzalAlIdx: item.restaurantIdx,
+          matzalAlName: item.restaurantName || '맛집명 없음',
+          matzalAlLocation: item.restaurantAddr || '',
+          matzalAlType: item.restaurantType || '맛집',
+          restaurantImage: item.restaurantImage || null,
+          restaurantLatX: item.restaurantLatX || null,
+          restaurantLatY: item.restaurantLatY || null,
+          restaurantIdx: item.restaurantIdx || null,
+          restaurantAddr: item.restaurantAddr || null,
+          averageRating: item.averageRating != null ? parseFloat(Number(item.averageRating).toFixed(1)) : null,
+          ratingCount: item.ratingCount || 0,
+        }));
+        setMapRestaurants(list);
+        hasFetchedMapRestaurants.current = true;
+        return list;
+      } catch {
+        return [];
+      }
+    };
+
+    const doRoulette = (loc: { lat: number; lng: number }, allRestaurants: any[]) => {
+      // 좌표 있는 식당에 거리 계산
+      const withDist = allRestaurants
+        .filter((rest: any) => rest.restaurantLatX && rest.restaurantLatY)
+        .map((rest: any) => ({
+          ...rest,
+          _dist: calcDist(loc.lat, loc.lng, rest.restaurantLatX, rest.restaurantLatY),
+        }))
+        .sort((a: any, b: any) => a._dist - b._dist);
+
+      // 3km 이내만 사용 (fallback 없음)
+      const pool = withDist.filter((r: any) => r._dist <= 3);
+
+      if (pool.length === 0) {
+        alert('3km 이내에 등록된 맛집이 없습니다.');
+        setIsLocationSpinning(false);
+        return;
+      }
+      const pick = pool[Math.floor(Math.random() * pool.length)];
+      setTimeout(() => {
+        setRouletteResult({
+          restaurantIdx: pick.matzalAlIdx || pick.restaurantIdx,
+          restaurantName: pick.matzalAlName,
+          restaurantAddr: pick.matzalAlLocation || pick.restaurantAddr,
+          restaurantType: pick.matzalAlType,
+          restaurantImage: pick.restaurantImage,
+          averageRating: pick.averageRating,
+          ratingCount: pick.ratingCount,
+          restaurantLocation: pick.matzalAlLocation,
+          nearbyDist: pick._dist,
+        });
+        setShowRouletteResult(true);
+        setIsLocationSpinning(false);
+      }, 1500);
+    };
+
+    const runWithLocation = async (loc: { lat: number; lng: number }) => {
+      const allRestaurants = await getAllRestaurants();
+      doRoulette(loc, allRestaurants);
+    };
+
+    if (userLocation) {
+      await runWithLocation(userLocation);
+      return;
+    }
+
+    if (!navigator.geolocation) {
+      alert('위치 서비스를 지원하지 않는 브라우저입니다.');
+      setIsLocationSpinning(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setUserLocation(loc);
+        await runWithLocation(loc);
+      },
+      () => {
+        alert('위치 권한을 허용해주세요.');
+        setIsLocationSpinning(false);
+      },
+      { enableHighAccuracy: true, timeout: 5000 }
+    );
+  }, [isLocationSpinning, userLocation, mapRestaurants]);
 
   // 인기 맛잘알 새로고침
   const handleRefresh = async () => {
@@ -1126,7 +1236,7 @@ export default function MatzalAlMentorPage() {
           </div>
 
           {/* 오늘 뭐 먹지? 랜덤 룰렛 */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
+          <div className="mt-6 bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <div className="flex-1 text-center sm:text-left">
                 <h3 className="text-lg font-bold text-gray-900 mb-1">
@@ -1140,15 +1250,15 @@ export default function MatzalAlMentorPage() {
                 </p>
               </div>
               <button
-                onClick={handleRoulette}
-                disabled={isSpinning}
-                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 ${
-                  isSpinning
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 hover:scale-105 hover:shadow-lg'
-                }`}
+                onClick={handleLocationRoulette}
+                disabled={isLocationSpinning}
+                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 ${isLocationSpinning ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 hover:scale-105 hover:shadow-lg'}`}
               >
-                <span>{isSpinning ? '추천 중...' : '랜덤 추천!'}</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span>{isLocationSpinning ? '찾는 중...' : '내 주변 추천'}</span>
               </button>
             </div>
 
@@ -1167,10 +1277,13 @@ export default function MatzalAlMentorPage() {
                       <p className="text-xs text-blue-600 font-semibold mb-0.5">오늘의 추천</p>
                       <h4 className="text-lg font-bold text-gray-900 truncate">{rouletteResult.restaurantName}</h4>
                       <p className="text-sm text-gray-500 truncate">{rouletteResult.restaurantAddr || rouletteResult.restaurantLocation}</p>
-                      <div className="flex items-center gap-2 mt-1">
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
                         <span className="text-xs bg-white px-2 py-0.5 rounded-full text-gray-600">{rouletteResult.restaurantType}</span>
                         {rouletteResult.averageRating > 0 && (
                           <span className="text-xs text-yellow-600">⭐ {rouletteResult.averageRating.toFixed(1)}</span>
+                        )}
+                        {rouletteResult.nearbyDist != null && (
+                          <span className="text-xs text-green-600 font-semibold">📍 {rouletteResult.nearbyDist.toFixed(1)}km</span>
                         )}
                       </div>
                     </div>

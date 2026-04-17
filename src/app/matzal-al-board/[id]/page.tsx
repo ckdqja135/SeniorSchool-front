@@ -964,7 +964,7 @@ export default function MatzalAlBoardDetailPage() {
       {/* 헤더 */}
       <nav className="bg-gray-800 text-white shadow-lg">
         <div className="w-full sm:max-w-7xl sm:mx-auto sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
+          <div className="flex justify-between items-center px-4 py-4 sm:px-0">
             <Link href="/matzal-al-mentor" className="text-2xl font-bold text-blue-400">
               맛잘알 오빠
             </Link>
@@ -979,7 +979,7 @@ export default function MatzalAlBoardDetailPage() {
         </div>
       </nav>
 
-      <div className="w-full py-4 sm:max-w-4xl sm:mx-auto sm:px-6 lg:px-8 sm:py-8">
+      <div className="w-full px-4 py-4 sm:max-w-4xl sm:mx-auto sm:px-6 lg:px-8 sm:py-8">
         {/* 뒤로가기 버튼 */}
         <div className="mb-6">
           <button 
@@ -1027,11 +1027,12 @@ export default function MatzalAlBoardDetailPage() {
         {/* 게시글 내용 */}
         <div className="bg-white rounded-lg shadow-md p-3 sm:p-6 mb-6">
           {/* 게시글 제목과 액션 버튼 */}
-          <div className="flex justify-between items-start mb-6">
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">{boardPost.boardTitle}</h1>
+          <div className="flex flex-col mb-6 gap-2">
+            <h1 className="text-2xl font-bold text-gray-900">{boardPost.boardTitle}</h1>
+            {/* 별점 + 액션 버튼 한 줄 */}
+            <div className="flex items-center justify-between gap-2">
               {/* 별점 표시 - null이어도 빈 별 5개 표시 */}
-              <div className="flex items-center space-x-2 mt-2">
+                <div className="flex items-center space-x-2">
                 {renderStarRating(boardPost.boardRating, 'md')}
                 <span className="text-sm text-gray-600">
                   {boardPost.boardRating && boardPost.boardRating > 0
@@ -1039,8 +1040,7 @@ export default function MatzalAlBoardDetailPage() {
                     : '평점 없음'}
                 </span>
               </div>
-            </div>
-            <div className="flex space-x-2 ml-4">
+              <div className="flex space-x-2 flex-shrink-0">
               <button
                 onClick={() => setShowReportModal(true)}
                 className="px-3 py-1 text-sm text-red-600 border border-red-300 rounded-md hover:bg-red-50 transition-colors flex items-center gap-1.5"
@@ -1083,6 +1083,7 @@ export default function MatzalAlBoardDetailPage() {
                   </div>
                 )}
               </div>
+            </div>
             </div>
           </div>
 

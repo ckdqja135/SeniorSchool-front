@@ -264,17 +264,17 @@ export default function FreeBoardPage() {
             <div className="flex-1 min-w-0">
               {/* 검색 */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 mb-4 sm:mb-6">
-              <form onSubmit={handleSearch} className="flex gap-2">
+              <form onSubmit={handleSearch} className="relative flex items-center">
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="제목, 내용, 카테고리, 태그로 검색..."
-                  className="flex-1 px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full pl-4 pr-24 py-3 text-sm sm:text-base border border-gray-300 rounded-full focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
                 />
                 <button
                   type="submit"
-                  className="px-4 sm:px-6 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-medium rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-colors text-sm sm:text-base flex-shrink-0"
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 px-5 py-1.5 bg-indigo-600 text-white text-sm font-bold rounded-full shadow-md hover:bg-indigo-700 active:scale-95 transition-all"
                 >
                   검색
                 </button>

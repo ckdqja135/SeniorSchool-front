@@ -878,9 +878,9 @@ export default function InterviewDetailPage() {
         {/* 면접 후기 내용 */}
         <div className="bg-white rounded-lg shadow-md p-3 sm:p-6 mb-6">
           {/* 면접 후기 제목과 액션 버튼 */}
-          <div className="flex justify-between items-start mb-6">
-            <h1 className="text-2xl font-bold text-gray-900 flex-1">{interview.interviewTitle}</h1>
-            <div className="flex space-x-2 ml-4">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-6 gap-2">
+            <h1 className="text-2xl font-bold text-gray-900">{interview.interviewTitle}</h1>
+            <div className="flex space-x-2 flex-shrink-0 self-end sm:self-start sm:ml-4">
               <button
                 onClick={() => setShowReportModal(true)}
                 className="px-3 py-1 text-sm text-red-600 border border-red-300 rounded-md hover:bg-red-50 transition-colors flex items-center gap-1.5"

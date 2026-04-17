@@ -305,7 +305,7 @@ export default function HomeClient({
 
         {/* Hero Search Section */}
         <section className="max-w-5xl mx-auto px-6 py-14 text-center">
-          <h1 className="font-extrabold text-4xl md:text-5xl text-gray-900 tracking-tight mb-8">
+          <h1 className="font-extrabold text-3xl md:text-5xl text-gray-900 tracking-tight mb-8 break-keep">
             가장 솔직한 후기를 경험해보세요!
           </h1>
           <form onSubmit={handleSearchSubmit} className="relative max-w-2xl mx-auto">
@@ -334,7 +334,7 @@ export default function HomeClient({
 
           {/* 후기 베스트 - Full Width */}
           <div className="bg-white rounded-xl p-8 border border-gray-200 shadow-sm">
-            <div className="flex justify-between items-center mb-1">
+            <div className="flex justify-between items-center mb-3">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
                   <svg className="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 24 24">
@@ -344,7 +344,7 @@ export default function HomeClient({
                 <h2 className="text-2xl font-extrabold tracking-tight text-gray-900">후기 베스트</h2>
               </div>
             </div>
-            <p className="text-xs text-gray-400 mb-6">실시간으로 가장 인기 있는 최고의 리뷰들을 확인하세요</p>
+            <p className="text-xs text-gray-400 mb-3">실시간으로 가장 인기 있는 최고의 리뷰들을 확인하세요</p>
 
             {(() => {
               const filteredPosts = bestPosts.filter(post => {
@@ -384,17 +384,17 @@ export default function HomeClient({
                         <span className="flex-grow text-sm font-semibold truncate group-hover:text-indigo-600 transition-colors">{post.boardTitle}</span>
                         <div className="flex items-center gap-3 text-xs text-gray-400 ml-2 whitespace-nowrap">
                           <span className="flex items-center gap-1">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
-                            {post.boardHits}
+                            <span>{post.boardHits}</span>
                           </span>
                           <span className="flex items-center gap-1">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                             </svg>
-                            {post.boardLike}
+                            <span>{post.boardLike}</span>
                           </span>
                         </div>
                       </li>
@@ -425,20 +425,20 @@ export default function HomeClient({
                   ? <li className="text-sm text-gray-400 py-4 text-center">첫 번째 글을 남겨보세요!</li>
                   : recentFreeBoardPosts.slice(0, 5).map((post) => (
                       <li key={post.boardIdx} onClick={() => handleFreeBoardPostClick(post)} className="flex items-center justify-between group cursor-pointer">
-                        <span className="text-sm truncate text-gray-600 group-hover:text-indigo-600 transition-colors">{post.boardTitle}</span>
-                        <div className="flex items-center gap-2 text-xs text-gray-400 ml-2 whitespace-nowrap flex-shrink-0">
+                        <span className="text-sm truncate min-w-0 flex-1 text-gray-600 group-hover:text-indigo-600 transition-colors">{post.boardTitle}</span>
+                        <div className="flex items-center gap-2 text-xs text-gray-400 ml-2 flex-shrink-0 leading-none tabular-nums w-16 justify-end">
                           <span className="flex items-center gap-1">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
-                            {post.boardHits}
+                            <span>{post.boardHits}</span>
                           </span>
                           <span className="flex items-center gap-1">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                             </svg>
-                            {post.boardLike}
+                            <span>{post.boardLike}</span>
                           </span>
                         </div>
                       </li>
@@ -464,20 +464,20 @@ export default function HomeClient({
                   ? <li className="text-sm text-gray-400 py-4 text-center">첫 번째 대학 후기를 남겨보세요!</li>
                   : recentPosts.slice(0, 5).map((post) => (
                       <li key={post.boardIdx} onClick={() => handlePostClick(post)} className="flex items-center justify-between group cursor-pointer">
-                        <span className="text-sm truncate text-gray-600 group-hover:text-indigo-600 transition-colors">{post.boardTitle}</span>
-                        <div className="flex items-center gap-2 text-xs text-gray-400 ml-2 whitespace-nowrap flex-shrink-0">
+                        <span className="text-sm truncate min-w-0 flex-1 text-gray-600 group-hover:text-indigo-600 transition-colors">{post.boardTitle}</span>
+                        <div className="flex items-center gap-2 text-xs text-gray-400 ml-2 flex-shrink-0 leading-none tabular-nums w-16 justify-end">
                           <span className="flex items-center gap-1">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
-                            {post.boardHits}
+                            <span>{post.boardHits}</span>
                           </span>
                           <span className="flex items-center gap-1">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                             </svg>
-                            {post.boardLike}
+                            <span>{post.boardLike}</span>
                           </span>
                         </div>
                       </li>
@@ -503,20 +503,20 @@ export default function HomeClient({
                   ? <li className="text-sm text-gray-400 py-4 text-center">첫 번째 회사 후기를 남겨보세요!</li>
                   : recentCompanyPosts.slice(0, 5).map((post) => (
                       <li key={post.boardIdx} onClick={() => handleCompanyPostClick(post)} className="flex items-center justify-between group cursor-pointer">
-                        <span className="text-sm truncate text-gray-600 group-hover:text-indigo-600 transition-colors">{post.boardTitle}</span>
-                        <div className="flex items-center gap-2 text-xs text-gray-400 ml-2 whitespace-nowrap flex-shrink-0">
+                        <span className="text-sm truncate min-w-0 flex-1 text-gray-600 group-hover:text-indigo-600 transition-colors">{post.boardTitle}</span>
+                        <div className="flex items-center gap-2 text-xs text-gray-400 ml-2 flex-shrink-0 leading-none tabular-nums w-16 justify-end">
                           <span className="flex items-center gap-1">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
-                            {post.boardHits}
+                            <span>{post.boardHits}</span>
                           </span>
                           <span className="flex items-center gap-1">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                             </svg>
-                            {post.boardLike}
+                            <span>{post.boardLike}</span>
                           </span>
                         </div>
                       </li>
@@ -542,20 +542,20 @@ export default function HomeClient({
                   ? <li className="text-sm text-gray-400 py-4 text-center">첫 번째 교회 후기를 남겨보세요!</li>
                   : recentChurchPosts.slice(0, 5).map((post) => (
                       <li key={post.boardIdx} onClick={() => handleChurchPostClick(post)} className="flex items-center justify-between group cursor-pointer">
-                        <span className="text-sm truncate text-gray-600 group-hover:text-indigo-600 transition-colors">{post.boardTitle}</span>
-                        <div className="flex items-center gap-2 text-xs text-gray-400 ml-2 whitespace-nowrap flex-shrink-0">
+                        <span className="text-sm truncate min-w-0 flex-1 text-gray-600 group-hover:text-indigo-600 transition-colors">{post.boardTitle}</span>
+                        <div className="flex items-center gap-2 text-xs text-gray-400 ml-2 flex-shrink-0 leading-none tabular-nums w-16 justify-end">
                           <span className="flex items-center gap-1">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
-                            {post.boardHits}
+                            <span>{post.boardHits}</span>
                           </span>
                           <span className="flex items-center gap-1">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                             </svg>
-                            {post.boardLike}
+                            <span>{post.boardLike}</span>
                           </span>
                         </div>
                       </li>
@@ -589,20 +589,20 @@ export default function HomeClient({
                         }}
                         className="flex items-center justify-between group cursor-pointer"
                       >
-                        <span className="text-sm truncate text-gray-600 group-hover:text-indigo-600 transition-colors">{board.boardTitle}</span>
-                        <div className="flex items-center gap-2 text-xs text-gray-400 ml-2 whitespace-nowrap flex-shrink-0">
+                        <span className="text-sm truncate min-w-0 flex-1 text-gray-600 group-hover:text-indigo-600 transition-colors">{board.boardTitle}</span>
+                        <div className="flex items-center gap-2 text-xs text-gray-400 ml-2 flex-shrink-0 leading-none tabular-nums w-16 justify-end">
                           <span className="flex items-center gap-1">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
-                            {board.boardHits || 0}
+                            <span>{board.boardHits || 0}</span>
                           </span>
                           <span className="flex items-center gap-1">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                             </svg>
-                            {board.boardLike || 0}
+                            <span>{board.boardLike || 0}</span>
                           </span>
                         </div>
                       </li>
@@ -629,20 +629,20 @@ export default function HomeClient({
                   ? <li className="text-sm text-gray-400 py-4 text-center">첫 번째 맛집 후기를 남겨보세요!</li>
                   : recentMatzalAlBoards.slice(0, 5).map((board: MatzalAlBoard) => (
                       <li key={board.boardIdx} onClick={() => handleMatzalAlBoardClick(board)} className="flex items-center justify-between group cursor-pointer">
-                        <span className="text-sm truncate text-gray-600 group-hover:text-indigo-600 transition-colors">{board.boardTitle}</span>
-                        <div className="flex items-center gap-2 text-xs text-gray-400 ml-2 whitespace-nowrap flex-shrink-0">
+                        <span className="text-sm truncate min-w-0 flex-1 text-gray-600 group-hover:text-indigo-600 transition-colors">{board.boardTitle}</span>
+                        <div className="flex items-center gap-2 text-xs text-gray-400 ml-2 flex-shrink-0 leading-none tabular-nums w-16 justify-end">
                           <span className="flex items-center gap-1">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
-                            {board.boardHits}
+                            <span>{board.boardHits}</span>
                           </span>
                           <span className="flex items-center gap-1">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                             </svg>
-                            {board.boardLike}
+                            <span>{board.boardLike}</span>
                           </span>
                         </div>
                       </li>
@@ -740,20 +740,20 @@ function DynamicServiceSection({ service }: { service: ServiceConfig }) {
                 onClick={() => router.push(`/s/${service.serviceSlug}/board/${board.boardIdx}`)}
                 className="flex items-center justify-between group cursor-pointer"
               >
-                <span className="text-sm truncate text-gray-600 group-hover:text-indigo-600 transition-colors">{board.boardTitle}</span>
-                <div className="flex items-center gap-2 text-xs text-gray-400 ml-2 whitespace-nowrap flex-shrink-0">
+                <span className="text-sm truncate min-w-0 flex-1 text-gray-600 group-hover:text-indigo-600 transition-colors">{board.boardTitle}</span>
+                <div className="flex items-center gap-2 text-xs text-gray-400 ml-2 flex-shrink-0 leading-none tabular-nums w-16 justify-end">
                   <span className="flex items-center gap-1">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
-                    {board.boardHits || 0}
+                    <span>{board.boardHits || 0}</span>
                   </span>
                   <span className="flex items-center gap-1">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                     </svg>
-                    {board.boardLike || 0}
+                    <span>{board.boardLike || 0}</span>
                   </span>
                 </div>
               </li>
