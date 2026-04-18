@@ -49,6 +49,11 @@ export default function MatzalAlMentorPage() {
   const [isSpinning, setIsSpinning] = useState(false);
   const [showRouletteResult, setShowRouletteResult] = useState(false);
   const [isLocationSpinning, setIsLocationSpinning] = useState(false);
+  const [hotplaceCity, setHotplaceCity] = useState<string>('전국');
+  const [allTopViewed, setAllTopViewed] = useState<any[]>([]);
+  const [locationModal, setLocationModal] = useState<{
+    type: 'denied' | 'noSupport' | 'noResults';
+  } | null>(null);
 
   // 탭 상태 (오늘의 추천 / 지도)
   const [viewTab, setViewTab] = useState<'grid' | 'map'>('grid');
@@ -134,6 +139,33 @@ export default function MatzalAlMentorPage() {
   // 인기 맛잘알 데이터 로드
   useEffect(() => {
     fetchPopularMatzalAl();
+  }, []);
+
+  // 지역별 핫플레이스용 전체 식당 데이터 로드
+  useEffect(() => {
+    const fetchHotplaceData = async () => {
+      try {
+        const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
+        const res = await fetch(`${backendURL}/restaurant`);
+        if (!res.ok) return;
+        const raw = await res.json();
+        const list = (Array.isArray(raw) ? raw : raw.data || [])
+          .map((item: any) => ({
+            matzalAlIdx: item.restaurantIdx,
+            matzalAlName: item.restaurantName || '맛집명 없음',
+            matzalAlLocation: item.restaurantAddr || '',
+            matzalAlType: item.restaurantType || '맛집',
+            viewCount: item.restaurantViewCount || item.viewCount || 0,
+            averageRating: item.averageRating != null
+              ? parseFloat(Number(item.averageRating).toFixed(1)) : null,
+            ratingCount: item.ratingCount || 0,
+            restaurantIdx: item.restaurantIdx,
+          }))
+          .filter((r: any) => r.matzalAlIdx && r.matzalAlName);
+        setAllTopViewed(list);
+      } catch { /* silent */ }
+    };
+    fetchHotplaceData();
   }, []);
 
   // 인기 후기 데이터 로드 (새로운 API 사용)
@@ -702,7 +734,7 @@ export default function MatzalAlMentorPage() {
       const pool = withDist.filter((r: any) => r._dist <= 3);
 
       if (pool.length === 0) {
-        alert('3km 이내에 등록된 맛집이 없습니다.');
+        setLocationModal({ type: 'noResults' });
         setIsLocationSpinning(false);
         return;
       }
@@ -735,7 +767,7 @@ export default function MatzalAlMentorPage() {
     }
 
     if (!navigator.geolocation) {
-      alert('위치 서비스를 지원하지 않는 브라우저입니다.');
+      setLocationModal({ type: 'noSupport' });
       setIsLocationSpinning(false);
       return;
     }
@@ -747,7 +779,7 @@ export default function MatzalAlMentorPage() {
         await runWithLocation(loc);
       },
       () => {
-        alert('위치 권한을 허용해주세요.');
+        setLocationModal({ type: 'denied' });
         setIsLocationSpinning(false);
       },
       { enableHighAccuracy: true, timeout: 5000 }
@@ -1451,44 +1483,68 @@ export default function MatzalAlMentorPage() {
 
           {/* 인기 식당 TOP 10 및 인기 후기 TOP 10 섹션 */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* 인기 맛잘알 섹션 */}
+            {/* 지역별 핫플레이스 섹션 */}
             <div className="relative">
               <div className="bg-white rounded-lg shadow-sm border border-gray-200">
                 <div className="p-3 border-b border-gray-200">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-base font-bold text-gray-900">인기 식당 TOP 10</h2>
+                    <h2 className="text-base font-bold text-gray-900">지역별 핫플레이스</h2>
                     <button
                       onClick={handleRefresh}
                       disabled={isRefreshing}
                       className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg transition-all duration-300 ${
-                        isRefreshing
-                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                          : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                        isRefreshing ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
                       }`}
                     >
-                      <svg
-                        className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
+                      <svg className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                       </svg>
                       <span className="text-sm">{isRefreshing ? '갱신 중...' : '새로고침'}</span>
                     </button>
                   </div>
+
+                  {/* 지역 탭 */}
+                  <div className="flex gap-1.5 mt-4 sm:mt-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+                    {(['전국', ...locations.slice().sort((a, b) => b.count - a.count).slice(0, 6).map(l => l.city)]).map(city => (
+                      <button
+                        key={city}
+                        onClick={() => setHotplaceCity(city)}
+                        className={`flex-shrink-0 px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-200 ${
+                          hotplaceCity === city ? 'bg-blue-500 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        {city === '전국' ? '전국' : city.replace(/특별시|광역시|특별자치시|특별자치도/, '').replace(/도$|시$/, '') || city}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                
+
                 <div className="p-3">
                   <div className="grid grid-cols-1 gap-1.5">
-                    {popularMatzalAl.length > 0 ? (
-                      popularMatzalAl.map((matzalAl, index) => (
+                    {(() => {
+                      const cityBase = hotplaceCity.replace(/특별시|광역시|특별자치시|특별자치도/, '').replace(/도$|시$/, '');
+                      const list = hotplaceCity === '전국'
+                        ? [...allTopViewed].sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0)).slice(0, 10)
+                        : allTopViewed
+                            .filter(r => {
+                              const addr = r.matzalAlLocation || '';
+                              return addr.includes(hotplaceCity) || (cityBase && addr.includes(cityBase));
+                            })
+                            .sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0) || (b.ratingCount || 0) - (a.ratingCount || 0))
+                            .slice(0, 10);
+
+                      if (allTopViewed.length === 0) return (
+                        <p className="text-sm text-gray-500 text-center py-4">데이터를 불러오는 중...</p>
+                      );
+                      if (list.length === 0) return (
+                        <p className="text-sm text-gray-500 text-center py-4">해당 지역에 등록된 식당이 없습니다.</p>
+                      );
+
+                      return list.map((matzalAl, index) => (
                         <div
                           key={matzalAl.matzalAlIdx}
                           onClick={() => handlePopularMatzalAlClick(matzalAl)}
-                          className={`group p-1.5 rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-300 cursor-pointer transform hover:scale-105 ${
-                            isRefreshing ? 'animate-pulse' : ''
-                          }`}
+                          className={`group p-1.5 rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-300 cursor-pointer transform hover:scale-105 ${isRefreshing ? 'animate-pulse' : ''}`}
                         >
                           <div className="flex items-center space-x-1.5">
                             <div className={`w-4 h-4 rounded-full flex items-center justify-center text-white font-bold text-xs ${
@@ -1505,12 +1561,8 @@ export default function MatzalAlMentorPage() {
                                 {matzalAl.averageRating !== null && matzalAl.averageRating !== undefined && matzalAl.averageRating > 0 ? (
                                   <>
                                     {renderStarRating(matzalAl.averageRating, 'sm')}
-                                    <span className="text-xs text-gray-600 font-semibold">
-                                      {matzalAl.averageRating.toFixed(1)}
-                                    </span>
-                                    <span className="text-xs text-gray-400">
-                                      ({matzalAl.ratingCount || 0})
-                                    </span>
+                                    <span className="text-xs text-gray-600 font-semibold">{matzalAl.averageRating.toFixed(1)}</span>
+                                    <span className="text-xs text-gray-400">({matzalAl.ratingCount || 0})</span>
                                   </>
                                 ) : (
                                   <>
@@ -1529,10 +1581,8 @@ export default function MatzalAlMentorPage() {
                             </div>
                           </div>
                         </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-gray-500">아직 등록된 맛잘알 후기가 없습니다.</p>
-                    )}
+                      ));
+                    })()}
                   </div>
                 </div>
               </div>
@@ -1608,6 +1658,74 @@ export default function MatzalAlMentorPage() {
       </div>
 
       {/* 맛잘알 추가 요청 모달 */}
+      {/* 위치 권한 관련 모달 */}
+      {locationModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center">
+            {locationModal.type === 'denied' && (
+              <>
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 mb-2">위치 권한이 거부됨</h3>
+                <p className="text-gray-600 text-sm mb-6">
+                  브라우저 주소창 왼쪽의 자물쇠 아이콘을 클릭하여<br />
+                  위치 권한을 <span className="font-semibold text-green-600">허용</span>으로 변경한 후 다시 시도해주세요.
+                </p>
+                <button
+                  onClick={() => setLocationModal(null)}
+                  className="w-full px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-bold transition-colors"
+                >
+                  확인
+                </button>
+              </>
+            )}
+            {locationModal.type === 'noSupport' && (
+              <>
+                <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 mb-2">위치 서비스 미지원</h3>
+                <p className="text-gray-600 text-sm mb-6">
+                  현재 브라우저는 위치 서비스를 지원하지 않습니다.<br />
+                  최신 Chrome, Edge 등을 사용해주세요.
+                </p>
+                <button
+                  onClick={() => setLocationModal(null)}
+                  className="w-full px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-bold transition-colors"
+                >
+                  확인
+                </button>
+              </>
+            )}
+            {locationModal.type === 'noResults' && (
+              <>
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 mb-2">주변 맛집 없음</h3>
+                <p className="text-gray-600 text-sm mb-6">
+                  3km 이내에 등록된 맛집이 없습니다.<br />
+                  조금 더 이동하거나 다른 지역을 탐색해보세요!
+                </p>
+                <button
+                  onClick={() => setLocationModal(null)}
+                  className="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-bold transition-colors"
+                >
+                  확인
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {showRequestModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
