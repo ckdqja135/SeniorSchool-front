@@ -173,7 +173,10 @@ const AdminMainPage = () => {
       
       if (data.success && data.data) {
         // 데이터를 날짜순으로 정렬하고 최근 8개월만 표시
-        const sortedData = [...data.data].sort((a, b) => b.month.localeCompare(a.month)).slice(0, 8);
+        const sortedData = [...data.data]
+          .sort((a, b) => b.month.localeCompare(a.month))
+          .slice(0, 8)
+          .map(d => ({ ...d, postCount: Number(d.postCount), companyCount: Number(d.companyCount) }));
         setMonthlyData(sortedData);
       }
     } catch (error) {
