@@ -249,7 +249,6 @@ export default function RecentRequestsSidebar() {
           <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
           </svg>
-          <span className="text-sm">📋</span>
           <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">신청 현황</span>
           {unseenPending > 0 && (
             <span className="bg-rose-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-[1.1rem] text-center">
