@@ -15,6 +15,7 @@ export interface RecentRequestItem {
   requestStatus: RequestStatus;
   requestDate: string;
   processedDate: string | null;
+  adminNote: string | null;
 }
 
 interface RecentRequestsResponse {

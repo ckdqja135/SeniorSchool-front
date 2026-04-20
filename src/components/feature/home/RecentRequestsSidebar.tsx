@@ -39,9 +39,10 @@ interface RequestsListProps {
   items: RecentRequestItem[];
   loading: boolean;
   error: string | null;
+  onMemoClick: (item: RecentRequestItem) => void;
 }
 
-function RequestsList({ items, loading, error }: RequestsListProps) {
+function RequestsList({ items, loading, error, onMemoClick }: RequestsListProps) {
   if (loading) {
     return (
       <ul className="p-3 space-y-3">
@@ -79,7 +80,19 @@ function RequestsList({ items, loading, error }: RequestsListProps) {
             <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate" title={item.name}>
               {item.name}
             </p>
-            <p className="text-[11px] text-gray-400 mt-0.5">{formatDate(item.requestDate)}</p>
+            <div className="flex items-center justify-between mt-0.5">
+              <p className="text-[11px] text-gray-400">{formatDate(item.requestDate)}</p>
+              {item.adminNote && item.adminNote.trim() && (
+                <button
+                  type="button"
+                  onClick={() => onMemoClick(item)}
+                  className="inline-flex items-center px-2.5 py-1 text-[10px] font-semibold rounded-full text-indigo-700 bg-white border border-indigo-300 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 dark:text-indigo-300 dark:bg-gray-800 dark:border-indigo-500/50 dark:hover:bg-indigo-600 dark:hover:text-white dark:hover:border-indigo-600 shadow-sm hover:shadow active:scale-95 transition-all duration-150"
+                  aria-label="관리자 메모 보기"
+                >
+                  메모 보기
+                </button>
+              )}
+            </div>
           </li>
         );
       })}
@@ -96,6 +109,7 @@ export default function RecentRequestsSidebar() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [desktopCollapsed, setDesktopCollapsed] = useState(false);
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
+  const [memoItem, setMemoItem] = useState<RecentRequestItem | null>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -232,7 +246,7 @@ export default function RecentRequestsSidebar() {
             </div>
           </div>
           <div className="overflow-y-auto max-h-[calc(100vh-12rem)]">
-            <RequestsList items={items} loading={loading} error={error} />
+            <RequestsList items={items} loading={loading} error={error} onMemoClick={setMemoItem} />
           </div>
         </aside>
       )}
@@ -369,7 +383,57 @@ export default function RecentRequestsSidebar() {
               </div>
             </div>
             <div className="overflow-y-auto flex-1">
-              <RequestsList items={items} loading={loading} error={error} />
+              <RequestsList items={items} loading={loading} error={error} onMemoClick={setMemoItem} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 메모 팝업 */}
+      {memoItem && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="관리자 메모"
+        >
+          <div className="absolute inset-0 bg-black/50" onClick={() => setMemoItem(null)} />
+          <div className="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-2xl flex flex-col max-h-[80vh] animate-[popIn_0.15s_ease-out]">
+            <div className="flex items-start justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700 gap-3">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 mb-1">
+                  <span>{SERVICE_EMOJI[memoItem.service]}</span>
+                  <span>{memoItem.serviceLabel}</span>
+                  <span className={`ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-full border ${STATUS_META[memoItem.requestStatus].badge}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${STATUS_META[memoItem.requestStatus].dot}`} />
+                    {STATUS_META[memoItem.requestStatus].label}
+                  </span>
+                </div>
+                <h3 className="font-bold text-base text-gray-900 dark:text-gray-100 truncate" title={memoItem.name}>
+                  {memoItem.name}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMemoItem(null)}
+                className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 flex-shrink-0"
+                aria-label="닫기"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="px-5 py-4 overflow-y-auto flex-1">
+              <p className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-2">관리자 메모</p>
+              <p className="text-sm text-gray-800 dark:text-gray-100 whitespace-pre-wrap break-words leading-relaxed">
+                {memoItem.adminNote || '메모가 없습니다.'}
+              </p>
+              {memoItem.processedDate && (
+                <p className="text-[11px] text-gray-400 mt-4">
+                  처리일: {new Date(memoItem.processedDate).toLocaleString('ko-KR')}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -383,6 +447,10 @@ export default function RecentRequestsSidebar() {
         @keyframes fadeIn {
           from { opacity: 0; }
           to { opacity: 1; }
+        }
+        @keyframes popIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
         }
       `}</style>
     </>
