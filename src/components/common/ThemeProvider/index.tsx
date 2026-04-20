@@ -8,11 +8,15 @@ type Theme = 'light' | 'dark';
 interface ThemeContextType {
   theme: Theme;
   toggleTheme: () => void;
+  hideDefaultToggle: boolean;
+  setHideDefaultToggle: (v: boolean) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType>({
   theme: 'light',
   toggleTheme: () => {},
+  hideDefaultToggle: false,
+  setHideDefaultToggle: () => {},
 });
 
 export const useTheme = () => useContext(ThemeContext);
@@ -20,6 +24,7 @@ export const useTheme = () => useContext(ThemeContext);
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>('light');
   const [mounted, setMounted] = useState(false);
+  const [hideDefaultToggle, setHideDefaultToggle] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem('theme') as Theme | null;
@@ -51,8 +56,8 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
   }
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      <ThemeToggle />
+    <ThemeContext.Provider value={{ theme, toggleTheme, hideDefaultToggle, setHideDefaultToggle }}>
+      {!hideDefaultToggle && <ThemeToggle />}
       {children}
     </ThemeContext.Provider>
   );

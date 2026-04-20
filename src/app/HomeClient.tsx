@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ReviewWriteModal from '@/components/common/ReviewWriteModal';
+import RecentRequestsSidebar from '@/components/feature/home/RecentRequestsSidebar';
 import { FreeBoardPost, BestPost } from '@/types';
 import { MatzalAlBoard } from '@/types/MatzalAl';
 import { OutsourceBoard } from '@/types/Outsource';
@@ -286,6 +287,8 @@ export default function HomeClient({
 
   return (
     <div className="min-h-screen bg-gray-50">
+
+      <RecentRequestsSidebar />
 
       {/* Ori 헤더 */}
       <header className="bg-white shadow-sm border-b border-gray-200">
