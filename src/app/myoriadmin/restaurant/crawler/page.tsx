@@ -212,6 +212,11 @@ const RestaurantCrawlerPage: React.FC = () => {
   const [enrichRestaurants, setEnrichRestaurants] = useState<any[]>([]);
   const [enrichFilter, setEnrichFilter] = useState("all");
   const [enrichLoading, setEnrichLoading] = useState(false);
+  const [enrichProgress, setEnrichProgress] = useState<
+    Array<{ index: number; total: number; name: string; status: string; matched?: string; elapsedMs?: number }>
+  >([]);
+  const [enrichTotal, setEnrichTotal] = useState(0);
+  const [enrichCurrent, setEnrichCurrent] = useState(0);
 
   // 관리 탭 상태 (NEW)
   const [mgSearchName, setMgSearchName] = useState("");
@@ -494,30 +499,86 @@ const RestaurantCrawlerPage: React.FC = () => {
     if (enriching) return;
     setEnriching(field);
     setEnrichResult(null);
+    setEnrichProgress([]);
+    setEnrichTotal(0);
+    setEnrichCurrent(0);
 
     try {
       const accessToken = localStorage.getItem("accessToken");
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 300000);
-      const res = await fetch(`${API_BASE_URL}/admin/crawler/enrich`, {
+      const res = await fetch(`${API_BASE_URL}/admin/crawler/enrich/stream`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({ field, limit: enrichBatchSize }),
-        signal: controller.signal,
       });
-      clearTimeout(timeout);
-      const data = await res.json();
-      setEnrichResult(data);
+
+      if (!res.ok) {
+        let msg = `요청 실패 (${res.status})`;
+        try {
+          const data = await res.json();
+          if (data?.message) msg = data.message;
+        } catch {}
+        setEnrichResult({ success: false, message: msg });
+        return;
+      }
+
+      if (!res.body) {
+        setEnrichResult({ success: false, message: "스트리밍 응답이 지원되지 않습니다." });
+        return;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        let newlineIdx;
+        while ((newlineIdx = buffer.indexOf("\n")) !== -1) {
+          const line = buffer.slice(0, newlineIdx).trim();
+          buffer = buffer.slice(newlineIdx + 1);
+          if (!line) continue;
+          try {
+            const msg = JSON.parse(line);
+            if (msg.type === "start") {
+              setEnrichTotal(msg.total || 0);
+              setEnrichCurrent(0);
+            } else if (msg.type === "progress") {
+              setEnrichCurrent((msg.index ?? 0) + 1);
+              setEnrichProgress((prev) => [
+                ...prev,
+                {
+                  index: msg.index,
+                  total: msg.total,
+                  name: msg.name,
+                  status: msg.status,
+                  matched: msg.matched,
+                  elapsedMs: msg.elapsedMs,
+                },
+              ]);
+            } else if (msg.type === "done") {
+              setEnrichResult({
+                success: msg.success,
+                message: msg.message,
+                total: msg.total,
+                updated: msg.updated,
+                results: msg.results || [],
+              });
+            }
+          } catch (e) {
+            console.warn("NDJSON 파싱 실패:", line, e);
+          }
+        }
+      }
       fetchEnrichData();
+      fetchDbStats();
     } catch (err: any) {
       console.error("보강 크롤링 실패:", err);
-      setEnrichResult({
-        success: false,
-        message:
-          err.name === "AbortError"
-            ? "타임아웃 (5분 초과). 배치 크기를 줄여주세요."
-            : `보강 중 오류: ${err.message}`,
-      });
+      setEnrichResult({ success: false, message: `보강 중 오류: ${err.message}` });
     } finally {
       setEnriching(null);
     }
@@ -1332,52 +1393,15 @@ const RestaurantCrawlerPage: React.FC = () => {
               </div>
             </section>
 
-            {enrichResult && (
-              <div className="glass-card rounded-xl overflow-hidden">
-                <div
-                  className={`p-4 ${
-                    enrichResult.success
-                      ? "bg-[color:var(--secondary-container)]/30 border-b border-[color:var(--secondary)]/30"
-                      : "bg-[color:var(--error-container)] border-b border-[color:var(--error)]/30"
-                  }`}
-                >
-                  <p className={`text-[13px] font-medium ${enrichResult.success ? "text-[color:var(--secondary)]" : "text-[color:var(--error)]"}`}>
-                    {enrichResult.message}
-                  </p>
-                </div>
-                {enrichResult.results && enrichResult.results.length > 0 && (
-                  <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
-                    <table className="w-full text-left">
-                      <thead className="bg-[color:var(--surface-container-low)] sticky top-0 z-10">
-                        <tr>
-                          <Th>#</Th><Th>식당명</Th><Th>매칭된 이름</Th><Th>결과</Th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[color:var(--outline-variant)]/30">
-                        {enrichResult.results.map((r: any, i: number) => (
-                          <tr key={i} className="hover:bg-[color:var(--surface-container-low)]">
-                            <Td className="text-[color:var(--outline)]">{i + 1}</Td>
-                            <Td className="font-semibold">{r.name}</Td>
-                            <Td className="text-[color:var(--on-surface-variant)]">{r.matched || "-"}</Td>
-                            <Td>
-                              <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                                r.status === "updated" ? "bg-[color:var(--secondary-container)] text-[color:var(--secondary)]" :
-                                r.status === "no_data" ? "bg-[color:var(--tertiary-container)] text-[color:var(--tertiary)]" :
-                                r.status === "not_found" ? "bg-[color:var(--surface-container-high)] text-[color:var(--outline)]" :
-                                "bg-[color:var(--error-container)] text-[color:var(--error)]"
-                              }`}>
-                                {r.status === "updated" ? "보강 완료" :
-                                 r.status === "no_data" ? "데이터 없음" :
-                                 r.status === "not_found" ? "미발견" : "오류"}
-                              </span>
-                            </Td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
+            {/* 실시간 진행 로그 (스트리밍 중 또는 최근 실행 기록) */}
+            {(enriching || enrichProgress.length > 0) && (
+              <EnrichLivePanel
+                active={!!enriching}
+                total={enrichTotal}
+                current={enrichCurrent}
+                progress={enrichProgress}
+                summary={enrichResult}
+              />
             )}
 
             <div className="glass-card rounded-xl overflow-hidden">
@@ -1425,6 +1449,62 @@ const RestaurantCrawlerPage: React.FC = () => {
                 </div>
               )}
             </div>
+
+            {/* 보강 결과 상세 (식당 목록 아래) */}
+            {enrichResult && (
+              <div className="glass-card rounded-xl overflow-hidden">
+                <div
+                  className={`px-5 py-4 flex items-center justify-between gap-3 ${
+                    enrichResult.success
+                      ? "bg-[color:var(--secondary-container)]/30 border-b border-[color:var(--secondary)]/30"
+                      : "bg-[color:var(--error-container)] border-b border-[color:var(--error)]/30"
+                  }`}
+                >
+                  <p
+                    className={`text-[13px] font-semibold flex items-center gap-2 ${
+                      enrichResult.success ? "text-[color:var(--secondary)]" : "text-[color:var(--error)]"
+                    }`}
+                  >
+                    <MatIcon name={enrichResult.success ? "task_alt" : "error"} size={18} fill={1} />
+                    보강 결과 — {enrichResult.message}
+                  </p>
+                  <button
+                    onClick={() => {
+                      setEnrichResult(null);
+                      setEnrichProgress([]);
+                      setEnrichTotal(0);
+                      setEnrichCurrent(0);
+                    }}
+                    className="text-[11px] text-[color:var(--outline)] hover:text-[color:var(--on-surface)] flex items-center gap-1"
+                  >
+                    <MatIcon name="close" size={14} /> 닫기
+                  </button>
+                </div>
+                {enrichResult.results && enrichResult.results.length > 0 && (
+                  <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+                    <table className="w-full text-left">
+                      <thead className="bg-[color:var(--surface-container-low)] sticky top-0 z-10">
+                        <tr>
+                          <Th>#</Th><Th>식당명</Th><Th>매칭된 이름</Th><Th>결과</Th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[color:var(--outline-variant)]/30">
+                        {enrichResult.results.map((r: any, i: number) => (
+                          <tr key={i} className="hover:bg-[color:var(--surface-container-low)]">
+                            <Td className="text-[color:var(--outline)]">{i + 1}</Td>
+                            <Td className="font-semibold">{r.name}</Td>
+                            <Td className="text-[color:var(--on-surface-variant)]">{r.matched || "-"}</Td>
+                            <Td>
+                              <EnrichStatusBadge status={r.status} />
+                            </Td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -2028,6 +2108,120 @@ const PageButton: React.FC<{ page: number; active: boolean; onClick: (p: number)
     {page}
   </button>
 );
+
+const EnrichStatusBadge: React.FC<{ status: string }> = ({ status }) => {
+  const map: Record<string, { label: string; cls: string }> = {
+    updated: { label: "보강 완료", cls: "bg-[color:var(--secondary-container)] text-[color:var(--secondary)]" },
+    no_data: { label: "데이터 없음", cls: "bg-[color:var(--tertiary-container)] text-[color:var(--tertiary)]" },
+    not_found: { label: "미발견", cls: "bg-[color:var(--surface-container-high)] text-[color:var(--outline)]" },
+    error: { label: "오류", cls: "bg-[color:var(--error-container)] text-[color:var(--error)]" },
+  };
+  const m = map[status] || map.error;
+  return (
+    <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase ${m.cls}`}>
+      {m.label}
+    </span>
+  );
+};
+
+const EnrichLivePanel: React.FC<{
+  active: boolean;
+  total: number;
+  current: number;
+  progress: Array<{ index: number; total: number; name: string; status: string; matched?: string; elapsedMs?: number }>;
+  summary: { success?: boolean; message?: string; updated?: number; total?: number } | null;
+}> = ({ active, total, current, progress, summary }) => {
+  const logRef = React.useRef<HTMLDivElement | null>(null);
+  React.useEffect(() => {
+    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
+  }, [progress.length]);
+
+  const effectiveTotal = total || progress[progress.length - 1]?.total || 0;
+  const pct = effectiveTotal > 0 ? Math.min(100, Math.round((current / effectiveTotal) * 100)) : 0;
+
+  const tallies = progress.reduce(
+    (acc, p) => {
+      acc[p.status] = (acc[p.status] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
+
+  return (
+    <div className="glass-card rounded-xl p-5 space-y-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <MatIcon
+            name={active ? "autorenew" : summary?.success ? "task_alt" : "history"}
+            size={20}
+            fill={1}
+            className={`${active ? "text-[color:var(--primary)] animate-spin" : "text-[color:var(--secondary)]"}`}
+          />
+          <h4 className="text-[14px] font-semibold">
+            {active ? "식신에서 보강 중..." : summary ? "보강 완료" : "최근 보강 기록"}
+          </h4>
+        </div>
+        <div className="flex items-center gap-3 text-[12px] text-[color:var(--on-surface-variant)]">
+          {Object.entries(tallies).map(([status, count]) => (
+            <span key={status} className="flex items-center gap-1">
+              <EnrichStatusBadge status={status} />
+              <span className="font-mono text-[color:var(--outline)]">{count}</span>
+            </span>
+          ))}
+          {effectiveTotal > 0 && (
+            <span className="text-[12px] font-mono text-[color:var(--on-surface)]">
+              {current} / {effectiveTotal}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      {effectiveTotal > 0 && (
+        <div className="space-y-1">
+          <div className="w-full bg-[color:var(--surface-container)] rounded-full h-2 overflow-hidden">
+            <div
+              className="bg-[color:var(--primary)] h-2 rounded-full transition-all"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <div className="flex justify-between text-[10px] text-[color:var(--outline)] font-mono">
+            <span>{pct}%</span>
+            {active && progress.length > 0 && (
+              <span>마지막: {progress[progress.length - 1]?.name}</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Live log list */}
+      <div
+        ref={logRef}
+        className="max-h-[220px] overflow-y-auto bg-[color:var(--surface-container-low)] rounded-lg p-3 font-mono text-[11px] leading-relaxed"
+      >
+        {progress.length === 0 ? (
+          <p className="text-[color:var(--outline)]">대상 식당을 찾는 중...</p>
+        ) : (
+          progress.map((p, i) => (
+            <div key={i} className="flex gap-2 py-0.5 border-b border-[color:var(--outline-variant)]/20 last:border-0">
+              <span className="text-[color:var(--outline)] w-10 shrink-0">{String(p.index + 1).padStart(3, " ")}.</span>
+              <span className="w-[80px] shrink-0">
+                <EnrichStatusBadge status={p.status} />
+              </span>
+              <span className="text-[color:var(--on-surface)] truncate flex-1">{p.name}</span>
+              {p.matched && p.matched !== p.name && (
+                <span className="text-[color:var(--outline)] truncate max-w-[180px]">→ {p.matched}</span>
+              )}
+              {typeof p.elapsedMs === "number" && (
+                <span className="text-[color:var(--outline)] shrink-0">{p.elapsedMs}ms</span>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
 
 const CrawlerFieldCard: React.FC<{
   icon: string;
