@@ -730,8 +730,8 @@ export default function MatzalAlMentorPage() {
         }))
         .sort((a: any, b: any) => a._dist - b._dist);
 
-      // 3km 이내만 사용 (fallback 없음)
-      const pool = withDist.filter((r: any) => r._dist <= 3);
+      // 1km 이내만 사용 (fallback 없음)
+      const pool = withDist.filter((r: any) => r._dist <= 1);
 
       if (pool.length === 0) {
         setLocationModal({ type: 'noResults' });
@@ -1711,7 +1711,7 @@ export default function MatzalAlMentorPage() {
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 mb-2">주변 맛집 없음</h3>
                 <p className="text-gray-600 text-sm mb-6">
-                  3km 이내에 등록된 맛집이 없습니다.<br />
+                  1km 이내에 등록된 맛집이 없습니다.<br />
                   조금 더 이동하거나 다른 지역을 탐색해보세요!
                 </p>
                 <button
