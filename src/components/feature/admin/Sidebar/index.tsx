@@ -78,6 +78,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
         { label: "회사 관리", href: "/myoriadmin/company" },
         { label: "회사 추가 요청 관리", href: "/myoriadmin/company/requests" },
         { label: "후기 관리", href: "/myoriadmin/company/board" },
+        { label: "크롤러 관리", href: "/myoriadmin/company/crawler" },
       ],
     },
     {
