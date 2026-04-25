@@ -8,8 +8,15 @@ const SignInForm = () => {
   const { username, setUsername, password, setPassword, handleSignIn, error } =
     useSignIn();
 
+  // 엔터 키 이벤트 핸들러
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSignIn();
+    }
+  };
+
   return (
-    <div className='flex flex-col gap-4'>
+    <div className='flex flex-col gap-5 [&_label]:text-slate-300 [&_label]:text-sm [&_label]:font-medium' onKeyPress={handleKeyPress}>
       <SignInInput
         username={username}
         setUsername={setUsername}
@@ -19,9 +26,9 @@ const SignInForm = () => {
       />
       <CommonButton
         onClick={handleSignIn}
-        className='w-full rounded-md border-2 bg-blue-500 px-4 py-2 hover:bg-blue-700'
+        className='w-full rounded-xl bg-indigo-600 px-4 py-3 hover:bg-indigo-700 active:bg-indigo-800 transition-colors'
       >
-        <p className='select-none text-white'>로그인</p>
+        <p className='select-none text-white font-semibold text-sm tracking-wide'>로그인</p>
       </CommonButton>
     </div>
   );

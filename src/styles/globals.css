@@ -2,20 +2,773 @@
 @tailwind components;
 @tailwind utilities;
 
-body,
-html {
-  background-color: white;
-  margin: 0;
+/* 기본 폰트 설정 */
+body {
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 400;
+  letter-spacing: -0.01em;
 }
 
-/* 추후 삭제 */
-@layer components {
-  /* admin페이지에서 사용할 전역 CSS */
-  .admin-layout {
-    background-color: white;
-  }
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Pretendard', sans-serif;
+  letter-spacing: -0.02em;
+}
 
-  .service-layout {
-    background-color: black;
+/* 다크 모드 전역 스타일 */
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: #111827;
+  color: #f3f4f6;
+}
+
+/* 다크 모드 - 카드/컨테이너 배경 */
+html.dark .bg-white {
+  background-color: #1f2937 !important;
+}
+
+html.dark .bg-white\/90 {
+  background-color: rgba(31, 41, 55, 0.9) !important;
+}
+
+html.dark .bg-white\/95 {
+  background-color: rgba(31, 41, 55, 0.95) !important;
+}
+
+html.dark .bg-gray-50 {
+  background-color: #111827 !important;
+}
+
+html.dark .bg-gray-100 {
+  background-color: #1f2937 !important;
+}
+
+html.dark .bg-gray-200 {
+  background-color: #374151 !important;
+}
+
+html.dark .bg-gray-800 {
+  background-color: #0f172a !important;
+}
+
+html.dark .bg-gray-900 {
+  background-color: #030712 !important;
+}
+
+/* 다크 모드 - 텍스트 색상 */
+html.dark .text-gray-900 {
+  color: #f9fafb !important;
+}
+
+html.dark .text-gray-800 {
+  color: #e5e7eb !important;
+}
+
+html.dark .text-gray-700 {
+  color: #d1d5db !important;
+}
+
+html.dark .text-gray-600 {
+  color: #9ca3af !important;
+}
+
+html.dark .text-gray-500 {
+  color: #9ca3af !important;
+}
+
+html.dark .text-gray-400 {
+  color: #6b7280 !important;
+}
+
+html.dark .text-gray-300 {
+  color: #9ca3af !important;
+}
+
+/* 다크 모드 - 보더 색상 */
+html.dark .border-gray-200 {
+  border-color: #374151 !important;
+}
+
+html.dark .border-gray-300 {
+  border-color: #4b5563 !important;
+}
+
+html.dark .border-gray-100 {
+  border-color: #374151 !important;
+}
+
+html.dark .border-white\/20 {
+  border-color: rgba(75, 85, 99, 0.3) !important;
+}
+
+/* 다크 모드 - 호버 상태 */
+html.dark .hover\:bg-gray-50:hover {
+  background-color: #374151 !important;
+}
+
+html.dark .hover\:bg-gray-100:hover {
+  background-color: #374151 !important;
+}
+
+html.dark .hover\:bg-white\/95:hover {
+  background-color: rgba(31, 41, 55, 0.95) !important;
+}
+
+html.dark .hover\:text-gray-900:hover {
+  color: #f9fafb !important;
+}
+
+html.dark .hover\:text-gray-800:hover {
+  color: #e5e7eb !important;
+}
+
+/* 다크 모드 - 입력 필드 */
+html.dark input,
+html.dark textarea,
+html.dark select {
+  background-color: #374151;
+  color: #f3f4f6;
+  border-color: #4b5563;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #9ca3af;
+}
+
+html.dark input:focus,
+html.dark textarea:focus,
+html.dark select:focus {
+  background-color: #1f2937;
+  border-color: #6366f1;
+}
+
+html.dark .focus\:bg-white:focus {
+  background-color: #1f2937 !important;
+}
+
+/* 다크 모드 - 그림자 */
+html.dark .shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3) !important;
+}
+
+html.dark .shadow-md {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4) !important;
+}
+
+html.dark .shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3) !important;
+}
+
+html.dark .shadow-xl {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 다크 모드 - placeholder 색상 */
+html.dark .placeholder-gray-500::placeholder {
+  color: #6b7280 !important;
+}
+
+html.dark .placeholder-gray-400::placeholder {
+  color: #6b7280 !important;
+}
+
+/* 다크 모드 - divide 색상 */
+html.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #374151 !important;
+}
+
+html.dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #374151 !important;
+}
+
+/* 다크 모드 - ring 색상 */
+html.dark .ring-gray-200 {
+  --tw-ring-color: #374151 !important;
+}
+
+html.dark .ring-gray-300 {
+  --tw-ring-color: #4b5563 !important;
+}
+
+/* 다크 모드 - 모달/오버레이 배경 */
+html.dark .bg-black\/50 {
+  background-color: rgba(0, 0, 0, 0.7) !important;
+}
+
+/* 다크 모드 - 스크롤바 */
+html.dark ::-webkit-scrollbar {
+  width: 8px;
+}
+
+html.dark ::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 4px;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* 다크 모드 - 반투명/글래스모피즘 배경 */
+html.dark .bg-white\/80 {
+  background-color: rgba(31, 41, 55, 0.8) !important;
+}
+
+html.dark .bg-white\/90 {
+  background-color: rgba(31, 41, 55, 0.9) !important;
+}
+
+html.dark .bg-white\/95 {
+  background-color: rgba(31, 41, 55, 0.95) !important;
+}
+
+html.dark .border-white\/60 {
+  border-color: rgba(75, 85, 99, 0.4) !important;
+}
+
+html.dark .border-white\/20 {
+  border-color: rgba(75, 85, 99, 0.3) !important;
+}
+
+html.dark .hover\:bg-white\/95:hover {
+  background-color: rgba(31, 41, 55, 0.95) !important;
+}
+
+/* 다크 모드 - 그래디언트 배경 (페이지 전체 배경) */
+html.dark .bg-gradient-to-br.from-blue-50,
+html.dark .bg-gradient-to-br.from-blue-50.via-indigo-50,
+html.dark .bg-gradient-to-br.from-blue-50.via-indigo-50.to-purple-50 {
+  background: linear-gradient(to bottom right, rgba(30, 58, 138, 0.2), rgba(49, 46, 129, 0.2), rgba(88, 28, 135, 0.2)) !important;
+}
+
+html.dark .bg-gradient-to-r.from-blue-50,
+html.dark .bg-gradient-to-r.from-blue-50.to-indigo-50 {
+  background: linear-gradient(to right, rgba(30, 58, 138, 0.2), rgba(49, 46, 129, 0.2)) !important;
+}
+
+html.dark .bg-gradient-to-br.from-purple-50,
+html.dark .bg-gradient-to-br.from-purple-50.to-pink-50 {
+  background: linear-gradient(to bottom right, rgba(88, 28, 135, 0.2), rgba(131, 24, 67, 0.2)) !important;
+}
+
+/* 다크 모드 - 컬러 보더 (폼 섹션) */
+html.dark .border-blue-200 {
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+html.dark .border-purple-200 {
+  border-color: rgba(147, 51, 234, 0.3) !important;
+}
+
+html.dark .border-yellow-500 {
+  border-color: rgba(234, 179, 8, 0.5) !important;
+}
+
+html.dark .border-red-500 {
+  border-color: rgba(239, 68, 68, 0.5) !important;
+}
+
+/* 다크 모드 - 에러/경고 텍스트 */
+html.dark .text-red-800 {
+  color: #fca5a5 !important;
+}
+
+html.dark .text-red-700 {
+  color: #fca5a5 !important;
+}
+
+html.dark .text-yellow-800 {
+  color: #fde047 !important;
+}
+
+html.dark .text-yellow-700 {
+  color: #fde047 !important;
+}
+
+html.dark .text-yellow-600 {
+  color: #facc15 !important;
+}
+
+html.dark .text-blue-600 {
+  color: #93c5fd !important;
+}
+
+/* 다크 모드 - 호버/포커스 보더 */
+html.dark .hover\:border-indigo-300:hover {
+  border-color: rgba(99, 102, 241, 0.5) !important;
+}
+
+html.dark .hover\:border-gray-400:hover {
+  border-color: #6b7280 !important;
+}
+
+html.dark .hover\:bg-gray-50:hover {
+  background-color: #374151 !important;
+}
+
+/* 다크 모드 - 컬러 카드 배경 (후기 상세 정보 카드) */
+html.dark .bg-blue-50 {
+  background-color: rgba(30, 58, 138, 0.3) !important;
+}
+
+html.dark .bg-green-50 {
+  background-color: rgba(20, 83, 45, 0.3) !important;
+}
+
+html.dark .bg-purple-50 {
+  background-color: rgba(88, 28, 135, 0.3) !important;
+}
+
+html.dark .bg-orange-50 {
+  background-color: rgba(154, 52, 18, 0.3) !important;
+}
+
+html.dark .bg-yellow-50 {
+  background-color: rgba(133, 77, 14, 0.3) !important;
+}
+
+html.dark .bg-red-50 {
+  background-color: rgba(127, 29, 29, 0.3) !important;
+}
+
+html.dark .bg-indigo-50 {
+  background-color: rgba(49, 46, 129, 0.3) !important;
+}
+
+html.dark .bg-cyan-50 {
+  background-color: rgba(22, 78, 99, 0.3) !important;
+}
+
+html.dark .bg-pink-50 {
+  background-color: rgba(131, 24, 67, 0.3) !important;
+}
+
+html.dark .bg-teal-50 {
+  background-color: rgba(19, 78, 74, 0.3) !important;
+}
+
+/* 다크 모드 - 컬러 카드 보더 */
+html.dark .border-blue-100 {
+  border-color: rgba(30, 58, 138, 0.4) !important;
+}
+
+html.dark .border-green-100 {
+  border-color: rgba(20, 83, 45, 0.4) !important;
+}
+
+html.dark .border-purple-100 {
+  border-color: rgba(88, 28, 135, 0.4) !important;
+}
+
+html.dark .border-orange-100 {
+  border-color: rgba(154, 52, 18, 0.4) !important;
+}
+
+html.dark .border-yellow-100 {
+  border-color: rgba(133, 77, 14, 0.4) !important;
+}
+
+html.dark .border-red-100,
+html.dark .border-red-200,
+html.dark .border-red-300 {
+  border-color: rgba(127, 29, 29, 0.4) !important;
+}
+
+html.dark .border-indigo-100 {
+  border-color: rgba(49, 46, 129, 0.4) !important;
+}
+
+html.dark .border-cyan-100,
+html.dark .border-cyan-200 {
+  border-color: rgba(22, 78, 99, 0.4) !important;
+}
+
+html.dark .border-pink-100 {
+  border-color: rgba(131, 24, 67, 0.4) !important;
+}
+
+/* 다크 모드 - 컬러 카드 라벨 텍스트 */
+html.dark .text-blue-700 {
+  color: #93c5fd !important;
+}
+
+html.dark .text-green-700 {
+  color: #86efac !important;
+}
+
+html.dark .text-purple-700 {
+  color: #c4b5fd !important;
+}
+
+html.dark .text-orange-700 {
+  color: #fdba74 !important;
+}
+
+html.dark .text-yellow-700 {
+  color: #fde047 !important;
+}
+
+/* 다크 모드 - 컬러 호버 배경 */
+html.dark .hover\:bg-red-50:hover {
+  background-color: rgba(127, 29, 29, 0.3) !important;
+}
+
+html.dark .hover\:bg-blue-50:hover {
+  background-color: rgba(30, 58, 138, 0.3) !important;
+}
+
+html.dark .hover\:bg-indigo-50:hover {
+  background-color: rgba(49, 46, 129, 0.3) !important;
+}
+
+html.dark .hover\:bg-purple-50:hover,
+html.dark .hover\:bg-purple-100:hover {
+  background-color: rgba(88, 28, 135, 0.4) !important;
+}
+
+html.dark .hover\:bg-cyan-100:hover {
+  background-color: rgba(22, 78, 99, 0.4) !important;
+}
+
+/* 다크 모드 - 컬러 100 배경 (배지 등) */
+html.dark .bg-green-100 {
+  background-color: rgba(20, 83, 45, 0.4) !important;
+}
+
+html.dark .bg-purple-100 {
+  background-color: rgba(88, 28, 135, 0.4) !important;
+}
+
+html.dark .bg-red-100 {
+  background-color: rgba(127, 29, 29, 0.4) !important;
+}
+
+html.dark .bg-blue-100 {
+  background-color: rgba(30, 58, 138, 0.4) !important;
+}
+
+html.dark .bg-orange-100 {
+  background-color: rgba(154, 52, 18, 0.4) !important;
+}
+
+html.dark .bg-yellow-100 {
+  background-color: rgba(133, 77, 14, 0.4) !important;
+}
+
+html.dark .bg-indigo-100 {
+  background-color: rgba(49, 46, 129, 0.4) !important;
+}
+
+/* 커스텀 폰트 클래스 */
+.font-black-han-sans {
+  font-family: 'Black Han Sans', sans-serif;
+}
+
+/* 텍스트 그림자 효과 */
+.text-shadow-lg {
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* 검색 입력 필드 스타일 */
+.search-input {
+  @apply flex-1 px-4 py-3 text-lg font-light border-0 rounded-l-md;
+  @apply focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-opacity-50;
+}
+
+/* 검색 버튼 스타일 */
+.search-button {
+  @apply px-6 py-3 bg-green-600 text-white font-light text-lg rounded-r-md;
+  @apply hover:bg-green-700 transition-colors duration-200;
+}
+
+/* 자동완성 드롭다운 스타일 */
+.autocomplete-dropdown {
+  @apply absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-md shadow-lg z-10;
+  @apply max-h-60 overflow-y-auto;
+}
+
+.autocomplete-item {
+  @apply px-4 py-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0;
+}
+
+/* 카카오맵 오버레이 스타일 */
+.map-overlay {
+  position: relative;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 0;
+  min-width: 200px;
+  max-width: 300px;
+}
+
+.map-overlay-header {
+  background: #4f46e5;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 8px 8px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.map-overlay-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  opacity: 0.8;
+}
+
+.map-overlay-body {
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+}
+
+.map-overlay-image img {
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.map-overlay-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.map-overlay-info .address,
+.map-overlay-info .lot-address {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.map-overlay-info .homepage-link {
+  color: #4f46e5;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.map-overlay-info .homepage-link:hover {
+  text-decoration: underline;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .font-black-han-sans {
+    font-size: 1.5rem;
   }
+}
+
+/* 차트 애니메이션 */
+@keyframes chartBarGrow {
+  from {
+    height: 0;
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes chartBarGlow {
+  0%, 100% {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+  50% {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* 차트 바 애니메이션 클래스 - 수정됨 */
+.animate-chart-bar {
+  animation: chartBarGrow 1.5s ease-out forwards, chartBarGlow 3s ease-in-out infinite;
+}
+
+/* 페이드인 애니메이션 */
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+/* 펄스 애니메이션 */
+.animate-pulse-slow {
+  animation: pulse 3s ease-in-out infinite;
+}
+
+/* 호버 효과 개선 */
+.hover-lift {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* 그라데이션 텍스트 효과 */
+.gradient-text {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 차트 그리드 라인 애니메이션 */
+.chart-grid-line {
+  animation: fadeInUp 0.8s ease-out forwards;
+  animation-delay: calc(var(--grid-index) * 0.1s);
+}
+
+/* 통계 카드 호버 효과 */
+.stats-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.stats-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.stats-card:hover::before {
+  left: 100%;
+}
+
+.stats-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* react-datepicker 커스텀 스타일 */
+.react-datepicker-wrapper {
+  width: 100%;
+}
+
+.react-datepicker__input-container input {
+  width: 100%;
+  cursor: pointer;
+}
+
+.react-datepicker {
+  font-family: inherit;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.react-datepicker__header {
+  background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%);
+  border-bottom: none;
+  border-radius: 0.5rem 0.5rem 0 0;
+  padding-top: 0.75rem;
+}
+
+.react-datepicker__current-month {
+  color: white;
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding-bottom: 0.5rem;
+}
+
+.react-datepicker__day-name {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected {
+  background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%);
+  border-radius: 0.375rem;
+}
+
+.react-datepicker__day:hover {
+  background: rgba(147, 51, 234, 0.2);
+  border-radius: 0.375rem;
+}
+
+.react-datepicker__month {
+  padding: 0.75rem;
+}
+
+.react-datepicker__navigation {
+  top: 0.875rem;
+}
+
+.react-datepicker__navigation-icon::before {
+  border-color: white;
+}
+
+.react-datepicker__month-year-read-view--down-arrow,
+.react-datepicker__year-read-view--down-arrow,
+.react-datepicker__month-read-view--down-arrow {
+  border-top-color: white;
+}
+
+.react-datepicker__year-dropdown,
+.react-datepicker__month-dropdown {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.react-datepicker__year-option:hover,
+.react-datepicker__month-option:hover {
+  background: #f3f4f6;
 }

@@ -1,45 +1,159 @@
 "use client";
 
-import React, { useState } from "react";
-import Link from "next/link";
+import React, { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
+import { ServiceConfig } from "@/types/Services";
+import { fetchActiveServices } from "@/lib/services/serviceConfigAPI";
+import { useNavigationGuard } from "@/components/common/NavigationGuard";
 
 interface SidebarProps {
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
 }
 
+interface MenuItem {
+  icon: string;
+  label: string;
+  href: string;
+  subItems: SubMenuItem[];
+}
+
+interface SubMenuItem {
+  label: string;
+  href: string;
+  subItems?: SubMenuItem[];
+}
+
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
   const pathname = usePathname();
+  const { requestNavigation } = useNavigationGuard();
+  const [dynamicServices, setDynamicServices] = useState<ServiceConfig[]>([]);
 
-  const menuItems = [
+  useEffect(() => {
+    fetchActiveServices().then(setDynamicServices).catch(() => {});
+  }, []);
+
+  // 기존 정적 메뉴
+  const staticMenuItems: MenuItem[] = [
     {
       icon: "📊",
       label: "Dashboard",
-      href: "/admin",
+      href: "/myoriadmin",
       subItems: [],
+    },
+    {
+      icon: "🗂️",
+      label: "자유게시판",
+      href: "/myoriadmin/freeboard",
+      subItems: [
+        { label: "자유게시판 관리", href: "/myoriadmin/freeboard" }
+      ],
     },
     {
       icon: "🎓",
       label: "학교 오빠",
-      href: "/admin/school",
+      href: "/myoriadmin/school",
       subItems: [
-        { label: "학교 관리", href: "/admin/school/management" },
-        { 
-          label: "게시글 관리", 
-          href: "/admin/school/posts",
-          subItems: [
-            { label: "신고 게시글", href: "/admin/school/posts/reported" }
-          ]
-        },
+        { label: "학교 관리", href: "/myoriadmin/school/management" },
+        { label: "대학교 추가 요청 관리", href: "/myoriadmin/school/requests" },
+        { label: "후기 관리", href: "/myoriadmin/school/board" },
+      ],
+    },
+    {
+      icon: "⛪",
+      label: "교회 오빠",
+      href: "/myoriadmin/church",
+      subItems: [
+        { label: "교회 관리", href: "/myoriadmin/church" },
+        { label: "교회 추가 요청 관리", href: "/myoriadmin/church/requests" },
+        { label: "후기 관리", href: "/myoriadmin/church/board" },
       ],
     },
     {
       icon: "✍️",
-      label: "직장생활",
-      href: "/admin/work-life",
+      label: "회사 오빠",
+      href: "/myoriadmin/company",
+      subItems: [
+        { label: "회사 관리", href: "/myoriadmin/company" },
+        { label: "회사 추가 요청 관리", href: "/myoriadmin/company/requests" },
+        { label: "후기 관리", href: "/myoriadmin/company/board" },
+        { label: "크롤러 관리", href: "/myoriadmin/company/crawler" },
+      ],
+    },
+    {
+      icon: "💼",
+      label: "외주 오빠",
+      href: "/myoriadmin/outsource",
+      subItems: [
+        { label: "외주업체 관리", href: "/myoriadmin/outsource" },
+        { label: "외주업체 추가 요청 관리", href: "/myoriadmin/outsource/requests" },
+        { label: "후기 관리", href: "/myoriadmin/outsource/board" },
+      ],
+    },
+    {
+      icon: "🍽️",
+      label: "맛잘알 오빠",
+      href: "/myoriadmin/restaurant",
+      subItems: [
+        { label: "식당 관리", href: "/myoriadmin/restaurant" },
+        { label: "식당 추가 요청 관리", href: "/myoriadmin/restaurant/requests" },
+        { label: "후기 관리", href: "/myoriadmin/restaurant/board" },
+        { label: "크롤러 관리", href: "/myoriadmin/restaurant/crawler" },
+      ],
+    },
+  ];
+
+  // 동적 서비스 메뉴 생성
+  const dynamicMenuItems: MenuItem[] = dynamicServices.map((svc) => ({
+    icon: svc.serviceEmoji,
+    label: svc.serviceDisplay,
+    href: `/myoriadmin/services/${svc.serviceSlug}`,
+    subItems: [
+      { label: `${svc.serviceName} 관리`, href: `/myoriadmin/services/${svc.serviceSlug}` },
+      { label: `추가 요청 관리`, href: `/myoriadmin/services/${svc.serviceSlug}/requests` },
+      { label: `후기 관리`, href: `/myoriadmin/services/${svc.serviceSlug}/board` },
+    ],
+  }));
+
+  // 하단 고정 메뉴
+  const bottomMenuItems: MenuItem[] = [
+    {
+      icon: "🛠️",
+      label: "서비스 관리",
+      href: "/myoriadmin/services",
+      subItems: [
+        { label: "서비스 목록", href: "/myoriadmin/services" },
+        { label: "서비스 추가", href: "/myoriadmin/services/create" },
+      ],
+    },
+    {
+      icon: "📈",
+      label: "접속 분석",
+      href: "/myoriadmin/analytics",
       subItems: [],
     },
+    {
+      icon: "👥",
+      label: "관리자 관리",
+      href: "/myoriadmin/admin",
+      subItems: [],
+    },
+    {
+      icon: "📝",
+      label: "게시글 관리",
+      href: "/myoriadmin/posts",
+      subItems: [
+        { label: "신고 게시글", href: "/myoriadmin/posts/reported" }
+      ],
+    },
+  ];
+
+  // 최종 메뉴 조합
+  const menuItems: MenuItem[] = [
+    ...staticMenuItems,
+    ...dynamicMenuItems,
+    ...bottomMenuItems,
   ];
 
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
@@ -63,7 +177,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
       <div className="p-4 border-b border-gray-700">
         <div className="flex items-center justify-between">
           {!isCollapsed && (
-            <span className="text-lg font-semibold">Admin Page</span>
+            <div className="flex items-center space-x-2">
+                <Image src="/images/duck.png" alt="Ori Duck" width={40} height={40} />
+              <span className="text-lg font-bold text-white">Ori Admin</span>
+            </div>
           )}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
@@ -83,8 +200,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
                 {item.subItems.length > 0 ? (
                   <button
                     onClick={() => toggleExpanded(item.href)}
-                    className={`w-full flex items-center justify-between p-2 rounded-md transition-colors hover:bg-gray-700 ${
-                      pathname.startsWith(item.href) ? "bg-blue-600" : ""
+                    className={`w-full flex items-center justify-between p-2 rounded-md transition-all duration-200 hover:bg-gray-700 ${
+                      pathname.startsWith(item.href) ? "bg-gray-700 shadow-lg ring-2 ring-gray-500 ring-opacity-50" : ""
                     }`}
                   >
                     <div className="flex items-center">
@@ -100,10 +217,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
                     )}
                   </button>
                 ) : (
-                  <Link href={item.href}>
+                  <button onClick={() => requestNavigation(item.href)} className="w-full text-left">
                     <div
-                      className={`flex items-center p-2 rounded-md transition-colors hover:bg-gray-700 ${
-                        pathname === item.href ? "bg-blue-600" : ""
+                      className={`flex items-center p-2 rounded-md transition-all duration-200 hover:bg-gray-700 ${
+                        pathname === item.href ? "bg-gray-700 shadow-lg ring-2 ring-gray-500 ring-opacity-50" : ""
                       }`}
                     >
                       <span className="text-xl mr-3">{item.icon}</span>
@@ -111,7 +228,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
                         <span className="text-sm">{item.label}</span>
                       )}
                     </div>
-                  </Link>
+                  </button>
                 )}
 
                 {/* Sub Items */}
@@ -125,8 +242,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
                             <div>
                               <button
                                 onClick={() => toggleSubExpanded(subItem.href)}
-                                className={`w-full flex items-center justify-between p-2 text-xs rounded-md transition-colors hover:bg-gray-700 ${
-                                  pathname.startsWith(subItem.href) ? "bg-blue-600" : ""
+                                className={`w-full flex items-center justify-between p-2 text-xs rounded-md transition-all duration-200 hover:bg-gray-700 ${
+                                  pathname.startsWith(subItem.href) ? "bg-gray-700 shadow-md ring-1 ring-gray-500 ring-opacity-50" : ""
                                 }`}
                               >
                                 <span>{subItem.label}</span>
@@ -140,30 +257,30 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
                                 <ul className="ml-4 mt-1 space-y-1">
                                   {subItem.subItems.map((thirdItem) => (
                                     <li key={thirdItem.href}>
-                                      <Link href={thirdItem.href}>
+                                      <button onClick={() => requestNavigation(thirdItem.href)} className="w-full text-left">
                                         <div
-                                          className={`block p-2 text-xs rounded-md transition-colors hover:bg-gray-700 ${
-                                            pathname === thirdItem.href ? "bg-blue-600" : ""
+                                          className={`block p-2 text-xs rounded-md transition-all duration-200 hover:bg-gray-700 ${
+                                            pathname === thirdItem.href ? "bg-gray-700 shadow-sm ring-1 ring-gray-500 ring-opacity-50" : ""
                                           }`}
                                         >
                                           {thirdItem.label}
                                         </div>
-                                      </Link>
+                                      </button>
                                     </li>
                                   ))}
                                 </ul>
                               )}
                             </div>
                           ) : (
-                            <Link href={subItem.href}>
+                            <button onClick={() => requestNavigation(subItem.href)} className="w-full text-left">
                               <div
-                                className={`block p-2 text-xs rounded-md transition-colors hover:bg-gray-700 ${
-                                  pathname === subItem.href ? "bg-blue-600" : ""
+                                className={`block p-2 text-xs rounded-md transition-all duration-200 hover:bg-gray-700 ${
+                                  pathname === subItem.href ? "bg-gray-700 shadow-md ring-1 ring-gray-500 ring-opacity-50" : ""
                                 }`}
                               >
                                 {subItem.label}
                               </div>
-                            </Link>
+                            </button>
                           )}
                         </li>
                       ))}
