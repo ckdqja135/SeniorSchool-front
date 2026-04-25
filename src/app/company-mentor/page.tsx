@@ -493,24 +493,34 @@ export default function CompanyMentorPage() {
                       <div
                         key={index}
                         onClick={() => handleSuggestionClick(suggestion)}
-                        className="px-6 py-4 cursor-pointer border-b border-gray-100/50 last:border-b-0 transition-all duration-200 group hover:bg-gray-50"
+                        className="pl-3 pr-1 py-3 cursor-pointer border-b border-gray-100/50 last:border-b-0 transition-all duration-200 group hover:bg-gray-50"
                       >
                         <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-purple-100 to-purple-100 rounded-full flex items-center justify-center">
-                            <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
-                          </div>
-                          <div className="flex-1">
-                            <div className="font-semibold text-gray-900">{suggestion.compName}</div>
-                            <div className="text-sm text-gray-500">📍 {suggestion.compLocation}</div>
-                            <div className="text-xs text-gray-400">🏢 {suggestion.compType} • {suggestion.compIndustry}</div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 text-sm flex-wrap">
+                              <span className="font-semibold text-gray-900 truncate">{suggestion.compName}</span>
+                              {suggestion.compIndustry && (
+                                <>
+                                  <span className="text-gray-300">|</span>
+                                  <span className="text-gray-500">{suggestion.compIndustry}</span>
+                                </>
+                              )}
+                              {suggestion.compCEO && (
+                                <>
+                                  <span className="text-gray-300">|</span>
+                                  <span className="text-gray-500">{suggestion.compCEO}</span>
+                                </>
+                              )}
+                            </div>
                           </div>
                           <div className="text-purple-400 opacity-0 group-hover:opacity-100 transition-all duration-200">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                             </svg>
                           </div>
+                        </div>
+                        <div className="text-left text-xs text-gray-400 truncate mt-0.5 ml-1">
+                          {suggestion.compAddr || suggestion.compLocate || suggestion.compLocation || '주소 정보 없음'}
                         </div>
                       </div>
                     ))}

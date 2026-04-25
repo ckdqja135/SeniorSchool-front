@@ -45,8 +45,11 @@ export interface CompanyAutoSearchResult {
   compIdx: number;
   compName: string;
   compLocation: string;
+  compLocate?: string;
   compType: string;
   compIndustry: string;
+  compCEO?: string;
+  compAddr?: string;
 }
 
 export interface PopularCompany {
