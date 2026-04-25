@@ -84,6 +84,34 @@ const CompanyManagementPage = () => {
     compStatus: 1
   });
 
+  // 사업자등록번호 검증 (국세청 API 연동, DB 저장 X — 등록 전 휴폐업 게이트)
+  const [bizNo, setBizNo] = useState("");
+  const [bizValidation, setBizValidation] = useState<null | { ok: boolean; status: string; message: string }>(null);
+  const [bizValidating, setBizValidating] = useState(false);
+
+  const handleValidateBusiness = async () => {
+    if (!bizNo.trim()) {
+      setBizValidation({ ok: false, status: "EMPTY", message: "사업자번호를 입력하세요" });
+      return;
+    }
+    setBizValidating(true);
+    setBizValidation(null);
+    try {
+      const accessToken = localStorage.getItem("accessToken");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/comp/validateBusiness`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ bizNo: bizNo.replace(/\D/g, "") }),
+      });
+      const data = await res.json();
+      setBizValidation({ ok: !!data.ok, status: data.status || "UNKNOWN", message: data.message || "" });
+    } catch {
+      setBizValidation({ ok: false, status: "ERROR", message: "검증 호출 실패" });
+    } finally {
+      setBizValidating(false);
+    }
+  };
+
   // 주소 정규화 (서울특별시 → 서울, 부산광역시 → 부산 등)
   const normalizeAddr = (addr: string) =>
     addr.replace(/특별시|광역시|특별자치시|특별자치도/g, "").replace(/\s+/g, " ").trim();
@@ -255,6 +283,8 @@ const CompanyManagementPage = () => {
           compMapIMG: "",
           compStatus: 1
         });
+        setBizNo("");
+        setBizValidation(null);
         searchCompanies(searchKeyword);
       }
     } catch (error) {
@@ -738,6 +768,42 @@ const CompanyManagementPage = () => {
                   <input type="text" value={newCompany.compCEO} onChange={(e) => setNewCompany({...newCompany, compCEO: e.target.value})} className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400 transition-all" placeholder="대표자명" />
                 </div>
               </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5">
+                  사업자등록번호 <span className="text-gray-400 font-normal">(선택, 국세청 휴폐업 검증)</span>
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={bizNo}
+                    onChange={(e) => { setBizNo(e.target.value); setBizValidation(null); }}
+                    placeholder="10자리 숫자 (하이픈 제외)"
+                    className={`flex-1 px-3.5 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all ${
+                      bizValidation?.ok
+                        ? "border-emerald-400 focus:ring-emerald-500/20 focus:border-emerald-400"
+                        : bizValidation && !bizValidation.ok
+                          ? "border-rose-400 focus:ring-rose-500/20 focus:border-rose-400"
+                          : "border-gray-200 focus:ring-amber-500/20 focus:border-amber-400"
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleValidateBusiness}
+                    disabled={bizValidating || !bizNo.trim()}
+                    className="shrink-0 px-3 py-2.5 text-xs font-medium text-amber-700 bg-amber-50 rounded-xl hover:bg-amber-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {bizValidating ? "검증중..." : "검증"}
+                  </button>
+                </div>
+                {bizValidation && (
+                  <p className={`mt-1.5 text-xs ${bizValidation.ok ? "text-emerald-600" : "text-rose-500"}`}>
+                    {bizValidation.ok ? "✓ " : "✗ "}{bizValidation.message}
+                    {!bizValidation.ok && bizValidation.status !== "EMPTY" && bizValidation.status !== "INVALID_FORMAT" && (
+                      <span className="text-gray-400"> · 그래도 등록 가능하지만 권장하지 않습니다</span>
+                    )}
+                  </p>
+                )}
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1.5">회사 종류</label>
@@ -844,7 +910,7 @@ const CompanyManagementPage = () => {
                 <div>
                   <label className="block text-xs font-semibold text-gray-400 mb-1.5">회사 종류</label>
                   <select value={isEditMode ? editingCompany?.compType || "" : selectedCompany.compType} onChange={(e) => handleEditChange("compType", e.target.value)} disabled={!isEditMode} className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all ${isEditMode ? "bg-white border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400" : "bg-gray-50/80 border-gray-100 text-gray-700"}`}>
-                    <option value="대기업">대기업</option><option value="중소기업">중소기업</option><option value="스타트업">스타트업</option><option value="공기업">공기업</option><option value="외국계">외국계</option><option value="기타">기타</option>
+                    <option value="대기업">대기업</option><option value="중견기업">중견기업</option><option value="중소기업">중소기업</option><option value="스타트업">스타트업</option><option value="공기업">공기업</option><option value="외국계">외국계</option><option value="기타">기타</option>
                   </select>
                 </div>
                 <div>
