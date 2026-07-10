@@ -380,7 +380,7 @@ export default function HomeClient({
                         onClick={() => handleBestPostClick(post)}
                         className="flex items-center gap-4 py-3 group cursor-pointer border-b border-gray-100 last:border-0"
                       >
-                        <span className={`w-6 text-center text-lg italic font-bold ${index < 3 ? 'text-indigo-600' : 'text-gray-400'}`}>{index + 1}</span>
+                        <span className={`w-6 flex-shrink-0 text-center text-lg italic font-bold ${index < 3 ? 'text-indigo-600' : 'text-gray-400'}`}>{index + 1}</span>
                         <div className={`w-8 h-8 ${colorBgMap[style.color] || 'bg-gray-100'} rounded-full flex items-center justify-center flex-shrink-0`}>
                           {style.icon}
                         </div>
