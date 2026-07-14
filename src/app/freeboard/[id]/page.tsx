@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FreeBoardPost, Comment } from '@/types';
 import { fetchFreeboardDetail, likeFreeboardPost, createFreeboardComment, likeFreeboardComment, updateFreeboardComment, deleteFreeboardComment, updateFreeboardPost, deleteFreeboardPost } from '@/lib/freeboard/freeboardAPI';
+import { SkeletonDetailPage, SkeletonList } from '@/components/common/Skeleton';
 
 interface FreeBoardDetailPageProps {
   params: {
@@ -632,14 +633,7 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">게시글을 불러오는 중...</p>
-        </div>
-      </div>
-    );
+    return <SkeletonDetailPage />;
   }
 
   if (error || !post) {
@@ -825,10 +819,7 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
           {/* 댓글 목록 */}
           <div className="p-4 sm:p-6">
             {isCommentLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600 mx-auto mb-2"></div>
-                <p className="text-sm text-gray-500">댓글을 불러오는 중...</p>
-              </div>
+              <SkeletonList rows={3} withAvatar />
             ) : comments.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-gray-500">아직 댓글이 없습니다. 첫 번째 댓글을 작성해보세요!</p>

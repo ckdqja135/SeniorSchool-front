@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
+import { Skeleton } from "@/components/common/Skeleton";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -1406,7 +1407,11 @@ const RestaurantCrawlerPage: React.FC = () => {
 
             <div className="glass-card rounded-xl overflow-hidden">
               {enrichLoading ? (
-                <p className="text-[13px] text-[color:var(--outline)] text-center py-12">식당 목록 로딩 중...</p>
+                <div className="p-4 space-y-3">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <Skeleton key={i} className="h-10 w-full" />
+                  ))}
+                </div>
               ) : enrichRestaurants.length === 0 ? (
                 <div className="text-center py-16">
                   <p className="text-[color:var(--outline)] mb-2">식당 데이터가 없습니다.</p>
@@ -1597,7 +1602,11 @@ const RestaurantCrawlerPage: React.FC = () => {
             {/* Result table */}
             <div className="glass-card rounded-xl overflow-hidden">
               {mgLoading ? (
-                <p className="text-[13px] text-[color:var(--outline)] text-center py-16">검색 중...</p>
+                <div className="p-4 space-y-3">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <Skeleton key={i} className="h-10 w-full" />
+                  ))}
+                </div>
               ) : !mgResult || mgResult.restaurants.length === 0 ? (
                 <div className="text-center py-16">
                   <MatIcon name="search_off" size={40} className="text-[color:var(--outline-variant)]" />

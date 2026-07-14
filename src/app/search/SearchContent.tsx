@@ -3,6 +3,7 @@
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { SkeletonSearchPage, SkeletonCircle } from '@/components/common/Skeleton';
 
 interface SearchResult {
   univIdx: number;
@@ -237,14 +238,7 @@ export default function SearchContent() {
   // 검색어가 있을 때 (검색 결과 표시)
   if (searchTerm) {
     if (isLoading) {
-      return (
-        <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">검색 중...</p>
-          </div>
-        </div>
-      );
+      return <SkeletonSearchPage />;
     }
 
     if (error) {
@@ -282,7 +276,7 @@ export default function SearchContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
             <div className="text-center py-16">
-              <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-green-600 mx-auto mb-4"></div>
+              <SkeletonCircle className="h-16 w-16 mx-auto mb-4" />
               <h2 className="text-2xl font-bold text-gray-800 mb-4">학교 정보를 찾는 중...</h2>
               <p className="text-gray-600 mb-8">
                 "{searchTerm}"에 대한 정보를 가져오고 있습니다.

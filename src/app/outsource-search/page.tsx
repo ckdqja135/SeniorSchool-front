@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { SkeletonSearchPage } from '@/components/common/Skeleton';
 
 function OutsourceSearchContent() {
   const searchParams = useSearchParams();
@@ -69,14 +70,7 @@ function OutsourceSearchContent() {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-yellow-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">검색 중...</p>
-        </div>
-      </div>
-    );
+    return <SkeletonSearchPage />;
   }
 
   return (
@@ -161,14 +155,7 @@ function OutsourceSearchContent() {
 
 export default function OutsourceSearchPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-yellow-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">로딩 중...</p>
-        </div>
-      </div>
-    }>
+    <Suspense fallback={<SkeletonSearchPage />}>
       <OutsourceSearchContent />
     </Suspense>
   );

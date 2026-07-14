@@ -9,6 +9,7 @@ import { useDynamicBoards } from '@/hooks/Services/useDynamicBoard';
 import BasicTemplate from '../templates/BasicTemplate';
 import CompanyTemplate from '../templates/CompanyTemplate';
 import RestaurantTemplate from '../templates/RestaurantTemplate';
+import { SkeletonDetailPage, SkeletonList } from '@/components/common/Skeleton';
 
 interface GenericEntityDetailProps {
   config: ServiceConfig;
@@ -65,14 +66,7 @@ const GenericEntityDetail: React.FC<GenericEntityDetailProps> = ({ config, entit
 
   // Loading state
   if (entityLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto" style={{ borderColor: config.serviceColor }} />
-          <p className="mt-4 text-gray-600">데이터를 불러오는 중...</p>
-        </div>
-      </div>
-    );
+    return <SkeletonDetailPage />;
   }
 
   // Error state
@@ -154,10 +148,7 @@ const GenericEntityDetail: React.FC<GenericEntityDetailProps> = ({ config, entit
           </div>
 
           {boardsLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: config.serviceColor }} />
-              <span className="ml-3 text-gray-500">게시글을 불러오는 중...</span>
-            </div>
+            <SkeletonList rows={3} itemClassName="bg-gray-50 rounded-xl border border-gray-100 p-4" />
           ) : boardsError ? (
             <div className="text-center py-8">
               <p className="text-gray-500">{boardsError}</p>

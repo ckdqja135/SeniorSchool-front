@@ -4,6 +4,7 @@ import React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useServiceConfig } from '@/hooks/Services/useServiceConfig';
 import GenericEntityTable from '@/components/feature/services/admin/GenericEntityTable';
+import { SkeletonDetailPage } from '@/components/common/Skeleton';
 
 export default function DynamicEntityManagementPage() {
   const { serviceSlug } = useParams<{ serviceSlug: string }>();
@@ -11,12 +12,7 @@ export default function DynamicEntityManagementPage() {
   const { config, loading, error } = useServiceConfig(serviceSlug);
 
   if (loading) {
-    return (
-      <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-3"></div>
-        <p className="text-sm text-gray-500">서비스 설정을 불러오는 중...</p>
-      </div>
-    );
+    return <SkeletonDetailPage />;
   }
 
   if (error || !config) {

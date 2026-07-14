@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRestaurantCommentsTop } from '@/hooks/MatzalAl/useMatzalAl';
 import { requestMatzalAl } from '@/lib/matzalAl/matzalAlAPI';
+import { Skeleton, SkeletonCircle } from '@/components/common/Skeleton';
 
 // 주요 카테고리 목록 (이외는 "기타"로 합산)
 const MAIN_CATEGORIES = [
@@ -1083,10 +1084,16 @@ export default function MatzalAlMentorPage() {
                   <div className="absolute top-full left-2 right-2 sm:left-0 sm:right-0 mt-3 bg-white/95 backdrop-blur-sm border border-white/30 rounded-2xl shadow-2xl z-10 max-h-80 overflow-y-auto">
                     {/* 로딩 표시 */}
                     {isLoading && (
-                      <div className="px-6 py-8 text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-3"></div>
-                        <div className="text-gray-600 font-medium">검색 중...</div>
-                        <div className="text-gray-400 text-sm mt-1">잠시만 기다려주세요</div>
+                      <div className="py-2">
+                        {Array.from({ length: 3 }).map((_, i) => (
+                          <div
+                            key={i}
+                            className="px-6 py-4 flex items-center space-x-3 border-b border-gray-100/50 last:border-b-0"
+                          >
+                            <SkeletonCircle className="w-10 h-10 flex-shrink-0" />
+                            <Skeleton className="h-4 w-1/2" />
+                          </div>
+                        ))}
                       </div>
                     )}
                     
@@ -1470,11 +1477,8 @@ export default function MatzalAlMentorPage() {
                   className="w-full h-full"
                 />
                 {!isKakaoMapLoaded && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
-                    <div className="text-center">
-                      <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-3" />
-                      <p className="text-sm text-gray-500">지도를 불러오는 중...</p>
-                    </div>
+                  <div className="absolute inset-0">
+                    <Skeleton className="w-full h-full rounded-xl" />
                   </div>
                 )}
               </div>
@@ -1534,7 +1538,20 @@ export default function MatzalAlMentorPage() {
                             .slice(0, 10);
 
                       if (allTopViewed.length === 0) return (
-                        <p className="text-sm text-gray-500 text-center py-4">데이터를 불러오는 중...</p>
+                        <>
+                          {Array.from({ length: 6 }).map((_, i) => (
+                            <div
+                              key={i}
+                              className="p-1.5 rounded-lg border border-gray-200 flex items-center space-x-1.5"
+                            >
+                              <SkeletonCircle className="w-4 h-4 flex-shrink-0" />
+                              <div className="flex-1 min-w-0 space-y-1">
+                                <Skeleton className="h-3 w-2/3" />
+                                <Skeleton className="h-2.5 w-1/3" />
+                              </div>
+                            </div>
+                          ))}
+                        </>
                       );
                       if (list.length === 0) return (
                         <p className="text-sm text-gray-500 text-center py-4">해당 지역에 등록된 식당이 없습니다.</p>

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { SkeletonDetailPage } from '@/components/common/Skeleton';
 
 interface BoardPost {
   boardIdx: number;
@@ -995,14 +996,7 @@ export default function BoardDetailPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">게시글을 불러오는 중...</p>
-        </div>
-      </div>
-    );
+    return <SkeletonDetailPage />;
   }
 
   if (error || !boardPost) {

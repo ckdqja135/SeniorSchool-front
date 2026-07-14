@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CompanyBoard, CompanyComment } from '@/types/Company';
+import { SkeletonDetailPage } from '@/components/common/Skeleton';
 
 const CommentItem = ({ comment, onEdit, onDelete, onReply, onMenuToggle, isActive, onMenuClick }: {
   comment: CompanyComment;
@@ -902,14 +903,7 @@ export default function CompanyBoardDetailPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">게시글을 불러오는 중...</p>
-        </div>
-      </div>
-    );
+    return <SkeletonDetailPage />;
   }
 
   if (error || !board) {

@@ -10,6 +10,7 @@ import { MatzalAlBoard } from '@/types/MatzalAl';
 import { OutsourceBoard } from '@/types/Outsource';
 import { ServiceConfig, DynamicBoard } from '@/types/Services';
 import { useRecentDynamicBoards } from '@/hooks/Services/useDynamicBoard';
+import { Skeleton } from '@/components/common/Skeleton';
 
 interface University {
   univName: string;
@@ -730,9 +731,9 @@ function DynamicServiceSection({ service }: { service: ServiceConfig }) {
       <ul className="space-y-3 flex-grow">
         {loading
           ? Array.from({ length: 5 }).map((_, i) => (
-              <li key={i} className="animate-pulse flex items-center gap-2">
-                <div className="h-3 bg-gray-200 rounded flex-grow"></div>
-                <div className="h-3 bg-gray-200 rounded w-8"></div>
+              <li key={i} className="flex items-center gap-2">
+                <Skeleton className="h-3 flex-grow" />
+                <Skeleton className="h-3 w-8" />
               </li>
             ))
           : !boards || boards.length === 0

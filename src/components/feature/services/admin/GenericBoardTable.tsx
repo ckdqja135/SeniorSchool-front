@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { ServiceConfig, DynamicBoard, ListParams } from '@/types/Services';
 import { adminFetchBoards, adminDeleteBoard } from '@/lib/services/dynamicBoardAPI';
+import { SkeletonTableRows } from '@/components/common/Skeleton';
 
 interface GenericBoardTableProps {
   config: ServiceConfig;
@@ -286,14 +287,7 @@ const GenericBoardTable: React.FC<GenericBoardTableProps> = ({ config, slug }) =
             </thead>
             <tbody>
               {loading ? (
-                <tr>
-                  <td
-                    colSpan={8}
-                    className="px-3 py-10 text-center text-sm text-gray-400"
-                  >
-                    로딩 중...
-                  </td>
-                </tr>
+                <SkeletonTableRows rows={6} cols={8} />
               ) : !boards || boards.length === 0 ? (
                 <tr>
                   <td

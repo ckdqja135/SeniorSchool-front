@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Church, PopularChurch, ChurchBoard, ChurchRequest, ChurchAutoSearchResult, ApiResponse } from '@/types/Church';
+import { Skeleton, SkeletonCircle } from '@/components/common/Skeleton';
 
 export default function ChurchMentorPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -427,10 +428,16 @@ export default function ChurchMentorPage() {
                   <div className="absolute top-full left-2 right-2 sm:left-0 sm:right-0 mt-3 bg-white/95 backdrop-blur-sm border border-white/30 rounded-2xl shadow-2xl z-10 max-h-80 overflow-y-auto">
                     {/* 로딩 표시 */}
                     {isLoading && (
-                      <div className="px-6 py-8 text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500 mx-auto mb-3"></div>
-                        <div className="text-gray-600 font-medium">검색 중...</div>
-                        <div className="text-gray-400 text-sm mt-1">잠시만 기다려주세요</div>
+                      <div className="py-2">
+                        {Array.from({ length: 3 }).map((_, i) => (
+                          <div
+                            key={i}
+                            className="px-6 py-4 flex items-center space-x-3 border-b border-gray-100/50 last:border-b-0"
+                          >
+                            <SkeletonCircle className="w-10 h-10 flex-shrink-0" />
+                            <Skeleton className="h-4 w-1/2" />
+                          </div>
+                        ))}
                       </div>
                     )}
                     

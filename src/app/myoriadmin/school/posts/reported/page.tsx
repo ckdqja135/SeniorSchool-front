@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { SkeletonTableRows } from '@/components/common/Skeleton';
 
 interface ReportData {
   reportIdx: number;
@@ -197,9 +198,7 @@ const ReportedPostsPage = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
-                  <tr>
-                    <td colSpan={7} className="px-3 py-4 text-center">로딩 중...</td>
-                  </tr>
+                  <SkeletonTableRows rows={6} cols={7} />
                 ) : !reports || reports.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-3 py-4 text-center">신고된 게시글이 없습니다.</td>

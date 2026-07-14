@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import AddressSearchModal, { AddressResult } from "@/components/common/AddressSearchModal";
 import { useNavigationGuard } from "@/components/common/NavigationGuard";
+import { SkeletonTableRows } from '@/components/common/Skeleton';
 
 interface RestaurantData {
   restaurantIdx: number;
@@ -524,9 +525,7 @@ const RestaurantManagementPage: React.FC = () => {
               </thead>
               <tbody>
                 {loading ? (
-                  <tr>
-                    <td colSpan={5} className="px-3 py-10 text-center text-sm text-gray-400">로딩 중...</td>
-                  </tr>
+                  <SkeletonTableRows rows={6} cols={5} />
                 ) : !restaurants || restaurants.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-3 py-10 text-center text-sm text-gray-400">검색 결과가 없습니다.</td>

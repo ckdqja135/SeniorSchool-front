@@ -7,6 +7,7 @@ import { ServiceConfig, DynamicEntity, DynamicBoard, AutoSearchResult } from '@/
 import { useTopViewedEntities, useAutoSearch } from '@/hooks/Services/useDynamicEntity';
 import { useTopViewedDynamicBoards } from '@/hooks/Services/useDynamicBoard';
 import { createRequest } from '@/lib/services/dynamicBoardAPI';
+import { Skeleton, SkeletonCircle } from '@/components/common/Skeleton';
 
 interface GenericMentorPageProps {
   config: ServiceConfig;
@@ -316,10 +317,16 @@ export default function GenericMentorPage({ config }: GenericMentorPageProps) {
                   <div className="absolute top-full left-2 right-2 sm:left-0 sm:right-0 mt-3 bg-white/95 backdrop-blur-sm border border-white/30 rounded-2xl shadow-2xl z-10 max-h-80 overflow-hidden">
                     {/* Loading */}
                     {searchLoading && (
-                      <div className="px-6 py-8 text-center">
-                        <div className={`animate-spin rounded-full h-8 w-8 ${colors.border} border-b-2 mx-auto mb-3`}></div>
-                        <div className="text-gray-600 font-medium">검색 중...</div>
-                        <div className="text-gray-400 text-sm mt-1">잠시만 기다려주세요</div>
+                      <div className="py-2">
+                        {Array.from({ length: 3 }).map((_, i) => (
+                          <div
+                            key={i}
+                            className="px-6 py-4 flex items-center space-x-3 border-b border-gray-100/50 last:border-b-0"
+                          >
+                            <SkeletonCircle className="w-10 h-10 flex-shrink-0" />
+                            <Skeleton className="h-4 w-1/2" />
+                          </div>
+                        ))}
                       </div>
                     )}
 
@@ -461,8 +468,19 @@ export default function GenericMentorPage({ config }: GenericMentorPageProps) {
 
                 <div className="p-3">
                   {entitiesLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <div className={`animate-spin rounded-full h-8 w-8 ${colors.border} border-b-2`}></div>
+                    <div className="grid grid-cols-1 gap-1.5">
+                      {Array.from({ length: 6 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className="p-1.5 rounded-lg border border-gray-200 flex items-center space-x-1.5"
+                        >
+                          <SkeletonCircle className="w-4 h-4 flex-shrink-0" />
+                          <div className="flex-1 min-w-0 space-y-1">
+                            <Skeleton className="h-3 w-2/3" />
+                            <Skeleton className="h-2.5 w-1/3" />
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   ) : popularEntities.length === 0 ? (
                     <div className="text-center py-8 text-gray-400">
@@ -536,8 +554,19 @@ export default function GenericMentorPage({ config }: GenericMentorPageProps) {
 
               <div className="p-3">
                 {boardsLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className={`animate-spin rounded-full h-8 w-8 ${colors.border} border-b-2`}></div>
+                  <div className="grid grid-cols-1 gap-1.5">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="p-1.5 rounded-lg border border-gray-200 flex items-center space-x-1.5"
+                      >
+                        <SkeletonCircle className="w-4 h-4 flex-shrink-0" />
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <Skeleton className="h-3 w-2/3" />
+                          <Skeleton className="h-2.5 w-2/5" />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : popularBoards.length === 0 ? (
                   <div className="text-center py-8 text-gray-400">

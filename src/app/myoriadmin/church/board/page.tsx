@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { SkeletonTableRows } from '@/components/common/Skeleton';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -340,9 +341,7 @@ const ChurchBoardManagementPage: React.FC = () => {
               </thead>
               <tbody>
                 {loading ? (
-                  <tr>
-                    <td colSpan={6} className="px-3 py-10 text-center text-sm text-gray-400">로딩 중...</td>
-                  </tr>
+                  <SkeletonTableRows rows={6} cols={6} />
                 ) : !boards || boards.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-3 py-10 text-center text-sm text-gray-400">검색 결과가 없습니다.</td>

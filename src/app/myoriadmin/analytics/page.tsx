@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { Skeleton, SkeletonTableRows } from "@/components/common/Skeleton";
 
 interface PathStat {
   pvPath: string;
@@ -208,7 +209,7 @@ const AnalyticsPage = () => {
               <span className="text-xs text-gray-400">총 <span className="font-semibold text-indigo-600">{totalVisits.toLocaleString()}</span>회</span>
             </div>
             {loading ? (
-              <div className="flex items-center justify-center h-56 text-sm text-gray-400">로딩 중...</div>
+              <Skeleton className="w-full h-56" />
             ) : dailyStats.length === 0 ? (
               <div className="flex items-center justify-center h-56 text-sm text-gray-400">데이터 없음</div>
             ) : (
@@ -367,7 +368,7 @@ const AnalyticsPage = () => {
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={5} className="px-3 py-10 text-center text-gray-400">로딩 중...</td></tr>
+                  <SkeletonTableRows rows={6} cols={5} />
                 ) : logs.length === 0 ? (
                   <tr><td colSpan={5} className="px-3 py-10 text-center text-gray-400">데이터 없음</td></tr>
                 ) : (

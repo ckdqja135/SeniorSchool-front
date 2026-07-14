@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { ServiceConfig, DynamicBoard } from '@/types/Services';
 import { fetchBoardDetail, toggleBoardLike } from '@/lib/services/dynamicBoardAPI';
+import { SkeletonDetailPage } from '@/components/common/Skeleton';
 
 interface GenericBoardDetailProps {
   config: ServiceConfig;
@@ -74,17 +75,7 @@ const GenericBoardDetail: React.FC<GenericBoardDetailProps> = ({ config, boardId
 
   // Loading state
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div
-            className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto"
-            style={{ borderColor: config.serviceColor }}
-          />
-          <p className="mt-4 text-gray-600">게시글을 불러오는 중...</p>
-        </div>
-      </div>
-    );
+    return <SkeletonDetailPage />;
   }
 
   // Error state

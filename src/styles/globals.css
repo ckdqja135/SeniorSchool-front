@@ -466,6 +466,45 @@ html.dark .bg-indigo-100 {
   background-color: rgba(49, 46, 129, 0.4) !important;
 }
 
+/* 스켈레톤 로딩 - 셔머 애니메이션 (데이터 조회 중 표시, 라이트/다크 대응) */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-box {
+  background-color: #e5e7eb;
+  background-image: linear-gradient(
+    90deg,
+    rgba(229, 231, 235, 0) 0%,
+    rgba(255, 255, 255, 0.65) 50%,
+    rgba(229, 231, 235, 0) 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+html.dark .skeleton-box {
+  background-color: #374151;
+  background-image: linear-gradient(
+    90deg,
+    rgba(55, 65, 81, 0) 0%,
+    rgba(75, 85, 99, 0.75) 50%,
+    rgba(55, 65, 81, 0) 100%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-box {
+    animation: none;
+  }
+}
+
 /* 커스텀 폰트 클래스 */
 .font-black-han-sans {
   font-family: 'Black Han Sans', sans-serif;

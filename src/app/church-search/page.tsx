@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ChurchAutoSearchResult } from '@/types/Church';
+import { SkeletonSearchPage } from '@/components/common/Skeleton';
 
 function ChurchSearchContent() {
   const searchParams = useSearchParams();
@@ -64,14 +65,7 @@ function ChurchSearchContent() {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-red-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">검색 중...</p>
-        </div>
-      </div>
-    );
+    return <SkeletonSearchPage />;
   }
 
   return (
@@ -191,7 +185,7 @@ function ChurchSearchContent() {
 
 export default function ChurchSearchPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-lg">로딩 중...</div></div>}>
+    <Suspense fallback={<SkeletonSearchPage />}>
       <ChurchSearchContent />
     </Suspense>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, useRef } from "react";
+import { Skeleton } from "@/components/common/Skeleton";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -1420,8 +1421,10 @@ const CompanyCrawlerPage: React.FC = () => {
 
             <section className="glass-card rounded-xl p-6">
               {mgLoading ? (
-                <div className="flex items-center justify-center py-8 text-[color:var(--outline)]">
-                  <Spinner /> <span className="ml-2">불러오는 중...</span>
+                <div className="p-2 space-y-3">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <Skeleton key={i} className="h-12 w-full" />
+                  ))}
                 </div>
               ) : !mgResult || mgResult.companies.length === 0 ? (
                 <p className="text-center py-8 text-[color:var(--outline)]">검색 결과가 없습니다.</p>

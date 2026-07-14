@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { Skeleton, SkeletonDetailPage } from '@/components/common/Skeleton';
 
 interface University {
   univName: string;
@@ -540,14 +541,7 @@ export default function SchoolPage() {
   // }, [university, searchQuery]);
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">대학교 정보를 불러오는 중...</p>
-        </div>
-      </div>
-    );
+    return <SkeletonDetailPage />;
   }
 
   if (error || !university) {
@@ -681,18 +675,12 @@ export default function SchoolPage() {
               >
                 {!isKakaoMapLoaded && (
                   <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
-                    <div className="text-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-2"></div>
-                      <p className="text-sm text-gray-600">지도를 불러오는 중...</p>
-                    </div>
+                    <Skeleton className="w-full h-full rounded-xl" />
                   </div>
                 )}
                 {isKakaoMapLoaded && !mapInstance.current && (
                   <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
-                    <div className="text-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-2"></div>
-                      <p className="text-sm text-gray-600">지도 초기화 중...</p>
-                    </div>
+                    <Skeleton className="w-full h-full rounded-xl" />
                   </div>
                 )}
               </div>

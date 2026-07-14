@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ChurchBoard, ChurchComment, ApiResponse } from '@/types/Church';
+import { SkeletonDetailPage, SkeletonList } from '@/components/common/Skeleton';
 
 // 재귀적으로 댓글을 렌더링하는 컴포넌트
 const CommentItem = ({ 
@@ -999,14 +1000,7 @@ export default function ChurchBoardDetailPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-red-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">게시글을 불러오는 중...</p>
-        </div>
-      </div>
-    );
+    return <SkeletonDetailPage />;
   }
 
   if (error || !board) {
@@ -1206,10 +1200,7 @@ export default function ChurchBoardDetailPage() {
           
           {/* 댓글 목록 */}
           {isCommentLoading ? (
-            <div className="text-center py-4">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto"></div>
-              <p className="mt-2 text-gray-600">댓글을 불러오는 중...</p>
-            </div>
+            <SkeletonList rows={3} withAvatar />
           ) : commentError ? (
             <div className="text-center py-4 text-red-600">
               <p>댓글을 불러올 수 없습니다: {commentError}</p>

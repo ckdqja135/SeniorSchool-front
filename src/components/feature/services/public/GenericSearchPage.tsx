@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ServiceConfig, DynamicEntity, EntityFieldConfig } from '@/types/Services';
 import { useDynamicEntities } from '@/hooks/Services/useDynamicEntity';
+import { SkeletonSearchPage } from '@/components/common/Skeleton';
 
 interface GenericSearchPageProps {
   config: ServiceConfig;
@@ -70,17 +71,7 @@ const GenericSearchPage: React.FC<GenericSearchPageProps> = ({ config, keyword }
 
   // Loading state
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div
-            className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto"
-            style={{ borderColor: config.serviceColor }}
-          />
-          <p className="mt-4 text-gray-600">검색 중...</p>
-        </div>
-      </div>
-    );
+    return <SkeletonSearchPage />;
   }
 
   return (

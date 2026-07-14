@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import AddressSearchModal, { AddressResult } from "@/components/common/AddressSearchModal";
 import { useNavigationGuard } from "@/components/common/NavigationGuard";
+import { SkeletonTableRows } from '@/components/common/Skeleton';
 
 interface OutsourceData {
   outsourceIdx: number;
@@ -509,9 +510,7 @@ const OutsourceManagementPage = () => {
               </thead>
               <tbody>
                 {loading ? (
-                  <tr>
-                    <td colSpan={6} className="px-3 py-10 text-center text-sm text-gray-400">로딩 중...</td>
-                  </tr>
+                  <SkeletonTableRows rows={6} cols={6} />
                 ) : !outsources || outsources.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-3 py-10 text-center text-sm text-gray-400">검색 결과가 없습니다.</td>

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { FreeBoardPost, FreeBoardApiResponse } from '@/types';
 import ReviewWriteModal from '@/components/common/ReviewWriteModal';
 import { createFreeboardPost, fetchFreeboardList, likeFreeboardPost, fetchFreeboardCategories, fetchFreeboardTags } from '@/lib/freeboard/freeboardAPI';
+import { Skeleton, SkeletonList } from '@/components/common/Skeleton';
 
 export default function FreeBoardPage() {
   const router = useRouter();
@@ -308,9 +309,8 @@ export default function FreeBoardPage() {
         {/* 게시글 목록 */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           {isLoading ? (
-            <div className="p-8 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">게시글을 불러오는 중...</p>
+            <div className="p-4">
+              <SkeletonList rows={6} />
             </div>
           ) : error ? (
             <div className="p-8 text-center">
@@ -584,10 +584,14 @@ export default function FreeBoardPage() {
               </h3>
               <div className="space-y-2">
                 {isStatsLoading ? (
-                  <div className="text-center py-4">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600 mx-auto mb-2"></div>
-                    <p className="text-sm text-gray-500">카테고리를 불러오는 중...</p>
-                  </div>
+                  <>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="flex items-center justify-between p-2">
+                        <Skeleton className="h-4 w-2/3" />
+                        <Skeleton className="h-3 w-6" />
+                      </div>
+                    ))}
+                  </>
                 ) : categories.length === 0 ? (
                   <div className="text-center py-4">
                     <p className="text-sm text-gray-500">카테고리 데이터가 없습니다.</p>
@@ -638,10 +642,11 @@ export default function FreeBoardPage() {
               </h3>
               <div className="flex flex-wrap gap-2">
                 {isStatsLoading ? (
-                  <div className="text-center py-4 w-full">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600 mx-auto mb-2"></div>
-                    <p className="text-sm text-gray-500">태그를 불러오는 중...</p>
-                  </div>
+                  <>
+                    {Array.from({ length: 8 }).map((_, i) => (
+                      <Skeleton key={i} className="h-7 w-16 rounded-full" />
+                    ))}
+                  </>
                 ) : tags.length === 0 ? (
                   <div className="text-center py-4 w-full">
                     <p className="text-sm text-gray-500">태그 데이터가 없습니다.</p>

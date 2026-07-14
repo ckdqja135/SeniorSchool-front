@@ -15,6 +15,7 @@ import { Bar } from "react-chartjs-2";
 import Link from "next/link";
 import { ServiceConfig } from "@/types/Services";
 import { fetchActiveServices } from "@/lib/services/serviceConfigAPI";
+import { Skeleton, SkeletonList } from "@/components/common/Skeleton";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, Filler);
 
@@ -498,7 +499,7 @@ const AdminMainPage = () => {
           </div>
           <div className="h-72">
             {monthlyLoading ? (
-              <div className="flex items-center justify-center h-full text-gray-400">로딩 중...</div>
+              <Skeleton className="w-full h-full" />
             ) : (
               <Bar
                 data={{
@@ -613,7 +614,7 @@ const AdminMainPage = () => {
           </div>
           <div className="space-y-1 max-h-[420px] overflow-y-auto">
             {activityLoading ? (
-              <div className="text-center py-8 text-gray-400">로딩 중...</div>
+              <SkeletonList rows={5} withAvatar />
             ) : recentActivities.length === 0 ? (
               <div className="text-center py-8 text-gray-400">최근 활동이 없습니다.</div>
             ) : (

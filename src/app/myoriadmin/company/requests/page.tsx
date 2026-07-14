@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
+import { SkeletonListPage } from "@/components/common/Skeleton";
 
 // API 베이스 URL을 상수로 관리
 const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
@@ -232,14 +233,7 @@ const CompanyRequestsPage: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">데이터를 불러오는 중...</p>
-        </div>
-      </div>
-    );
+    return <SkeletonListPage />;
   }
 
   if (error) {

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { SkeletonList } from "@/components/common/Skeleton";
 
 export interface AddressResult {
   roadAddress: string;
@@ -179,9 +180,7 @@ const AddressSearchModal: React.FC<AddressSearchModalProps> = ({
         {/* 검색 결과 */}
         <div className="flex-1 overflow-y-auto px-5 pb-5">
           {loading ? (
-            <div className="flex items-center justify-center py-10">
-              <p className="text-sm text-gray-400">검색 중...</p>
-            </div>
+            <SkeletonList rows={4} itemClassName="p-3.5 border border-gray-100 rounded-xl" />
           ) : tab === "place" && placeResults.length > 0 ? (
             <div className="space-y-2">
               {placeResults.map((item, idx) => (

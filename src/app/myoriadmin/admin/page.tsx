@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { SkeletonTableRows } from '@/components/common/Skeleton';
 
 interface AdminData {
   userIdx: number;
@@ -332,9 +333,7 @@ const AdminManagementPage = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
-                  <tr>
-                    <td colSpan={6} className="px-3 py-4 text-center">로딩 중...</td>
-                  </tr>
+                  <SkeletonTableRows rows={6} cols={6} />
                 ) : !admins || admins.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-3 py-4 text-center">검색 결과가 없습니다.</td>

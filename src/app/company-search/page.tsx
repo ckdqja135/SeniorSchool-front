@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { CompanyAutoSearchResult } from '@/types/Company';
+import { SkeletonSearchPage } from '@/components/common/Skeleton';
 
 function CompanySearchContent() {
   const searchParams = useSearchParams();
@@ -66,14 +67,7 @@ function CompanySearchContent() {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">검색 중...</p>
-        </div>
-      </div>
-    );
+    return <SkeletonSearchPage />;
   }
 
   return (
@@ -197,7 +191,7 @@ function CompanySearchContent() {
 
 export default function CompanySearchPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-lg">로딩 중...</div></div>}>
+    <Suspense fallback={<SkeletonSearchPage />}>
       <CompanySearchContent />
     </Suspense>
   );

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ServiceConfig } from '@/types/Services';
 import { fetchActiveServices, deleteService } from '@/lib/services/serviceConfigAPI';
+import { SkeletonCardGrid } from '@/components/common/Skeleton';
 
 export default function ServiceListPage() {
   const router = useRouter();
@@ -65,10 +66,7 @@ export default function ServiceListPage() {
       </div>
 
       {loading ? (
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-3"></div>
-          <p className="text-sm text-gray-500">서비스 목록을 불러오는 중...</p>
-        </div>
+        <SkeletonCardGrid count={6} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" />
       ) : error ? (
         <div className="text-center py-12">
           <p className="text-sm text-red-500">{error}</p>

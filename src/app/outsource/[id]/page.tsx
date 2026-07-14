@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { getOutsourceDetail, getOutsourceBoardList } from '@/lib/outsource/outsourceAPI';
 import { Outsource, OutsourceBoard } from '@/types/Outsource';
+import { SkeletonDetailPage, SkeletonList } from '@/components/common/Skeleton';
 
 export default function OutsourceDetailPage() {
   const router = useRouter();
@@ -67,24 +68,7 @@ export default function OutsourceDetailPage() {
   }, [outsourceId]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-6xl mx-auto px-4 py-8">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="animate-pulse">
-              <div className="h-8 bg-gray-200 rounded w-1/2 mb-4"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/4 mb-6"></div>
-              <div className="space-y-3">
-                <div className="h-4 bg-gray-200 rounded"></div>
-                <div className="h-4 bg-gray-200 rounded"></div>
-                <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <SkeletonDetailPage />;
   }
 
   if (error) {
@@ -184,15 +168,7 @@ export default function OutsourceDetailPage() {
               <div className="divide-y divide-gray-200">
                 {boardsLoading ? (
                   <div className="p-6">
-                    <div className="space-y-4">
-                      {[1, 2, 3].map((i) => (
-                        <div key={i} className="animate-pulse">
-                          <div className="h-5 bg-gray-200 rounded w-3/4 mb-2"></div>
-                          <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
-                          <div className="h-3 bg-gray-200 rounded w-1/4"></div>
-                        </div>
-                      ))}
-                    </div>
+                    <SkeletonList rows={3} />
                   </div>
                 ) : boards.length === 0 ? (
                   <div className="p-12 text-center">
