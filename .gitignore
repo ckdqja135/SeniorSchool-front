@@ -1,6 +1,9 @@
 # Created by https://www.toptal.com/developers/gitignore/api/macos,intellij,visualstudiocode,react,nextjs
 # Edit at https://www.toptal.com/developers/gitignore?templates=macos,intellij,visualstudiocode,react,nextjs
 
+### Claude Code ###
+.claude/
+
 ### env ###
 .env
 
