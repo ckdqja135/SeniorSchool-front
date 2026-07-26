@@ -26,7 +26,18 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         console.error("사용자 정보 파싱 오류:", error);
       }
     }
+
+    // 사이드바 접힘 상태 복원
+    if (localStorage.getItem("adminSidebarCollapsed") === "true") {
+      setIsCollapsed(true);
+    }
   }, []);
+
+  // 사이드바 접힘 상태 저장
+  const handleToggleCollapsed = (collapsed: boolean) => {
+    setIsCollapsed(collapsed);
+    localStorage.setItem("adminSidebarCollapsed", String(collapsed));
+  };
 
   const handleHomeClick = () => {
     router.push("/myoriadmin");
@@ -43,7 +54,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+      <Sidebar isCollapsed={isCollapsed} setIsCollapsed={handleToggleCollapsed} />
       
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Header */}
