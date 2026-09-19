@@ -10,10 +10,14 @@
  * - '내 주변' 버튼을 눌렀을 때만 위치를 조회하고, 거부·미지원이면 지역 프리셋으로 수동 탐색.
  * - 상단바·패널 크기를 모아 렌더러에 가시 영역 인셋(카메라 보정)을 전달.
  * - 선택된 식당이 필터에서 제외되면 패널에 안내하고, 결과가 비면 빈 상태를 보여준다.
+ * - 패널 목록 탭(주변 / 핫플 / 후기): 예전에 지도 아래 카드로 있던 '지역별 핫플레이스' · '인기 후기 TOP 10' 을
+ *   지도 안 패널로 옮겼다. 데이터는 page.tsx 가 이미 받아 둔 것을 props 로 넘긴다(중복 조회 없음).
+ *   핫플을 누르면 그 식당 좌표로 flyTo 하고, nearby 결과에 들어오면 핀을 자동 선택한다.
  */
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useNearbyRestaurants } from '@/hooks/MatzalAl/useNearbyRestaurants';
 import { useSavedRestaurants } from '@/hooks/MatzalAl/useSavedRestaurants';
 import { useIsDesktop, usePrefersReducedMotion } from '@/hooks/MatzalAl/useMediaQuery';
@@ -25,16 +29,21 @@ import type {
   ExploreRenderer,
   ExploreRestaurant,
   ExploreViewport,
+  HotplaceRestaurant,
   LatLng,
   LocateStatus,
   PanelState,
+  PanelTab,
+  PopularReview,
   VisibleInsets,
 } from '@/types/MatzalAl/explore';
 import { ExploreModeControl } from './ExploreModeControl';
 import { ExploreTopBar } from './ExploreTopBar';
 import { KakaoExploreMap, type FlyToRequest } from './KakaoExploreMap';
 import { RestaurantPanel } from './RestaurantPanel';
-import { DioramaExploreMap } from './DioramaExploreMap';
+import { DioramaExploreMap, type FocusRequest } from './DioramaExploreMap';
+import { HotplaceList } from './HotplaceList';
+import { PopularReviewList } from './PopularReviewList';
 
 const DEFAULT_FILTERS: ExploreFilters = { sort: 'distance', ratedOnly: false, savedOnly: false };
 /** nearby 조회 한도. 핀 라벨이 겹치지 않을 정도로 제한 */
@@ -43,8 +52,38 @@ const NEARBY_MIN_RADIUS_KM = 0.5;
 const NEARBY_MAX_RADIUS_KM = 8;
 /** 렌더러 최초 확대 단계 (카카오 level 기준, 입체 지도는 zoom 16 으로 환산) */
 const INITIAL_LEVEL = 4;
+/** flyTo 후 nearby 결과에 식당이 안 들어오면 이 시간 뒤 대기 선택을 접고 안내한다 */
+const PENDING_SELECT_TIMEOUT_MS = 6000;
 
-export default function ExploreShell() {
+export interface ExploreShellProps {
+  /** 지역별 핫플레이스 원본 (`GET /restaurant` 전체 목록). page.tsx 가 받아 둔 것 */
+  hotplaces?: HotplaceRestaurant[];
+  /** 핫플 지역 칩 (전국 제외, 식당 수 상위 도시) */
+  hotplaceCities?: string[];
+  hotplacesLoading?: boolean;
+  hotplacesRefreshing?: boolean;
+  onRefreshHotplaces?: () => void;
+  /** 인기 후기 TOP 10 (`GET /restaurant/board/top-viewed`) */
+  reviews?: PopularReview[];
+  reviewsLoading?: boolean;
+  reviewsRefreshing?: boolean;
+  onRefreshReviews?: () => void;
+}
+
+const NOOP = () => {};
+
+export default function ExploreShell({
+  hotplaces = [],
+  hotplaceCities = [],
+  hotplacesLoading = false,
+  hotplacesRefreshing = false,
+  onRefreshHotplaces = NOOP,
+  reviews = [],
+  reviewsLoading = false,
+  reviewsRefreshing = false,
+  onRefreshReviews = NOOP,
+}: ExploreShellProps) {
+  const router = useRouter();
   const isDesktop = useIsDesktop();
   const reducedMotion = usePrefersReducedMotion();
   const { savedIds, isSaved, toggleSaved } = useSavedRestaurants();
@@ -56,6 +95,10 @@ export default function ExploreShell() {
   const [filters, setFilters] = useState<ExploreFilters>(DEFAULT_FILTERS);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [panelState, setPanelState] = useState<PanelState>('collapsed');
+  const [panelTab, setPanelTab] = useState<PanelTab>('nearby');
+  const [hotplaceCity, setHotplaceCity] = useState('전국');
+  /** 핫플·후기에서 고른 식당 id. flyTo 뒤 nearby 결과에 들어오면 선택으로 바꾼다 */
+  const [pendingSelectId, setPendingSelectId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   const [userLocation, setUserLocation] = useState<LatLng | null>(null);
@@ -63,6 +106,8 @@ export default function ExploreShell() {
   const [regionLabel, setRegionLabel] = useState<string | null>(null);
   const [regionPreset, setRegionPreset] = useState<RegionPreset>(DEFAULT_REGION);
   const [flyTo, setFlyTo] = useState<FlyToRequest | null>(null);
+  /** 입체 모드 정면 카메라 요청 (핫플·후기 선택). 카카오 모드는 flyTo + 선택 핀 보정으로 충분 */
+  const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
   const [kakaoReady, setKakaoReady] = useState(false);
   const [tiltReady, setTiltReady] = useState(false);
   const [lastViewport, setLastViewport] = useState<ExploreViewport | null>(null);
@@ -141,6 +186,7 @@ export default function ExploreShell() {
     (next: ExploreRenderer) => {
       if (next === renderer) return;
       setFlyTo(null);
+      setFocusRequest(null);
       setRenderer(next);
     },
     [renderer],
@@ -154,9 +200,89 @@ export default function ExploreShell() {
   }, [sourceList, selectedId]);
 
   const handleSelect = useCallback((id: string | null) => {
+    setPendingSelectId(null);
     setSelectedId(id);
     if (id) setPanelState((s) => (s === 'collapsed' ? 'default' : s));
   }, []);
+
+  // ---- 핫플 · 후기 → 지도 이동 + 자동 선택 ----
+  /** 핫플 목록에서 idx 로 좌표 찾기 (후기 탭의 핀 버튼도 같은 목록을 쓴다) */
+  const hotplaceByIdx = useMemo(() => {
+    const m = new Map<string, HotplaceRestaurant>();
+    for (const h of hotplaces) m.set(h.restaurantIdx, h);
+    return m;
+  }, [hotplaces]);
+
+  const canLocateRestaurant = useCallback(
+    (restaurantIdx: string) => hotplaceByIdx.get(restaurantIdx)?.coord != null,
+    [hotplaceByIdx],
+  );
+
+  /** 좌표로 이동하고, 그 식당이 nearby 결과에 들어오면 선택 + 정면 카메라 */
+  const focusRestaurant = useCallback(
+    (restaurantIdx: string, coord: LatLng) => {
+      const id = `api:${restaurantIdx}`;
+      const token = Date.now();
+      setFlyTo({ center: coord, level: INITIAL_LEVEL, token });
+      setPanelState((s) => (s === 'collapsed' ? 'default' : s));
+      if (sourceList.some((r) => r.id === id)) {
+        setPendingSelectId(null);
+        setSelectedId(id);
+        setFocusRequest({ id, token });
+      } else {
+        setPendingSelectId(id);
+      }
+    },
+    [sourceList],
+  );
+
+  const handleHotplaceSelect = useCallback(
+    (h: HotplaceRestaurant) => {
+      if (h.coord) {
+        focusRestaurant(h.restaurantIdx, h.coord);
+        return;
+      }
+      // 좌표가 없는 식당은 지도에 올릴 수 없으므로 상세 페이지로 (기존 핫플레이스 카드와 같은 규칙)
+      router.push(`/matzal-al-mentor/${encodeURIComponent(h.name)}?matzalAlIdx=${h.restaurantIdx}`);
+    },
+    [focusRestaurant, router],
+  );
+
+  const handleLocateReviewRestaurant = useCallback(
+    (restaurantIdx: string) => {
+      const h = hotplaceByIdx.get(restaurantIdx);
+      if (!h?.coord) {
+        showNotice('이 식당은 위치 정보가 없어 지도에 표시할 수 없어요');
+        return;
+      }
+      focusRestaurant(restaurantIdx, h.coord);
+    },
+    [hotplaceByIdx, focusRestaurant, showNotice],
+  );
+
+  // flyTo 후 nearby 결과가 갱신되면 대기 중인 식당을 선택 + 정면 카메라
+  useEffect(() => {
+    if (!pendingSelectId) return;
+    if (sourceList.some((r) => r.id === pendingSelectId)) {
+      setSelectedId(pendingSelectId);
+      setFocusRequest({ id: pendingSelectId, token: Date.now() });
+      setPendingSelectId(null);
+    }
+  }, [sourceList, pendingSelectId]);
+
+  // 조회 실패·시간 초과 시 대기 선택을 접고 안내
+  useEffect(() => {
+    if (!pendingSelectId) return;
+    if (nearby.status === 'error') {
+      setPendingSelectId(null);
+      return;
+    }
+    const t = window.setTimeout(() => {
+      setPendingSelectId(null);
+      showNotice('지도에서 이 식당을 찾지 못했어요. 지도를 조금 옮겨보세요');
+    }, PENDING_SELECT_TIMEOUT_MS);
+    return () => window.clearTimeout(t);
+  }, [pendingSelectId, nearby.status, showNotice]);
 
   const handleToggleSave = useCallback(
     (id: string) => {
@@ -236,7 +362,7 @@ export default function ExploreShell() {
     <div
       ref={containerRef}
       className="relative w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-100"
-      style={{ height: 'min(calc(100dvh - 140px), 820px)', minHeight: 520 }}
+      style={{ height: 'min(calc(100dvh - 140px), 920px)', minHeight: 520 }}
       data-explore-renderer={renderer}
     >
       {/* 렌더러 — 셋 다 같은 DB 데이터(pinned)를 그린다 */}
@@ -250,6 +376,7 @@ export default function ExploreShell() {
           initialCenter={initialCenter}
           initialLevel={initialLevel}
           flyTo={flyTo}
+          focusRequest={focusRequest}
           visibleInsets={visibleInsets}
           onViewportChange={handleViewportChange}
           onRegionChange={handleRegionChange}
@@ -333,6 +460,32 @@ export default function ExploreShell() {
         onSelect={handleSelect}
         onNotice={showNotice}
         onSizeChange={setPanelSize}
+        tab={panelTab}
+        onTabChange={setPanelTab}
+        tabContent={
+          panelTab === 'hot' ? (
+            <HotplaceList
+              items={hotplaces}
+              cities={hotplaceCities}
+              city={hotplaceCity}
+              onCityChange={setHotplaceCity}
+              loading={hotplacesLoading}
+              refreshing={hotplacesRefreshing}
+              onRefresh={onRefreshHotplaces}
+              onSelect={handleHotplaceSelect}
+              selectedRestaurantIdx={selected?.restaurantIdx ?? null}
+            />
+          ) : panelTab === 'reviews' ? (
+            <PopularReviewList
+              items={reviews}
+              loading={reviewsLoading}
+              refreshing={reviewsRefreshing}
+              onRefresh={onRefreshReviews}
+              canLocate={canLocateRestaurant}
+              onLocate={handleLocateReviewRestaurant}
+            />
+          ) : null
+        }
       />
 
       {/* 토스트 */}

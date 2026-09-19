@@ -14,6 +14,12 @@ import { loadKakaoMapSdk } from '@/lib/matzalAl/kakaoMapLoader';
 import type { CitySceneHandle } from '@/lib/matzalAl/diorama/cityScene';
 import type { ExploreRestaurant, ExploreViewport, LatLng, VisibleInsets } from '@/types/MatzalAl/explore';
 import type { FlyToRequest } from './KakaoExploreMap';
+
+/** 매장 정면 카메라 요청 (패널 핫플·후기에서 식당을 골랐을 때). 같은 id 라도 다시 잡도록 토큰을 둔다 */
+export interface FocusRequest {
+  id: string;
+  token: number;
+}
 import { RestaurantPin } from './RestaurantPin';
 
 export interface DioramaExploreMapProps {
@@ -25,6 +31,8 @@ export interface DioramaExploreMapProps {
   initialCenter: LatLng;
   initialLevel: number;
   flyTo: FlyToRequest | null;
+  /** 핀 클릭과 같은 '매장 정면 카메라' 를 바깥에서 요청 (flyTo 뒤에 처리) */
+  focusRequest?: FocusRequest | null;
   visibleInsets: VisibleInsets;
   onViewportChange: (vp: ExploreViewport) => void;
   onRegionChange: (label: string | null) => void;
@@ -52,6 +60,7 @@ export function DioramaExploreMap({
   initialCenter,
   initialLevel,
   flyTo,
+  focusRequest = null,
   visibleInsets,
   onViewportChange,
   onRegionChange,
@@ -166,6 +175,12 @@ export function DioramaExploreMap({
     if (state !== 'ready' || !flyTo) return;
     handleRef.current?.flyTo(flyTo.center, flyTo.level);
   }, [flyTo, state]);
+
+  // 외부 정면 카메라 요청 (flyTo 효과 뒤에 선언해 같은 렌더에서는 이동 → 정면 순으로 실행)
+  useEffect(() => {
+    if (state !== 'ready' || !focusRequest) return;
+    handleRef.current?.focus(focusRequest.id);
+  }, [focusRequest, state]);
 
   useEffect(() => {
     if (state !== 'ready') return;

@@ -3,7 +3,8 @@
  *
  * - 접힘 / 기본 / 펼침 3단계. 손잡이 드래그 외에 버튼(▲▼✕)과 키보드(↑ ↓ Esc)로도 조작 가능.
  * - 드래그는 손잡이 요소에서만 시작하므로 지도 드래그와 충돌하지 않는다.
- * - 선택된 식당이 없으면 현재 결과 목록을 보여준다 (빈 결과·로딩·오류 상태 포함).
+ * - 선택된 식당이 없으면 목록 탭(주변 / 핫플 / 후기)을 보여준다. '주변' 은 현재 결과 목록(빈 결과·로딩·오류 상태 포함),
+ *   '핫플' · '후기' 본문은 셸이 `tabContent` 로 넘긴다 (예전에 지도 아래 있던 두 섹션을 지도 안으로 옮긴 것).
  * - 예약·웨이팅은 아직 백엔드 연동이 없으므로 '연동 준비 중' 으로만 표시한다 (가짜 값을 보여주지 않는다).
  * - 자신의 크기를 `onSizeChange` 로 알려 셸이 카메라 보정용 가시 영역을 계산한다.
  */
@@ -13,7 +14,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Skeleton, SkeletonCircle } from '@/components/common/Skeleton';
 import { buildRestaurantDetailHref } from '@/lib/matzalAl/exploreAdapter';
-import type { ExploreCategory, ExploreRestaurant, PanelState } from '@/types/MatzalAl/explore';
+import type { ExploreCategory, ExploreRestaurant, PanelState, PanelTab } from '@/types/MatzalAl/explore';
 import { CategoryIcon } from './categoryIcons';
 
 export type PanelListStatus = 'idle' | 'loading' | 'success' | 'error';
@@ -42,7 +43,15 @@ export interface RestaurantPanelProps {
   onSelect: (id: string | null) => void;
   onNotice: (message: string) => void;
   onSizeChange: (size: { width: number; height: number }) => void;
+  /** 목록 탭 (선택된 식당이 없을 때만 보임) */
+  tab: PanelTab;
+  onTabChange: (tab: PanelTab) => void;
+  /** '핫플' · '후기' 탭 본문. 셸이 데이터와 함께 구성해서 넘긴다 */
+  tabContent?: React.ReactNode;
 }
+
+const TAB_LABELS: Record<PanelTab, string> = { nearby: '주변', hot: '핫플', reviews: '후기' };
+const TAB_ORDER: PanelTab[] = ['nearby', 'hot', 'reviews'];
 
 const STATE_ORDER: PanelState[] = ['collapsed', 'default', 'expanded'];
 const COLLAPSED_PX = 76;
@@ -113,6 +122,9 @@ export function RestaurantPanel({
   onSelect,
   onNotice,
   onSizeChange,
+  tab,
+  onTabChange,
+  tabContent,
 }: RestaurantPanelProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const handleRef = useRef<HTMLButtonElement>(null);
@@ -141,10 +153,10 @@ export function RestaurantPanel({
     return () => ro.disconnect();
   }, [onSizeChange]);
 
-  // 선택이 바뀌면 본문 스크롤을 맨 위로
+  // 선택·탭이 바뀌면 본문 스크롤을 맨 위로
   useEffect(() => {
     bodyRef.current?.scrollTo({ top: 0 });
-  }, [restaurant?.id]);
+  }, [restaurant?.id, tab]);
 
   // ---- 손잡이 드래그 (손잡이에서만 시작 → 지도 드래그와 충돌 없음) ----
   const onHandlePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
@@ -203,15 +215,22 @@ export function RestaurantPanel({
   // 접힘 상태 한 줄 요약
   const peekText = restaurant
     ? `${restaurant.name}${restaurant.averageRating !== null ? ` · ★ ${restaurant.averageRating.toFixed(1)}` : ''}`
-    : listStatus === 'loading'
-      ? '주변 식당을 불러오는 중…'
-      : `이 지역 식당 ${list.length}곳 · 펼쳐서 목록 보기`;
+    : tab === 'hot'
+      ? '지역별 핫플레이스 · 펼쳐서 보기'
+      : tab === 'reviews'
+        ? '인기 후기 TOP 10 · 펼쳐서 보기'
+        : listStatus === 'loading'
+          ? '주변 식당을 불러오는 중…'
+          : `이 지역 식당 ${list.length}곳 · 펼쳐서 목록 보기`;
+
+  const tabLabel = (t: PanelTab) =>
+    t === 'nearby' && listStatus !== 'loading' ? `${TAB_LABELS[t]} ${list.length}` : TAB_LABELS[t];
 
   return (
     <div
       ref={rootRef}
       role="region"
-      aria-label={restaurant ? `${restaurant.name} 정보` : '주변 식당 목록'}
+      aria-label={restaurant ? `${restaurant.name} 정보` : tab === 'hot' ? '지역별 핫플레이스' : tab === 'reviews' ? '인기 후기' : '주변 식당 목록'}
       className={`absolute z-30 flex flex-col overflow-hidden bg-white shadow-[0_-8px_30px_rgba(0,0,0,0.15)] ${layoutClass}`}
       style={{ height, transition }}
     >
@@ -361,90 +380,117 @@ export function RestaurantPanel({
           </div>
         ) : (
           <div>
-            <div className="mb-2 flex items-baseline justify-between">
-              <h3 className="text-base font-bold text-gray-900">
-                이 지역 식당{' '}
-                {listStatus !== 'loading' && <span className="text-sm font-semibold text-gray-500">{list.length}곳</span>}
-              </h3>
-              <span className="text-xs text-gray-500">핀을 누르면 정보가 열려요</span>
+            {/* 목록 탭: 주변 / 핫플 / 후기 */}
+            <div role="tablist" aria-label="패널 목록" className="mb-3 flex rounded-full bg-gray-100 p-1">
+              {TAB_ORDER.map((t) => {
+                const active = tab === t;
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => onTabChange(t)}
+                    className={`min-h-[36px] flex-1 rounded-full text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${
+                      active ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800'
+                    }`}
+                  >
+                    {tabLabel(t)}
+                  </button>
+                );
+              })}
             </div>
 
-            {listStatus === 'loading' && (
-              <ul className="space-y-2" aria-label="불러오는 중">
-                {[0, 1, 2].map((i) => (
-                  <li key={i} className="flex items-center gap-3 py-1">
-                    <SkeletonCircle className="h-11 w-11" />
-                    <div className="flex-1 space-y-1.5">
-                      <Skeleton className="h-3.5 w-1/2" />
-                      <Skeleton className="h-3 w-1/3" />
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
+            {tab !== 'nearby' ? (
+              <div role="tabpanel">{tabContent}</div>
+            ) : (
+              <div role="tabpanel">
+                <div className="mb-2 flex items-baseline justify-between">
+                  <h3 className="text-base font-bold text-gray-900">
+                    이 지역 식당{' '}
+                    {listStatus !== 'loading' && <span className="text-sm font-semibold text-gray-500">{list.length}곳</span>}
+                  </h3>
+                  <span className="text-xs text-gray-500">핀을 누르면 정보가 열려요</span>
+                </div>
 
-            {listStatus === 'error' && (
-              <div className="rounded-xl bg-rose-50 p-4 text-center">
-                <p className="text-sm text-rose-700">{listError ?? '주변 식당을 불러오지 못했어요.'}</p>
-                <button
-                  type="button"
-                  onClick={onRetry}
-                  className="mt-2 min-h-[40px] rounded-full bg-rose-600 px-4 text-sm font-bold text-white hover:bg-rose-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300"
-                >
-                  다시 시도
-                </button>
-              </div>
-            )}
-
-            {listStatus !== 'loading' && listStatus !== 'error' && list.length === 0 && (
-              <div className="rounded-xl bg-gray-50 p-4 text-center">
-                <p className="text-sm text-gray-700">
-                  {hasQuery
-                    ? '검색어와 맞는 식당이 없어요.'
-                    : category !== '전체'
-                      ? `이 지역에 ${category} 식당이 없어요.`
-                      : '이 지역에 표시할 식당이 없어요. 지도를 옮기거나 다른 지역을 골라보세요.'}
-                </p>
-                {(hasQuery || category !== '전체') && (
-                  <button
-                    type="button"
-                    onClick={onResetFilters}
-                    className="mt-2 min-h-[40px] rounded-full border border-gray-300 px-4 text-sm font-semibold text-gray-700 hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
-                  >
-                    조건 해제하고 전체 보기
-                  </button>
+                {listStatus === 'loading' && (
+                  <ul className="space-y-2" aria-label="불러오는 중">
+                    {[0, 1, 2].map((i) => (
+                      <li key={i} className="flex items-center gap-3 py-1">
+                        <SkeletonCircle className="h-11 w-11" />
+                        <div className="flex-1 space-y-1.5">
+                          <Skeleton className="h-3.5 w-1/2" />
+                          <Skeleton className="h-3 w-1/3" />
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
                 )}
-              </div>
-            )}
 
-            {listStatus !== 'loading' && list.length > 0 && (
-              <ul className="divide-y divide-gray-100">
-                {list.slice(0, 30).map((r) => (
-                  <li key={r.id}>
+                {listStatus === 'error' && (
+                  <div className="rounded-xl bg-rose-50 p-4 text-center">
+                    <p className="text-sm text-rose-700">{listError ?? '주변 식당을 불러오지 못했어요.'}</p>
                     <button
                       type="button"
-                      onClick={() => onSelect(r.id)}
-                      className="flex min-h-[56px] w-full items-center gap-3 py-2 text-left hover:bg-gray-50 focus:outline-none focus-visible:bg-rose-50"
+                      onClick={onRetry}
+                      className="mt-2 min-h-[40px] rounded-full bg-rose-600 px-4 text-sm font-bold text-white hover:bg-rose-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300"
                     >
-                      <Thumb r={r} size="sm" />
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-semibold text-gray-900">{r.name}</span>
-                        <span className="block truncate text-xs text-gray-500">
-                          {[r.typeLabel, distanceFor(r)].filter(Boolean).join(' · ')}
-                        </span>
-                      </span>
-                      <span className="shrink-0 text-xs">
-                        {r.averageRating !== null ? (
-                          <span className="font-bold text-amber-500">★ {r.averageRating.toFixed(1)}</span>
-                        ) : (
-                          <span className="text-gray-400">평점 없음</span>
-                        )}
-                      </span>
-                      {isSaved(r.id) && <span className="h-2 w-2 shrink-0 rounded-full bg-amber-400" aria-label="저장됨" />}
+                      다시 시도
                     </button>
-                  </li>
-                ))}
-              </ul>
+                  </div>
+                )}
+
+                {listStatus !== 'loading' && listStatus !== 'error' && list.length === 0 && (
+                  <div className="rounded-xl bg-gray-50 p-4 text-center">
+                    <p className="text-sm text-gray-700">
+                      {hasQuery
+                        ? '검색어와 맞는 식당이 없어요.'
+                        : category !== '전체'
+                          ? `이 지역에 ${category} 식당이 없어요.`
+                          : '이 지역에 표시할 식당이 없어요. 지도를 옮기거나 다른 지역을 골라보세요.'}
+                    </p>
+                    {(hasQuery || category !== '전체') && (
+                      <button
+                        type="button"
+                        onClick={onResetFilters}
+                        className="mt-2 min-h-[40px] rounded-full border border-gray-300 px-4 text-sm font-semibold text-gray-700 hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+                      >
+                        조건 해제하고 전체 보기
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {listStatus !== 'loading' && list.length > 0 && (
+                  <ul className="divide-y divide-gray-100">
+                    {list.slice(0, 30).map((r) => (
+                      <li key={r.id}>
+                        <button
+                          type="button"
+                          onClick={() => onSelect(r.id)}
+                          className="flex min-h-[56px] w-full items-center gap-3 py-2 text-left hover:bg-gray-50 focus:outline-none focus-visible:bg-rose-50"
+                        >
+                          <Thumb r={r} size="sm" />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-semibold text-gray-900">{r.name}</span>
+                            <span className="block truncate text-xs text-gray-500">
+                              {[r.typeLabel, distanceFor(r)].filter(Boolean).join(' · ')}
+                            </span>
+                          </span>
+                          <span className="shrink-0 text-xs">
+                            {r.averageRating !== null ? (
+                              <span className="font-bold text-amber-500">★ {r.averageRating.toFixed(1)}</span>
+                            ) : (
+                              <span className="text-gray-400">평점 없음</span>
+                            )}
+                          </span>
+                          {isSaved(r.id) && <span className="h-2 w-2 shrink-0 rounded-full bg-amber-400" aria-label="저장됨" />}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             )}
           </div>
         )}

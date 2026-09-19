@@ -57,6 +57,7 @@ export interface CitySceneOptions {
 export interface CitySceneHandle {
   setRestaurants(all: ExploreRestaurant[], pinnedIds: Set<string>): void;
   setSelected(id: string | null): void;
+  /** 매장 정면이 보이도록 카메라 이동. 매장이 아직 안 세워진 셀이면 세워진 뒤에 실행한다 */
   focus(id: string): void;
   flyTo(center: LatLng, level?: number): void;
   setUserLocation(loc: LatLng | null): void;
@@ -612,6 +613,9 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
     }
     rebuildPeople();
     applySelection(opts.selectedId());
+    if (pendingFocusId && (plans.has(pendingFocusId) || (pendingFocusUntouched && anchorFallback.has(pendingFocusId)))) {
+      focusOn(pendingFocusId);
+    }
     stats.storefrontMs += performance.now() - t0;
     stats.storefrontBuilds += 1;
   };
@@ -680,6 +684,42 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
   let focusTarget: THREE.Vector3 | null = null;
   /** 포커스 시 카메라가 매장 정면(바깥쪽)에 서도록 맞출 방위각 (null 이면 유지) */
   let focusAzimuth: number | null = null;
+  /**
+   * focus() 요청 시점에 매장(plan)이 아직 없으면 여기 두고, 셀이 세워져 매장이 생기면 정면으로 다시 잡는다.
+   * 사용자가 직접 지도를 움직이거나(controls start) flyTo 하면 버린다.
+   */
+  let pendingFocusId: string | null = null;
+  /** 아직 한 번도 카메라를 못 잡은 상태 (좌표 fallback 조차 없었음) */
+  let pendingFocusUntouched = false;
+
+  /** 매장 정면 카메라. 핀 클릭·패널 목록(핫플/후기) 선택이 같이 쓴다 */
+  const focusOn = (id: string) => {
+    const plan = plans.get(id);
+    const fb = anchorFallback.get(id);
+    if (!plan && !fb) {
+      pendingFocusId = id;
+      pendingFocusUntouched = true;
+      return;
+    }
+    // 매장이 아직 없으면 좌표로 우선 잡고(fallback), 매장이 생기면 rebuildStorefronts 가 정면으로 다시 잡는다
+    pendingFocusId = plan ? null : id;
+    pendingFocusUntouched = false;
+    focusAzimuth = null;
+    if (plan?.door) {
+      focusTarget = new THREE.Vector3(plan.door.pos.x + plan.frame.nx * 5, 0, plan.door.pos.z + plan.frame.nz * 5);
+    } else if (plan) {
+      focusTarget = new THREE.Vector3(plan.center.x + plan.frame.nx * 6, 0, plan.center.z + plan.frame.nz * 6);
+    } else if (fb) {
+      focusTarget = new THREE.Vector3(fb.x, 0, fb.z);
+    } else return;
+    // 매장 정면이 보이도록 카메라를 바깥쪽(도로 쪽)에 세운다. 살짝 비스듬히(+25°) 봐서 입체감을 살린다
+    if (plan) focusAzimuth = Math.atan2(plan.frame.nx, plan.frame.nz) + 0.44;
+    const dist = camera.position.distanceTo(controls.target);
+    if (dist > 110) {
+      const dir = camera.position.clone().sub(controls.target).normalize();
+      camera.position.copy(controls.target).addScaledVector(dir, 95);
+    }
+  };
   const applySelection = (id: string | null) => {
     selectedId = id;
     queueItems.length = 0;
@@ -833,6 +873,7 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
   controls.addEventListener('start', () => {
     focusTarget = null;
     focusAzimuth = null;
+    pendingFocusId = null;
   });
   controls.addEventListener('end', () => {
     emitViewport();
@@ -1032,30 +1073,16 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
       restaurantsDirty = true;
     },
     setSelected(id) {
+      if (pendingFocusId && pendingFocusId !== id) pendingFocusId = null;
       applySelection(id);
     },
     focus(id) {
-      const plan = plans.get(id);
-      const fb = anchorFallback.get(id);
-      focusAzimuth = null;
-      if (plan?.door) {
-        focusTarget = new THREE.Vector3(plan.door.pos.x + plan.frame.nx * 5, 0, plan.door.pos.z + plan.frame.nz * 5);
-      } else if (plan) {
-        focusTarget = new THREE.Vector3(plan.center.x + plan.frame.nx * 6, 0, plan.center.z + plan.frame.nz * 6);
-      } else if (fb) {
-        focusTarget = new THREE.Vector3(fb.x, 0, fb.z);
-      } else return;
-      // 매장 정면이 보이도록 카메라를 바깥쪽(도로 쪽)에 세운다. 살짝 비스듬히(+25°) 봐서 입체감을 살린다
-      if (plan) focusAzimuth = Math.atan2(plan.frame.nx, plan.frame.nz) + 0.44;
-      const dist = camera.position.distanceTo(controls.target);
-      if (dist > 110) {
-        const dir = camera.position.clone().sub(controls.target).normalize();
-        camera.position.copy(controls.target).addScaledVector(dir, 95);
-      }
+      focusOn(id);
     },
     flyTo(center, level) {
       const l = toLocal(origin, center.lat, center.lng);
       focusTarget = null;
+      pendingFocusId = null;
       const dist = level !== undefined ? levelToDistance(level) : camera.position.distanceTo(controls.target);
       const off = camera.position.clone().sub(controls.target).normalize().multiplyScalar(dist);
       controls.target.set(l.x, 0, l.z);

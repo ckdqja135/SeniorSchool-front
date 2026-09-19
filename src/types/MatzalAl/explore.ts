@@ -105,3 +105,31 @@ export interface VisibleInsets {
   bottom: number;
   left: number;
 }
+
+/** 정보 패널의 목록 탭. 주변 식당(nearby) / 지역별 핫플레이스 / 인기 후기 TOP 10 */
+export type PanelTab = 'nearby' | 'hot' | 'reviews';
+
+/**
+ * 지역별 핫플레이스 항목. `GET /restaurant` 전체 목록에서 만들며, 조회수·평점 순으로 뽑는다.
+ * 지도 안에서 눌렀을 때 그 자리로 이동하려고 좌표를 같이 보관한다 (없거나 한반도 밖이면 null).
+ */
+export interface HotplaceRestaurant {
+  restaurantIdx: string;
+  name: string;
+  addr: string;
+  typeLabel: string;
+  viewCount: number;
+  averageRating: number | null;
+  ratingCount: number;
+  coord: LatLng | null;
+}
+
+/** 인기 후기 TOP 10 항목 (`GET /restaurant/board/top-viewed`) */
+export interface PopularReview {
+  boardIdx: number;
+  title: string;
+  restaurantIdx: string | null;
+  restaurantName: string | null;
+  likeCount: number;
+  hitCount: number;
+}

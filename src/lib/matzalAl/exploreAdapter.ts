@@ -17,6 +17,7 @@ import type {
   ExploreMenuItem,
   ExploreRestaurant,
   LatLng,
+  PopularReview,
 } from '@/types/MatzalAl/explore';
 
 /** 한반도 대략 범위. 이 밖의 좌표는 잘못 입력된 데이터로 보고 지도에 올리지 않는다 */
@@ -200,4 +201,26 @@ export function buildRestaurantDetailHref(r: ExploreRestaurant): string | null {
   params.append('restaurantIdx', r.restaurantIdx);
   if (r.addr) params.append('restaurantAddr', r.addr);
   return `/matzal-al-mentor/${encodeURIComponent(r.name)}?${params.toString()}`;
+}
+
+/**
+ * `/restaurant/board/top-viewed` 응답 1건 → 인기 후기 항목.
+ * 식당명은 include 된 `restaurant.restaurantName` 우선, 평면 `restaurantName` 도 허용.
+ */
+export function adaptPopularReview(item: unknown): PopularReview | null {
+  if (!item || typeof item !== 'object') return null;
+  const rec = item as Record<string, unknown>;
+  const boardIdx = toNumberOrNull(rec.boardIdx);
+  if (boardIdx === null) return null;
+  const nested = rec.restaurant && typeof rec.restaurant === 'object' ? (rec.restaurant as Record<string, unknown>) : null;
+  const nameRaw = nested?.restaurantName ?? rec.restaurantName;
+  const idxRaw = rec.restaurantIdx;
+  return {
+    boardIdx,
+    title: typeof rec.boardTitle === 'string' && rec.boardTitle.trim() ? rec.boardTitle.trim() : '제목 없음',
+    restaurantIdx: idxRaw === null || idxRaw === undefined || idxRaw === '' ? null : String(idxRaw),
+    restaurantName: typeof nameRaw === 'string' && nameRaw.trim() ? nameRaw.trim() : null,
+    likeCount: toNumberOrNull(rec.boardLike) ?? 0,
+    hitCount: toNumberOrNull(rec.boardHits) ?? 0,
+  };
 }
