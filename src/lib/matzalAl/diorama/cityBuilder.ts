@@ -22,7 +22,7 @@ import {
   type Pt,
 } from './geo';
 import type { Placement } from './props';
-import type { AreaFeature, BuildingFeature, RoadClass, RoadFeature } from './tiles';
+import type { AreaFeature, BuildingFeature, FootwayFeature, RoadClass, RoadFeature } from './tiles';
 import {
   crosswalkTexture,
   facadeWindowTextures,
@@ -467,43 +467,102 @@ interface Junction {
   z: number;
   /** 모인 끝점 수 */
   n: number;
-  /** 가장 넓은 도로의 폭 — 패드 크기와 횡단보도 위치를 정한다 */
+  /** 가장 넓은 도로의 폭 — 패드 높이(등급)와 횡단보도 기준 */
   maxWidth: number;
   cls: RoadClass;
+  /** 패드 반지름. 큰 교차로는 끝점이 넓게 퍼지므로 퍼진 정도까지 덮어야 한다 */
+  radius: number;
 }
 
-/** 도로 끝점을 반경 CLUSTER_R 로 묶어 교차로를 만든다 (2개 이상 모인 곳만) */
-const CLUSTER_R = 11;
+/**
+ * 도로 끝점을 union-find 로 묶어 교차로를 만든다.
+ * 묶는 거리는 도로 폭에 비례한다 — 왕복 8차선 교차로는 끝점이 20m 넘게 떨어져 있어서
+ * 고정 반경으로 묶으면 한 교차로가 여러 덩어리로 쪼개지고, 패드가 안쪽을 못 덮어
+ * 횡단보도가 교차로 한가운데에 겹쳐 깔린다.
+ */
 function buildJunctions(roads: RoadFeature[]): Junction[] {
   const ends: { p: Pt; width: number; cls: RoadClass }[] = [];
   for (const r of roads) {
     if (r.width < 5 || r.pts.length < 2) continue;
     ends.push({ p: r.pts[0], width: r.width, cls: r.cls }, { p: r.pts[r.pts.length - 1], width: r.width, cls: r.cls });
   }
-  const used = new Array(ends.length).fill(false);
-  const out: Junction[] = [];
-  for (let i = 0; i < ends.length; i += 1) {
-    if (used[i]) continue;
-    used[i] = true;
-    let sx = ends[i].p.x;
-    let sz = ends[i].p.z;
-    let n = 1;
-    let maxWidth = ends[i].width;
-    let cls = ends[i].cls;
-    for (let j = i + 1; j < ends.length; j += 1) {
-      if (used[j]) continue;
-      if (Math.hypot(ends[j].p.x - sx / n, ends[j].p.z - sz / n) > CLUSTER_R) continue;
-      used[j] = true;
-      sx += ends[j].p.x;
-      sz += ends[j].p.z;
-      n += 1;
-      if (ends[j].width > maxWidth) {
-        maxWidth = ends[j].width;
-        cls = ends[j].cls;
+  const n = ends.length;
+  if (n === 0) return [];
+
+  const parent = new Int32Array(n);
+  for (let i = 0; i < n; i += 1) parent[i] = i;
+  const find = (i: number): number => {
+    let root = i;
+    while (parent[root] !== root) root = parent[root];
+    let cur = i;
+    while (parent[cur] !== root) {
+      const next = parent[cur];
+      parent[cur] = root;
+      cur = next;
+    }
+    return root;
+  };
+  const union = (a: number, b: number) => {
+    const ra = find(a);
+    const rb = find(b);
+    if (ra !== rb) parent[rb] = ra;
+  };
+
+  // 공간 격자로 이웃만 비교
+  const GS = 24;
+  const grid = new Map<string, number[]>();
+  ends.forEach((e, i) => {
+    const k = `${Math.floor(e.p.x / GS)},${Math.floor(e.p.z / GS)}`;
+    const list = grid.get(k);
+    if (list) list.push(i);
+    else grid.set(k, [i]);
+  });
+  for (let i = 0; i < n; i += 1) {
+    const gx = Math.floor(ends[i].p.x / GS);
+    const gz = Math.floor(ends[i].p.z / GS);
+    for (let dx = -1; dx <= 1; dx += 1) {
+      for (let dz = -1; dz <= 1; dz += 1) {
+        const list = grid.get(`${gx + dx},${gz + dz}`);
+        if (!list) continue;
+        for (const j of list) {
+          if (j <= i) continue;
+          const d = Math.hypot(ends[i].p.x - ends[j].p.x, ends[i].p.z - ends[j].p.z);
+          if (d <= Math.max(12, (ends[i].width + ends[j].width) * 0.6)) union(i, j);
+        }
       }
     }
-    if (n >= 2) out.push({ x: sx / n, z: sz / n, n, maxWidth, cls });
   }
+
+  const groups = new Map<number, number[]>();
+  for (let i = 0; i < n; i += 1) {
+    const r = find(i);
+    const list = groups.get(r);
+    if (list) list.push(i);
+    else groups.set(r, [i]);
+  }
+
+  const out: Junction[] = [];
+  groups.forEach((idx) => {
+    if (idx.length < 2) return;
+    let cx = 0;
+    let cz = 0;
+    let maxWidth = 0;
+    let cls: RoadClass = ends[idx[0]].cls;
+    for (const i of idx) {
+      cx += ends[i].p.x;
+      cz += ends[i].p.z;
+      if (ends[i].width > maxWidth) {
+        maxWidth = ends[i].width;
+        cls = ends[i].cls;
+      }
+    }
+    cx /= idx.length;
+    cz /= idx.length;
+    let spread = 0;
+    for (const i of idx) spread = Math.max(spread, Math.hypot(ends[i].p.x - cx, ends[i].p.z - cz));
+    const radius = Math.min(45, Math.max(maxWidth * 0.58, spread * 0.85 + maxWidth * 0.5 + 1));
+    out.push({ x: cx, z: cz, n: idx.length, maxWidth, cls, radius });
+  });
   return out;
 }
 
@@ -538,6 +597,96 @@ function makeRoadTester(roads: RoadFeature[]): (p: Pt, margin?: number) => boole
   };
 }
 
+/** 점에서 가장 가까운 차도 세그먼트 (노면 안이거나 extra 만큼 여유 안) */
+interface RoadHit {
+  road: RoadFeature;
+  seg: number;
+  dist: number;
+}
+function makeRoadLocator(roads: RoadFeature[]): (p: Pt, extra: number) => RoadHit | null {
+  const CS = 32;
+  const grid = new Map<string, RoadFeature[]>();
+  for (const r of roads) {
+    if (r.width < 7) continue;
+    const [minx, minz, maxx, maxz] = r.bbox;
+    const m = r.width / 2 + 3;
+    for (let gx = Math.floor((minx - m) / CS); gx <= Math.floor((maxx + m) / CS); gx += 1) {
+      for (let gz = Math.floor((minz - m) / CS); gz <= Math.floor((maxz + m) / CS); gz += 1) {
+        const k = `${gx},${gz}`;
+        const list = grid.get(k);
+        if (list) list.push(r);
+        else grid.set(k, [r]);
+      }
+    }
+  }
+  return (p: Pt, extra: number) => {
+    const list = grid.get(`${Math.floor(p.x / CS)},${Math.floor(p.z / CS)}`);
+    if (!list) return null;
+    let best: RoadHit | null = null;
+    for (const r of list) {
+      const lim = r.width / 2 + extra;
+      for (let i = 0; i + 1 < r.pts.length; i += 1) {
+        const d = distToSegment(p, r.pts[i], r.pts[i + 1]);
+        if (d <= lim && (!best || d < best.dist)) best = { road: r, seg: i, dist: d };
+      }
+    }
+    return best;
+  };
+}
+
+/**
+ * 지도 데이터 기반 횡단보도.
+ * 보행로 선분(3~45m) 가운데가 차도(7m 이상) 노면 위에 있고, 차도와 50° 이상으로 만나면 횡단보도로 본다.
+ * 그 자리에 차도를 가로지르는 줄무늬 띠를 깐다 (차도 방향 3.4m, 폭은 차도 폭).
+ */
+function buildCrosswalks(acc: CellAccumulators, footways: FootwayFeature[], locate: (p: Pt, extra: number) => RoadHit | null, cellMin: Pt) {
+  const placed: Pt[] = [];
+  for (const f of footways) {
+    for (let i = 0; i + 1 < f.pts.length; i += 1) {
+      const a = f.pts[i];
+      const b = f.pts[i + 1];
+      const len = Math.hypot(b.x - a.x, b.z - a.z);
+      if (len < 3 || len > 45) continue;
+      const mid = { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 };
+      // 중복 방지: 이 셀이 소유한 위치만
+      if (mid.x < cellMin.x || mid.x >= cellMin.x + CELL_SIZE || mid.z < cellMin.z || mid.z >= cellMin.z + CELL_SIZE) continue;
+      const hit = locate(mid, 1.5);
+      if (!hit) continue;
+      const r = hit.road;
+      const ra = r.pts[hit.seg];
+      const rb = r.pts[hit.seg + 1];
+      const rl = Math.hypot(rb.x - ra.x, rb.z - ra.z) || 1;
+      const tx = (rb.x - ra.x) / rl;
+      const tz = (rb.z - ra.z) / rl;
+      const fx = (b.x - a.x) / len;
+      const fz = (b.z - a.z) / len;
+      const cos = Math.abs(fx * tx + fz * tz);
+      if (cos > Math.cos((50 * Math.PI) / 180)) continue; // 차도와 나란한 보행로(인도)는 제외
+      // 차도 중심선 위 교차점
+      const tt = Math.max(0, Math.min(1, ((mid.x - ra.x) * tx + (mid.z - ra.z) * tz)));
+      const cx = ra.x + tx * tt;
+      const cz = ra.z + tz * tt;
+      if (placed.some((p) => Math.hypot(p.x - cx, p.z - cz) < 4)) continue;
+      placed.push({ x: cx, z: cz });
+      const nx = -tz;
+      const nz = tx;
+      const halfW = (r.width / 2) * 0.96;
+      const halfL = 1.7;
+      acc.crosswalk.pushFlatQuad(
+        { x: cx - tx * halfL + nx * halfW, z: cz - tz * halfL + nz * halfW },
+        { x: cx - tx * halfL - nx * halfW, z: cz - tz * halfL - nz * halfW },
+        { x: cx + tx * halfL - nx * halfW, z: cz + tz * halfL - nz * halfW },
+        { x: cx + tx * halfL + nx * halfW, z: cz + tz * halfL + nz * halfW },
+        asphaltY(r.cls) + 0.012,
+        0,
+        1,
+        0,
+        Math.max(1, r.width / 6.3),
+      );
+    }
+  }
+}
+
 function buildRoads(
   acc: CellAccumulators,
   roads: RoadFeature[],
@@ -554,23 +703,8 @@ function buildRoads(
   for (const j of junctions) {
     if (j.x < cellMin.x || j.x >= cellMin.x + CELL_SIZE || j.z < cellMin.z || j.z >= cellMin.z + CELL_SIZE) continue;
     if (j.maxWidth < 6) continue;
-    disc(acc.asphaltAlley, { x: j.x, z: j.z }, (j.maxWidth / 2) * 1.12, asphaltY(j.cls) + 0.002, 6);
+    disc(acc.asphaltAlley, { x: j.x, z: j.z }, j.radius, asphaltY(j.cls) + 0.002, 6);
   }
-
-  // 같은 교차로·같은 진입 방향에 횡단보도가 여러 겹 깔리지 않게 (OSM 은 본선·측도를 따로 준다)
-  const drawnCrossings = new Set<string>();
-  const junctionNear = (p: Pt): Junction | null => {
-    let best: Junction | null = null;
-    let bestD = 14;
-    for (const j of junctions) {
-      const d = Math.hypot(j.x - p.x, j.z - p.z);
-      if (d < bestD) {
-        bestD = d;
-        best = j;
-      }
-    }
-    return best;
-  };
 
   for (const r of roads) {
     const st = stations(r.pts);
@@ -581,40 +715,7 @@ function buildRoads(
     if (r.sidewalk) ribbon(acc.sidewalk, st, halfW + SIDEWALK_W, sidewalkY(r.cls), 4, 0, (r.width + SIDEWALK_W * 2) / 4);
     ribbon(laneAcc, st, halfW, roadY, 6);
 
-    // 2) 횡단보도: 교차로에 닿는 끝점에서, 교차로 패드 바로 바깥에 도로를 가로질러 깐다.
-    //    줄 간격은 약 0.9m (텍스처 1타일 = 줄 7개)로 고정해야 물결무늬가 생기지 않는다.
-    if (r.width >= 9) {
-      for (const endIdx of [0, st.length - 1]) {
-        const s = st[endIdx];
-        const j = junctionNear(s.p);
-        if (!j || j.maxWidth < 9) continue;
-        const tx = s.nz;
-        const tz = -s.nx;
-        const dirSignForKey = endIdx === 0 ? 1 : -1;
-        const bucket = Math.round(Math.atan2(tx * dirSignForKey, tz * dirSignForKey) / (Math.PI / 6));
-        const key = `${Math.round(j.x)},${Math.round(j.z)},${bucket}`;
-        if (drawnCrossings.has(key)) continue;
-        drawnCrossings.add(key);
-        // 끝점에서 도로 안쪽(진행) 방향
-        const dirSign = endIdx === 0 ? 1 : -1;
-        const start = j.maxWidth / 2 + 1.6;
-        const len = 3.4;
-        const c0 = { x: j.x + tx * dirSign * start, z: j.z + tz * dirSign * start };
-        const c1 = { x: c0.x + tx * dirSign * len, z: c0.z + tz * dirSign * len };
-        const w = halfW * 0.94;
-        acc.crosswalk.pushFlatQuad(
-          { x: c0.x + s.nx * w, z: c0.z + s.nz * w },
-          { x: c0.x - s.nx * w, z: c0.z - s.nz * w },
-          { x: c1.x - s.nx * w, z: c1.z - s.nz * w },
-          { x: c1.x + s.nx * w, z: c1.z + s.nz * w },
-          roadY + 0.012,
-          0,
-          1,
-          0,
-          Math.max(1, r.width / 6.3),
-        );
-      }
-    }
+    // 2) 횡단보도는 여기서 만들지 않는다 — 지도 보행로 데이터로 buildCrosswalks 가 실제 위치에 깐다
 
     // 3) 가로수·가로등: 인도 있는 길만. 건물 안이거나 다른 도로 노면 위면 건너뛴다
     if (r.sidewalk && r.width >= 9) {
@@ -725,8 +826,10 @@ export interface CellInput {
   areas: AreaFeature[];
   /** 건물 안인지 (가로수·가로등 배치 제외용), 이웃 셀 포함 */
   isBlocked: (p: Pt) => boolean;
-  /** 셀의 최소 좌표 (교차로 패드 중복 방지) */
+  /** 셀의 최소 좌표 (교차로 패드·횡단보도 중복 방지) */
   cellMin: Pt;
+  /** 보행로 (횡단보도 검출용), 이웃 셀 포함 */
+  footwaysAround: FootwayFeature[];
 }
 
 export interface CellBuild {
@@ -753,6 +856,7 @@ export function buildCell(input: CellInput, mats: CityMaterials): CellBuild {
   const junctions = buildJunctions(input.roadsAround);
   const onRoad = makeRoadTester(input.roadsAround);
   buildRoads(acc, input.roads, input.roadsAround, junctions, input.cellMin, trees, lamps, input.isBlocked, onRoad);
+  buildCrosswalks(acc, input.footwaysAround, makeRoadLocator(input.roadsAround), input.cellMin);
   buildAreas(acc, input.areas, trees, input.isBlocked, onRoad);
 
   const group = new THREE.Group();

@@ -60,11 +60,23 @@ export interface AreaFeature {
   centroid: Pt;
 }
 
+/**
+ * 보행로(footway/path/cycleway) 선형. 도로로 그리지는 않고 **횡단보도 검출**에만 쓴다.
+ * OSM 의 횡단보도(highway=footway + footway=crossing)는 타일에서 subclass=footway 로만 오지만,
+ * 차도를 거의 직각으로 가로지르는 짧은 선분이라 기하로 찾아낼 수 있다.
+ */
+export interface FootwayFeature {
+  id: string;
+  pts: Pt[];
+  bbox: [number, number, number, number];
+}
+
 export interface TileData {
   key: string;
   buildings: BuildingFeature[];
   roads: RoadFeature[];
   areas: AreaFeature[];
+  footways: FootwayFeature[];
 }
 
 const ROAD_WIDTH: Record<RoadClass, number> = {
@@ -198,12 +210,22 @@ export async function loadTile(origin: LocalOrigin, tx: number, ty: number, sign
   }
 
   const roads: RoadFeature[] = [];
+  const footways: FootwayFeature[] = [];
   const rl = tile.layers.transportation;
   if (rl) {
     for (let i = 0; i < rl.length; i += 1) {
       const f = rl.feature(i);
       if (f.type !== 2) continue;
       const props = f.properties as Record<string, unknown>;
+      if (props.class === 'path' && props.brunnel !== 'tunnel' && props.brunnel !== 'bridge') {
+        const sub = String(props.subclass ?? '');
+        if (sub === 'footway' || sub === 'path' || sub === 'cycleway') {
+          f.loadGeometry().forEach((line, j) => {
+            const pts = ringToLocal(origin, tx, ty, z, f.extent, line);
+            if (pts.length >= 2) footways.push({ id: `${key}:f${i}:${j}`, pts, bbox: bboxOf(pts) });
+          });
+        }
+      }
       const cls = classifyRoad(props);
       if (!cls) continue;
       const lines = f.loadGeometry();
@@ -239,7 +261,7 @@ export async function loadTile(origin: LocalOrigin, tx: number, ty: number, sign
     }
   }
 
-  return { key, buildings, roads, areas };
+  return { key, buildings, roads, areas, footways };
 }
 
 /** 피처 id → 결정적 난수 시드 */

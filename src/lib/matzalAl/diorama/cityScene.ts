@@ -34,7 +34,7 @@ import {
   type Placement,
 } from './props';
 import { buildStorefronts, planStorefronts, SignCache, StorefrontMaterials, type StorefrontBatch, type StorefrontPlan } from './storefronts';
-import { loadTile, TILE_ZOOM, tileKeyOf, type BuildingFeature, type RoadFeature, type TileData, type AreaFeature } from './tiles';
+import { loadTile, TILE_ZOOM, tileKeyOf, type BuildingFeature, type FootwayFeature, type RoadFeature, type TileData, type AreaFeature } from './tiles';
 import { aoBlobTexture, lightPoolTexture } from './textures';
 
 export interface CityViewport {
@@ -88,6 +88,7 @@ interface CellFeatures {
   buildings: BuildingFeature[];
   roads: RoadFeature[];
   areas: AreaFeature[];
+  footways: FootwayFeature[];
 }
 
 interface CarState {
@@ -270,7 +271,7 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
   const featuresOf = (key: string): CellFeatures => {
     let f = cellFeatures.get(key);
     if (!f) {
-      f = { buildings: [], roads: [], areas: [] };
+      f = { buildings: [], roads: [], areas: [], footways: [] };
       cellFeatures.set(key, f);
     }
     return f;
@@ -283,6 +284,10 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
       featuresOf(cellKey(c)).roads.push(r);
     }
     for (const a of t.areas) featuresOf(cellKey(a.centroid)).areas.push(a);
+    for (const w of t.footways) {
+      const c = { x: (w.bbox[0] + w.bbox[2]) / 2, z: (w.bbox[1] + w.bbox[3]) / 2 };
+      featuresOf(cellKey(c)).footways.push(w);
+    }
   };
   const cellKey = (p: Pt) => {
     const { cx, cz } = cellIndexOf(p.x, p.z);
@@ -306,7 +311,7 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
       .catch(() => {
         if (disposed) return;
         // 실패한 타일은 빈 타일로 두고 다음에 다시 시도하지 않는다 (재시도는 페이지 재진입)
-        tiles.set(key, { key, buildings: [], roads: [], areas: [] });
+        tiles.set(key, { key, buildings: [], roads: [], areas: [], footways: [] });
       })
       .finally(() => tilePromises.delete(key));
     tilePromises.set(key, p);
@@ -329,7 +334,7 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
   };
 
   const neighborhood = (cx: number, cz: number): CellFeatures => {
-    const out: CellFeatures = { buildings: [], roads: [], areas: [] };
+    const out: CellFeatures = { buildings: [], roads: [], areas: [], footways: [] };
     for (let dx = -1; dx <= 1; dx += 1) {
       for (let dz = -1; dz <= 1; dz += 1) {
         const f = cellFeatures.get(`${cx + dx},${cz + dz}`);
@@ -337,6 +342,7 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
         out.buildings.push(...f.buildings);
         out.roads.push(...f.roads);
         out.areas.push(...f.areas);
+        out.footways.push(...f.footways);
       }
     }
     return out;
@@ -382,7 +388,7 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
 
   const buildOneCell = (key: string, cx: number, cz: number) => {
     const t0 = performance.now();
-    const own = cellFeatures.get(key) ?? { buildings: [], roads: [], areas: [] };
+    const own = cellFeatures.get(key) ?? { buildings: [], roads: [], areas: [], footways: [] };
     const around = neighborhood(cx, cz);
     const built = buildCell(
       {
@@ -392,6 +398,7 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
         areas: own.areas,
         isBlocked: makeBlockedTester(around.buildings),
         cellMin: { x: cx * CELL_SIZE, z: cz * CELL_SIZE },
+        footwaysAround: around.footways,
       },
       mats,
     );
