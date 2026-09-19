@@ -1,0 +1,351 @@
+/**
+ * '지도' 탭(입체 탐색)의 최상위 셸. page.tsx 에서 `next/dynamic` 으로 지연 로딩된다.
+ *
+ * 책임(상태 오케스트레이션)
+ * - 렌더러(입체 디오라마 / 지도 / 위성), 검색어, 카테고리, 필터, 선택 핀, 패널 상태를 한 곳에서 관리해
+ *   검색·카테고리·핀·패널이 같은 데이터 상태를 공유한다.
+ * - 데이터 소스는 렌더러와 무관하게 하나: `useNearbyRestaurants` (DB, `GET /restaurant/nearby`).
+ *   렌더러를 바꿔도 마지막 뷰포트(중심·확대)를 이어받아 같은 자리에서 계속 본다.
+ * - 뷰포트 변경 → nearby 조회 파라미터 계산(반경 0.5~8km 캡, limit 60).
+ * - '내 주변' 버튼을 눌렀을 때만 위치를 조회하고, 거부·미지원이면 지역 프리셋으로 수동 탐색.
+ * - 상단바·패널 크기를 모아 렌더러에 가시 영역 인셋(카메라 보정)을 전달.
+ * - 선택된 식당이 필터에서 제외되면 패널에 안내하고, 결과가 비면 빈 상태를 보여준다.
+ */
+'use client';
+
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNearbyRestaurants } from '@/hooks/MatzalAl/useNearbyRestaurants';
+import { useSavedRestaurants } from '@/hooks/MatzalAl/useSavedRestaurants';
+import { useIsDesktop, usePrefersReducedMotion } from '@/hooks/MatzalAl/useMediaQuery';
+import { displayDistanceKm, formatDistance } from '@/lib/matzalAl/exploreAdapter';
+import { DEFAULT_REGION, REGION_PRESETS, type RegionPreset } from '@/lib/matzalAl/exploreRegions';
+import type {
+  ExploreCategory,
+  ExploreFilters,
+  ExploreRenderer,
+  ExploreRestaurant,
+  ExploreViewport,
+  LatLng,
+  LocateStatus,
+  PanelState,
+  VisibleInsets,
+} from '@/types/MatzalAl/explore';
+import { ExploreModeControl } from './ExploreModeControl';
+import { ExploreTopBar } from './ExploreTopBar';
+import { KakaoExploreMap, type FlyToRequest } from './KakaoExploreMap';
+import { RestaurantPanel } from './RestaurantPanel';
+import { DioramaExploreMap } from './DioramaExploreMap';
+
+const DEFAULT_FILTERS: ExploreFilters = { sort: 'distance', ratedOnly: false, savedOnly: false };
+/** nearby 조회 한도. 핀 라벨이 겹치지 않을 정도로 제한 */
+const NEARBY_LIMIT = 60;
+const NEARBY_MIN_RADIUS_KM = 0.5;
+const NEARBY_MAX_RADIUS_KM = 8;
+/** 렌더러 최초 확대 단계 (카카오 level 기준, 입체 지도는 zoom 16 으로 환산) */
+const INITIAL_LEVEL = 4;
+
+export default function ExploreShell() {
+  const isDesktop = useIsDesktop();
+  const reducedMotion = usePrefersReducedMotion();
+  const { savedIds, isSaved, toggleSaved } = useSavedRestaurants();
+  const nearby = useNearbyRestaurants();
+
+  const [renderer, setRenderer] = useState<ExploreRenderer>('tilt');
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState<ExploreCategory>('전체');
+  const [filters, setFilters] = useState<ExploreFilters>(DEFAULT_FILTERS);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [panelState, setPanelState] = useState<PanelState>('collapsed');
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const [userLocation, setUserLocation] = useState<LatLng | null>(null);
+  const [locateStatus, setLocateStatus] = useState<LocateStatus>('idle');
+  const [regionLabel, setRegionLabel] = useState<string | null>(null);
+  const [regionPreset, setRegionPreset] = useState<RegionPreset>(DEFAULT_REGION);
+  const [flyTo, setFlyTo] = useState<FlyToRequest | null>(null);
+  const [kakaoReady, setKakaoReady] = useState(false);
+  const [tiltReady, setTiltReady] = useState(false);
+  const [lastViewport, setLastViewport] = useState<ExploreViewport | null>(null);
+
+  const [topBarHeight, setTopBarHeight] = useState(140);
+  const [panelSize, setPanelSize] = useState({ width: 0, height: 76 });
+  const [containerHeight, setContainerHeight] = useState(640);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const noticeTimerRef = useRef<number | null>(null);
+
+  // 컨테이너 높이 추적 (패널 단계 높이 계산용)
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setContainerHeight(el.clientHeight));
+    ro.observe(el);
+    setContainerHeight(el.clientHeight);
+    return () => ro.disconnect();
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (noticeTimerRef.current !== null) window.clearTimeout(noticeTimerRef.current);
+    },
+    [],
+  );
+
+  /** 짧은 안내 토스트 */
+  const showNotice = useCallback((message: string) => {
+    setNotice(message);
+    if (noticeTimerRef.current !== null) window.clearTimeout(noticeTimerRef.current);
+    noticeTimerRef.current = window.setTimeout(() => setNotice(null), 2600);
+  }, []);
+
+  // ---- 데이터 소스 (DB) ----
+  const sourceList: ExploreRestaurant[] = nearby.restaurants;
+
+  const distanceFor = useCallback(
+    (r: ExploreRestaurant) => formatDistance(displayDistanceKm(r, userLocation)),
+    [userLocation],
+  );
+
+  /** 검색어·카테고리·필터 적용 + 정렬 */
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    let list = sourceList.filter((r) => {
+      if (category !== '전체' && r.cuisine !== category) return false;
+      if (filters.ratedOnly && r.averageRating === null) return false;
+      if (filters.savedOnly && !savedIds.has(r.id)) return false;
+      if (q && !r.name.toLowerCase().includes(q) && !r.typeLabel.toLowerCase().includes(q)) return false;
+      return true;
+    });
+    const dist = (r: ExploreRestaurant) => displayDistanceKm(r, userLocation) ?? Number.POSITIVE_INFINITY;
+    list = [...list].sort((a, b) => {
+      if (filters.sort === 'rating') {
+        const ra = a.averageRating ?? -1;
+        const rb = b.averageRating ?? -1;
+        if (rb !== ra) return rb - ra;
+      }
+      return dist(a) - dist(b);
+    });
+    return list;
+  }, [sourceList, query, category, filters, savedIds, userLocation]);
+
+  const selected = useMemo(() => sourceList.find((r) => r.id === selectedId) ?? null, [sourceList, selectedId]);
+  const selectedFilteredOut = !!selected && !filtered.some((r) => r.id === selected.id);
+  /** 핀으로 그릴 목록: 필터 결과 + (필터에서 빠졌더라도) 선택된 식당 */
+  const pinned = useMemo(
+    () => (selected && selectedFilteredOut ? [...filtered, selected] : filtered),
+    [filtered, selected, selectedFilteredOut],
+  );
+
+  // 렌더러 전환: 데이터·선택·검색어는 그대로 두고 지도 엔진만 바꾼다.
+  // 새 렌더러는 lastViewport 를 시작 위치로 쓰므로, 예전 flyTo 요청이 다시 실행되지 않게 비운다.
+  const handleRendererChange = useCallback(
+    (next: ExploreRenderer) => {
+      if (next === renderer) return;
+      setFlyTo(null);
+      setRenderer(next);
+    },
+    [renderer],
+  );
+
+  // 실데이터 목록이 갱신됐는데 선택된 식당이 더 이상 없으면 선택 해제
+  useEffect(() => {
+    if (selectedId && !sourceList.some((r) => r.id === selectedId)) {
+      setSelectedId(null);
+    }
+  }, [sourceList, selectedId]);
+
+  const handleSelect = useCallback((id: string | null) => {
+    setSelectedId(id);
+    if (id) setPanelState((s) => (s === 'collapsed' ? 'default' : s));
+  }, []);
+
+  const handleToggleSave = useCallback(
+    (id: string) => {
+      const now = toggleSaved(id);
+      showNotice(now ? '내 기기에 저장했어요' : '저장을 취소했어요');
+    },
+    [toggleSaved, showNotice],
+  );
+
+  const resetFilters = useCallback(() => {
+    setQuery('');
+    setCategory('전체');
+    setFilters(DEFAULT_FILTERS);
+  }, []);
+
+  // ---- 위치 ----
+  const handleLocate = useCallback(() => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setLocateStatus('unsupported');
+      return;
+    }
+    setLocateStatus('locating');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setUserLocation(loc);
+        setLocateStatus('done');
+        setFlyTo({ center: loc, level: INITIAL_LEVEL, token: Date.now() });
+      },
+      (err) => {
+        setLocateStatus(err.code === err.PERMISSION_DENIED ? 'denied' : 'error');
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 },
+    );
+  }, []);
+
+  const handleSelectRegion = useCallback((preset: RegionPreset) => {
+    setRegionPreset(preset);
+    setRegionLabel(preset.label);
+    setFlyTo({ center: preset.center, level: INITIAL_LEVEL, token: Date.now() });
+  }, []);
+
+  // ---- 뷰포트 → nearby 조회 ----
+  const handleViewportChange = useCallback(
+    (vp: ExploreViewport) => {
+      setLastViewport(vp);
+      const radiusKm = Math.min(NEARBY_MAX_RADIUS_KM, Math.max(NEARBY_MIN_RADIUS_KM, vp.radiusKm));
+      nearby.request({ lat: vp.center.lat, lng: vp.center.lng, radiusKm, limit: NEARBY_LIMIT });
+    },
+    [nearby],
+  );
+
+  const handleRegionChange = useCallback((label: string | null) => {
+    setRegionLabel(label);
+  }, []);
+
+  // ---- 가시 영역 인셋 ----
+  const visibleInsets: VisibleInsets = useMemo(
+    () => ({
+      top: topBarHeight,
+      right: 0,
+      bottom: isDesktop ? 0 : panelSize.height,
+      left: isDesktop ? panelSize.width + 16 : 0,
+    }),
+    [topBarHeight, panelSize, isDesktop],
+  );
+
+  const displayRegionLabel = regionLabel ?? (lastViewport ? '위치 확인 중…' : regionPreset.label);
+
+  const listStatus = nearby.status === 'idle' ? 'loading' : nearby.status;
+
+  /** 렌더러를 바꿔도 같은 자리에서 이어보기: 마지막 뷰포트 → 사용자 위치 → 지역 프리셋 순 */
+  const initialCenter = lastViewport?.center ?? userLocation ?? regionPreset.center;
+  const initialLevel = lastViewport?.level ?? INITIAL_LEVEL;
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-100"
+      style={{ height: 'min(calc(100dvh - 140px), 820px)', minHeight: 520 }}
+      data-explore-renderer={renderer}
+    >
+      {/* 렌더러 — 셋 다 같은 DB 데이터(pinned)를 그린다 */}
+      {renderer === 'tilt' ? (
+        <DioramaExploreMap
+          restaurants={pinned}
+          sceneRestaurants={nearby.restaurants}
+          selectedId={selectedId}
+          onSelect={handleSelect}
+          userLocation={userLocation}
+          initialCenter={initialCenter}
+          initialLevel={initialLevel}
+          flyTo={flyTo}
+          visibleInsets={visibleInsets}
+          onViewportChange={handleViewportChange}
+          onRegionChange={handleRegionChange}
+          onReadyChange={setTiltReady}
+          savedIds={savedIds}
+          distanceFor={distanceFor}
+          reducedMotion={reducedMotion}
+          fetchStatus={nearby.status}
+        />
+      ) : (
+        <KakaoExploreMap
+          restaurants={pinned}
+          selectedId={selectedId}
+          onSelect={handleSelect}
+          mapType={renderer === 'sky' ? 'sky' : 'road'}
+          userLocation={userLocation}
+          initialCenter={initialCenter}
+          initialLevel={initialLevel}
+          flyTo={flyTo}
+          visibleInsets={visibleInsets}
+          onViewportChange={handleViewportChange}
+          onRegionChange={handleRegionChange}
+          onReadyChange={setKakaoReady}
+          savedIds={savedIds}
+          distanceFor={distanceFor}
+          reducedMotion={reducedMotion}
+          fetchStatus={nearby.status}
+        />
+      )}
+
+      {/* 상단 오버레이 */}
+      <ExploreTopBar
+        regionLabel={displayRegionLabel}
+        regionPresets={REGION_PRESETS}
+        onSelectRegion={handleSelectRegion}
+        locateStatus={locateStatus}
+        onLocate={handleLocate}
+        query={query}
+        onQueryChange={setQuery}
+        category={category}
+        onCategoryChange={setCategory}
+        filters={filters}
+        onFiltersChange={setFilters}
+        resultCount={filtered.length}
+        onHeightChange={setTopBarHeight}
+      />
+
+      {/* 지도 모드. 데스크톱은 패널 오른쪽, 모바일은 패널 위에 배치.
+          위성(카카오 하이브리드)은 어느 렌더러든 준비된 뒤에 노출한다 */}
+      <ExploreModeControl
+        renderer={renderer}
+        onChange={handleRendererChange}
+        satelliteAvailable={kakaoReady || tiltReady || renderer === 'sky'}
+        className="absolute z-20"
+        style={{
+          left: isDesktop ? panelSize.width + 28 : 12,
+          bottom: isDesktop ? 16 : panelSize.height + 12,
+        }}
+      />
+
+      {/* 정보 패널 */}
+      <RestaurantPanel
+        restaurant={selected}
+        isFilteredOut={selectedFilteredOut}
+        category={category}
+        onResetFilters={resetFilters}
+        list={filtered}
+        listStatus={listStatus}
+        listError={nearby.error}
+        onRetry={nearby.refetch}
+        hasQuery={query.trim().length > 0}
+        distanceFor={distanceFor}
+        state={panelState}
+        onStateChange={setPanelState}
+        isDesktop={isDesktop}
+        containerHeight={containerHeight}
+        topInset={topBarHeight}
+        reducedMotion={reducedMotion}
+        isSaved={isSaved}
+        onToggleSave={handleToggleSave}
+        onSelect={handleSelect}
+        onNotice={showNotice}
+        onSizeChange={setPanelSize}
+      />
+
+      {/* 토스트 */}
+      {notice && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="pointer-events-none absolute left-1/2 z-40 -translate-x-1/2 rounded-full bg-gray-900/90 px-4 py-2 text-sm text-white shadow-lg"
+          style={{ bottom: (isDesktop ? 24 : panelSize.height + 56) }}
+        >
+          {notice}
+        </div>
+      )}
+    </div>
+  );
+}

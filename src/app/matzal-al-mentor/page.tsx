@@ -2,12 +2,25 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRestaurantCommentsTop } from '@/hooks/MatzalAl/useMatzalAl';
 import { requestMatzalAl } from '@/lib/matzalAl/matzalAlAPI';
 import { Skeleton, SkeletonCircle } from '@/components/common/Skeleton';
+
+// '지도' 탭(입체 탐색): 지도 렌더러·패널 로직을 별도 컴포넌트로 분리하고, 탭을 열었을 때만 지연 로딩한다.
+// (MapLibre·카카오 SDK 코드가 카드 탭 초기 번들에 섞이지 않게 함)
+// 예전 카카오 단독 '지도' 탭(viewTab === 'map')은 진입 버튼을 제거했고 코드는 남아 있다.
+const ExploreShell = dynamic(() => import('@/components/feature/matzalAl/explore/ExploreShell'), {
+  ssr: false,
+  loading: () => (
+    <div className="rounded-xl border border-gray-200 overflow-hidden" style={{ height: 'min(calc(100dvh - 140px), 820px)', minHeight: 520 }}>
+      <Skeleton className="w-full h-full rounded-xl" />
+    </div>
+  ),
+});
 
 // 주요 카테고리 목록 (이외는 "기타"로 합산)
 const MAIN_CATEGORIES = [
@@ -56,8 +69,8 @@ export default function MatzalAlMentorPage() {
     type: 'denied' | 'noSupport' | 'noResults';
   } | null>(null);
 
-  // 탭 상태 (오늘의 추천 / 지도)
-  const [viewTab, setViewTab] = useState<'grid' | 'map'>('grid');
+  // 탭 상태 (오늘의 추천 카드 / [구]카카오 지도(버튼 제거됨) / 지도=입체 탐색)
+  const [viewTab, setViewTab] = useState<'grid' | 'map' | 'explore'>('grid');
   const [isKakaoMapLoaded, setIsKakaoMapLoaded] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [mapRestaurants, setMapRestaurants] = useState<any[]>([]);
@@ -1354,7 +1367,7 @@ export default function MatzalAlMentorPage() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-bold text-gray-900">
-                  {viewTab === 'map' ? '내 주변 맛집' : (selectedCategory === '전체' ? '오늘의 맛잘알 추천' : `${selectedCategory} 맛집`)}
+                  {viewTab === 'map' || viewTab === 'explore' ? '내 주변 맛집' : (selectedCategory === '전체' ? '오늘의 맛잘알 추천' : `${selectedCategory} 맛집`)}
                 </h2>
                 {viewTab === 'map' && (
                   <select
@@ -1384,9 +1397,10 @@ export default function MatzalAlMentorPage() {
                   카드
                 </button>
                 <button
-                  onClick={() => setViewTab('map')}
+                  onClick={() => setViewTab('explore')}
+                  aria-pressed={viewTab === 'explore'}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                    viewTab === 'map'
+                    viewTab === 'explore'
                       ? 'bg-white text-gray-900 shadow-sm'
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
@@ -1468,6 +1482,9 @@ export default function MatzalAlMentorPage() {
                 ))}
               </div>
             )}
+
+            {/* 지도 탭 (입체 탐색, 지연 로딩, 별도 컴포넌트) */}
+            {viewTab === 'explore' && <ExploreShell />}
 
             {/* 지도 뷰 */}
             {viewTab === 'map' && (
