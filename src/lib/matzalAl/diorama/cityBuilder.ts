@@ -636,53 +636,72 @@ function makeRoadLocator(roads: RoadFeature[]): (p: Pt, extra: number) => RoadHi
 
 /**
  * 지도 데이터 기반 횡단보도.
- * 보행로 선분(3~45m) 가운데가 차도(7m 이상) 노면 위에 있고, 차도와 50° 이상으로 만나면 횡단보도로 본다.
- * 그 자리에 차도를 가로지르는 줄무늬 띠를 깐다 (차도 방향 3.4m, 폭은 차도 폭).
+ * OSM 횡단보도는 차도를 가로지르는 보행로 선분으로 들어 있다. 그 선분을 0.5m 간격으로 따라가며
+ * 차도(7m 이상) 노면 위에 있는 구간만 잘라 **보행로 방향 그대로** 줄무늬 띠를 깐다.
+ * - 왕복 분리 차도(OSM 은 방향별로 선을 나눔)는 노면 구간이 둘로 나뉘어 중앙분리대 자리가 비는데, 실제와 같다.
+ * - 차도와 45° 미만으로 만나는(나란한) 보행로는 인도이므로 제외한다.
+ * - 도로 폭·방향으로 그리면 한쪽 차로에만 걸치거나 각도가 어긋난다. 보행로 선분을 따라야 실제 위치와 맞는다.
  */
 function buildCrosswalks(acc: CellAccumulators, footways: FootwayFeature[], locate: (p: Pt, extra: number) => RoadHit | null, cellMin: Pt) {
   const placed: Pt[] = [];
+  const COS45 = Math.cos((45 * Math.PI) / 180);
   for (const f of footways) {
     for (let i = 0; i + 1 < f.pts.length; i += 1) {
       const a = f.pts[i];
       const b = f.pts[i + 1];
       const len = Math.hypot(b.x - a.x, b.z - a.z);
-      if (len < 3 || len > 45) continue;
-      const mid = { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 };
-      // 중복 방지: 이 셀이 소유한 위치만
-      if (mid.x < cellMin.x || mid.x >= cellMin.x + CELL_SIZE || mid.z < cellMin.z || mid.z >= cellMin.z + CELL_SIZE) continue;
-      const hit = locate(mid, 1.5);
-      if (!hit) continue;
-      const r = hit.road;
-      const ra = r.pts[hit.seg];
-      const rb = r.pts[hit.seg + 1];
-      const rl = Math.hypot(rb.x - ra.x, rb.z - ra.z) || 1;
-      const tx = (rb.x - ra.x) / rl;
-      const tz = (rb.z - ra.z) / rl;
+      if (len < 2.5 || len > 80) continue;
       const fx = (b.x - a.x) / len;
       const fz = (b.z - a.z) / len;
-      const cos = Math.abs(fx * tx + fz * tz);
-      if (cos > Math.cos((50 * Math.PI) / 180)) continue; // 차도와 나란한 보행로(인도)는 제외
-      // 차도 중심선 위 교차점
-      const tt = Math.max(0, Math.min(1, ((mid.x - ra.x) * tx + (mid.z - ra.z) * tz)));
-      const cx = ra.x + tx * tt;
-      const cz = ra.z + tz * tt;
-      if (placed.some((p) => Math.hypot(p.x - cx, p.z - cz) < 4)) continue;
-      placed.push({ x: cx, z: cz });
-      const nx = -tz;
-      const nz = tx;
-      const halfW = (r.width / 2) * 0.96;
-      const halfL = 1.7;
-      acc.crosswalk.pushFlatQuad(
-        { x: cx - tx * halfL + nx * halfW, z: cz - tz * halfL + nz * halfW },
-        { x: cx - tx * halfL - nx * halfW, z: cz - tz * halfL - nz * halfW },
-        { x: cx + tx * halfL - nx * halfW, z: cz + tz * halfL - nz * halfW },
-        { x: cx + tx * halfL + nx * halfW, z: cz + tz * halfL + nz * halfW },
-        asphaltY(r.cls) + 0.012,
-        0,
-        1,
-        0,
-        Math.max(1, r.width / 6.3),
-      );
+
+      // 노면 위 연속 구간 찾기
+      const step = 0.5;
+      const n = Math.ceil(len / step);
+      const runs: { t0: number; t1: number; hit: RoadHit }[] = [];
+      let runStart = -1;
+      let runHit: RoadHit | null = null;
+      for (let k = 0; k <= n; k += 1) {
+        const t = Math.min(len, k * step);
+        const hit = locate({ x: a.x + fx * t, z: a.z + fz * t }, 0.3);
+        if (hit) {
+          if (runStart < 0) {
+            runStart = t;
+            runHit = hit;
+          } else if (runHit && hit.dist < runHit.dist) {
+            runHit = hit; // 중심선에 가장 가까운 지점의 도로를 대표로
+          }
+        } else if (runStart >= 0 && runHit) {
+          runs.push({ t0: runStart, t1: t - step, hit: runHit });
+          runStart = -1;
+          runHit = null;
+        }
+      }
+      if (runStart >= 0 && runHit) runs.push({ t0: runStart, t1: len, hit: runHit });
+
+      for (const run of runs) {
+        if (run.t1 - run.t0 < 2.5) continue;
+        const r = run.hit.road;
+        const ra = r.pts[run.hit.seg];
+        const rb = r.pts[run.hit.seg + 1];
+        const rl = Math.hypot(rb.x - ra.x, rb.z - ra.z) || 1;
+        const cos = Math.abs((fx * (rb.x - ra.x)) / rl + (fz * (rb.z - ra.z)) / rl);
+        if (cos > COS45) continue; // 차도와 나란한 보행로(인도)는 제외
+        const tm = (run.t0 + run.t1) / 2;
+        const mid = { x: a.x + fx * tm, z: a.z + fz * tm };
+        if (mid.x < cellMin.x || mid.x >= cellMin.x + CELL_SIZE || mid.z < cellMin.z || mid.z >= cellMin.z + CELL_SIZE) continue;
+        if (placed.some((p) => Math.hypot(p.x - mid.x, p.z - mid.z) < 3)) continue;
+        placed.push(mid);
+
+        // 띠 폭: 차도가 넓을수록 넓게 (한국 횡단보도 4~6m)
+        const half = Math.min(2.8, Math.max(1.7, r.width * 0.2));
+        const s0 = Math.max(0, run.t0 - 0.3);
+        const s1 = Math.min(len, run.t1 + 0.3);
+        const nx = -fz;
+        const nz = fx;
+        const P = (t: number, side: number): Pt => ({ x: a.x + fx * t + nx * side, z: a.z + fz * t + nz * side });
+        // 첫 변(l0→r0)이 보행 방향이어야 줄무늬(v 방향)가 보행 방향으로 번갈아 나온다
+        acc.crosswalk.pushFlatQuad(P(s0, half), P(s1, half), P(s1, -half), P(s0, -half), asphaltY(r.cls) + 0.012, 0, 1, 0, (s1 - s0) / 6.3);
+      }
     }
   }
 }
