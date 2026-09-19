@@ -17,7 +17,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import type { ExploreRestaurant, LatLng } from '@/types/MatzalAl/explore';
-import { buildCell, CityMaterials, makeBlockedTester, stations, along, Y, type CellBuild } from './cityBuilder';
+import { buildCell, CityMaterials, isCrosswalkDebug, makeBlockedTester, setCrosswalkDebug, stations, along, Y, type CellBuild } from './cityBuilder';
 import { CELL_SIZE, cellIndexOf, hash01, lngLatToTile, makeOrigin, pointInRing, toLatLng, toLocal, type LocalOrigin, type Pt } from './geo';
 import {
   CAR_COLORS,
@@ -61,6 +61,10 @@ export interface CitySceneHandle {
   focus(id: string): void;
   flyTo(center: LatLng, level?: number): void;
   setUserLocation(loc: LatLng | null): void;
+  /** 개발용: 도로 중심선·차도 경계·보행로·횡단보도 후보 오버레이. 셀을 다시 짓는다 */
+  setDebug(on: boolean): void;
+  /** 개발용: 현재 셀들의 횡단보도 후보 통계 */
+  crosswalkStats(): { accepted: number; rejected: Record<string, number>; bands: number };
   zoomBy(factor: number): void;
   rotateBy(deltaRad: number): void;
   resetView(): void;
@@ -403,6 +407,23 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
       mats,
     );
     cellGroup.add(built.group);
+    if (built.debugSegments && built.debugSegments.length > 0) {
+      const segs = built.debugSegments;
+      const pos = new Float32Array(segs.length * 6);
+      const col = new Float32Array(segs.length * 6);
+      const tmpColor = new THREE.Color();
+      segs.forEach((sg, i) => {
+        pos.set([sg.a.x, sg.y, sg.a.z, sg.b.x, sg.y, sg.b.z], i * 6);
+        tmpColor.setHex(sg.color);
+        col.set([tmpColor.r, tmpColor.g, tmpColor.b, tmpColor.r, tmpColor.g, tmpColor.b], i * 6);
+      });
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+      const lines = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ vertexColors: true, depthTest: false, transparent: true, opacity: 0.95 }));
+      lines.renderOrder = 50;
+      built.group.add(lines);
+    }
     cells.set(key, built);
     propsDirty = true;
     restaurantsDirty = true;
@@ -1102,7 +1123,9 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
     (window as unknown as { __cityGfx: unknown }).__cityGfx = { renderer, scene, camera, controls, sun, composer };
     (window as unknown as { __cityDebug: unknown }).__cityDebug = () => ({
       cells: cells.size,
-      tiles: Array.from(tiles.keys()),
+      pendingCells: pendingCells.map((c) => ({ key: c.key, ready: cellReady(c.cx, c.cz) })),
+      tiles: Array.from(tiles.entries()).map(([k, v]) => `${k}:${v ? 'ok' : 'loading'}`),
+      buildRadius,
       restaurants: allRestaurants.length,
       plans: plans.size,
       fallback: anchorFallback.size,
@@ -1142,6 +1165,31 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
       updateCells();
       emitViewport(true);
       assignLights();
+    },
+    setDebug(on) {
+      if (on === isCrosswalkDebug()) return;
+      setCrosswalkDebug(on);
+      cells.forEach((c) => {
+        cellGroup.remove(c.group);
+        c.dispose();
+      });
+      cells.clear();
+      propsDirty = true;
+      restaurantsDirty = true;
+      updateCells();
+    },
+    crosswalkStats() {
+      const rejected: Record<string, number> = {};
+      let accepted = 0;
+      let bands = 0;
+      cells.forEach((c) => {
+        bands += c.crosswalks.length;
+        for (const cand of c.crosswalkCandidates) {
+          if (cand.accepted) accepted += 1;
+          else rejected[cand.reason ?? '?'] = (rejected[cand.reason ?? '?'] ?? 0) + 1;
+        }
+      });
+      return { accepted, rejected, bands };
     },
     setUserLocation(loc) {
       if (!loc) {

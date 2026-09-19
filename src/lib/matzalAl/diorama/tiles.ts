@@ -69,6 +69,8 @@ export interface FootwayFeature {
   id: string;
   pts: Pt[];
   bbox: [number, number, number, number];
+  /** 데이터에 횡단보도로 명시됨(footway=crossing). 현재 타일 소스에는 이 태그가 없어 항상 undefined */
+  crossing?: boolean;
 }
 
 export interface TileData {

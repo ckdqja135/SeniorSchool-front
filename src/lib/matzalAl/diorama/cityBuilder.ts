@@ -23,6 +23,7 @@ import {
 } from './geo';
 import type { Placement } from './props';
 import type { AreaFeature, BuildingFeature, FootwayFeature, RoadClass, RoadFeature } from './tiles';
+import { makeCrosswalkTester, planCrosswalks, type CrosswalkBand, type CrosswalkCandidate, type SurfaceQuery } from './crosswalks';
 import {
   crosswalkTexture,
   facadeWindowTextures,
@@ -597,19 +598,17 @@ function makeRoadTester(roads: RoadFeature[]): (p: Pt, margin?: number) => boole
   };
 }
 
-/** 점에서 가장 가까운 차도 세그먼트 (노면 안이거나 extra 만큼 여유 안) */
-interface RoadHit {
-  road: RoadFeature;
-  seg: number;
-  dist: number;
-}
-function makeRoadLocator(roads: RoadFeature[]): (p: Pt, extra: number) => RoadHit | null {
+/**
+ * 횡단보도 계획에 쓰는 노면 질의. 도로 리본(중심선 ± 폭/2)과 교차로 패드(원판) — 화면에 그리는 것과 같은 기하.
+ * 리본 꺾임의 마이터 모서리만 근사(세그먼트 거리)한다.
+ */
+function makeSurfaceQuery(roads: RoadFeature[], junctions: Junction[], blocked: (p: Pt) => boolean): SurfaceQuery {
   const CS = 32;
   const grid = new Map<string, RoadFeature[]>();
   for (const r of roads) {
-    if (r.width < 7) continue;
+    if (r.width < 7) continue; // 골목(service)은 횡단보도 대상이 아니다
     const [minx, minz, maxx, maxz] = r.bbox;
-    const m = r.width / 2 + 3;
+    const m = r.width / 2 + 1;
     for (let gx = Math.floor((minx - m) / CS); gx <= Math.floor((maxx + m) / CS); gx += 1) {
       for (let gz = Math.floor((minz - m) / CS); gz <= Math.floor((maxz + m) / CS); gz += 1) {
         const k = `${gx},${gz}`;
@@ -619,91 +618,70 @@ function makeRoadLocator(roads: RoadFeature[]): (p: Pt, extra: number) => RoadHi
       }
     }
   }
-  return (p: Pt, extra: number) => {
+  const pads = junctions.filter((j) => j.maxWidth >= 7);
+  const nearestRoad = (p: Pt) => {
     const list = grid.get(`${Math.floor(p.x / CS)},${Math.floor(p.z / CS)}`);
     if (!list) return null;
-    let best: RoadHit | null = null;
+    let best: { road: RoadFeature; tx: number; tz: number; d: number } | null = null;
     for (const r of list) {
-      const lim = r.width / 2 + extra;
       for (let i = 0; i + 1 < r.pts.length; i += 1) {
         const d = distToSegment(p, r.pts[i], r.pts[i + 1]);
-        if (d <= lim && (!best || d < best.dist)) best = { road: r, seg: i, dist: d };
+        if (!best || d < best.d) {
+          const a = r.pts[i];
+          const b = r.pts[i + 1];
+          const l = Math.hypot(b.x - a.x, b.z - a.z) || 1;
+          best = { road: r, tx: (b.x - a.x) / l, tz: (b.z - a.z) / l, d };
+        }
       }
     }
     return best;
   };
+  return {
+    onSurface: (p) => {
+      const list = grid.get(`${Math.floor(p.x / CS)},${Math.floor(p.z / CS)}`);
+      if (list) {
+        for (const r of list) {
+          const half = r.width / 2;
+          for (let i = 0; i + 1 < r.pts.length; i += 1) if (distToSegment(p, r.pts[i], r.pts[i + 1]) <= half) return true;
+        }
+      }
+      for (const j of pads) if (Math.hypot(j.x - p.x, j.z - p.z) <= j.radius) return true;
+      return false;
+    },
+    nearestRoad: (p) => {
+      const b = nearestRoad(p);
+      return b ? { road: b.road, tx: b.tx, tz: b.tz } : null;
+    },
+    blocked,
+  };
 }
 
 /**
- * 지도 데이터 기반 횡단보도.
- * OSM 횡단보도는 차도를 가로지르는 보행로 선분으로 들어 있다. 그 선분을 0.5m 간격으로 따라가며
- * 차도(7m 이상) 노면 위에 있는 구간만 잘라 **보행로 방향 그대로** 줄무늬 띠를 깐다.
- * - 왕복 분리 차도(OSM 은 방향별로 선을 나눔)는 노면 구간이 둘로 나뉘어 중앙분리대 자리가 비는데, 실제와 같다.
- * - 차도와 45° 미만으로 만나는(나란한) 보행로는 인도이므로 제외한다.
- * - 도로 폭·방향으로 그리면 한쪽 차로에만 걸치거나 각도가 어긋난다. 보행로 선분을 따라야 실제 위치와 맞는다.
+ * 횡단보도 띠 그리기.
+ * 흰 줄의 긴 변 = 횡단 방향(e0→e1), 줄무늬는 폭 방향으로 반복.
+ * 텍스처는 v 방향으로 줄이 쌓여 있으므로(1타일 = 줄 7개) 사각형의 첫 변(l0→r0)을 **폭 방향**에 두고
+ * v 반복 수를 폭/0.9m 로 잡는다. u(횡단 방향)는 0..1 로 한 줄이 끝까지 이어진다.
  */
-function buildCrosswalks(acc: CellAccumulators, footways: FootwayFeature[], locate: (p: Pt, extra: number) => RoadHit | null, cellMin: Pt) {
-  const placed: Pt[] = [];
-  const COS45 = Math.cos((45 * Math.PI) / 180);
-  for (const f of footways) {
-    for (let i = 0; i + 1 < f.pts.length; i += 1) {
-      const a = f.pts[i];
-      const b = f.pts[i + 1];
-      const len = Math.hypot(b.x - a.x, b.z - a.z);
-      if (len < 2.5 || len > 80) continue;
-      const fx = (b.x - a.x) / len;
-      const fz = (b.z - a.z) / len;
+function drawCrosswalk(acc: CellAccumulators, b: CrosswalkBand) {
+  const [l0, r0, r1, l1] = b.quad; // e0 좌, e0 우, e1 우, e1 좌
+  const width = b.half * 2;
+  acc.crosswalk.pushFlatQuad(l0, r0, r1, l1, asphaltY(b.road.cls) + 0.012, 0, 1, 0, Math.max(1, width / 0.9 / 7));
+}
 
-      // 노면 위 연속 구간 찾기
-      const step = 0.5;
-      const n = Math.ceil(len / step);
-      const runs: { t0: number; t1: number; hit: RoadHit }[] = [];
-      let runStart = -1;
-      let runHit: RoadHit | null = null;
-      for (let k = 0; k <= n; k += 1) {
-        const t = Math.min(len, k * step);
-        const hit = locate({ x: a.x + fx * t, z: a.z + fz * t }, 0.3);
-        if (hit) {
-          if (runStart < 0) {
-            runStart = t;
-            runHit = hit;
-          } else if (runHit && hit.dist < runHit.dist) {
-            runHit = hit; // 중심선에 가장 가까운 지점의 도로를 대표로
-          }
-        } else if (runStart >= 0 && runHit) {
-          runs.push({ t0: runStart, t1: t - step, hit: runHit });
-          runStart = -1;
-          runHit = null;
-        }
-      }
-      if (runStart >= 0 && runHit) runs.push({ t0: runStart, t1: len, hit: runHit });
-
-      for (const run of runs) {
-        if (run.t1 - run.t0 < 2.5) continue;
-        const r = run.hit.road;
-        const ra = r.pts[run.hit.seg];
-        const rb = r.pts[run.hit.seg + 1];
-        const rl = Math.hypot(rb.x - ra.x, rb.z - ra.z) || 1;
-        const cos = Math.abs((fx * (rb.x - ra.x)) / rl + (fz * (rb.z - ra.z)) / rl);
-        if (cos > COS45) continue; // 차도와 나란한 보행로(인도)는 제외
-        const tm = (run.t0 + run.t1) / 2;
-        const mid = { x: a.x + fx * tm, z: a.z + fz * tm };
-        if (mid.x < cellMin.x || mid.x >= cellMin.x + CELL_SIZE || mid.z < cellMin.z || mid.z >= cellMin.z + CELL_SIZE) continue;
-        if (placed.some((p) => Math.hypot(p.x - mid.x, p.z - mid.z) < 3)) continue;
-        placed.push(mid);
-
-        // 띠 폭: 차도가 넓을수록 넓게 (한국 횡단보도 4~6m)
-        const half = Math.min(2.8, Math.max(1.7, r.width * 0.2));
-        const s0 = Math.max(0, run.t0 - 0.3);
-        const s1 = Math.min(len, run.t1 + 0.3);
-        const nx = -fz;
-        const nz = fx;
-        const P = (t: number, side: number): Pt => ({ x: a.x + fx * t + nx * side, z: a.z + fz * t + nz * side });
-        // 첫 변(l0→r0)이 보행 방향이어야 줄무늬(v 방향)가 보행 방향으로 번갈아 나온다
-        acc.crosswalk.pushFlatQuad(P(s0, half), P(s1, half), P(s1, -half), P(s0, -half), asphaltY(r.cls) + 0.012, 0, 1, 0, (s1 - s0) / 6.3);
-      }
-    }
-  }
+/** 디버그 오버레이용 선분 (색은 0xRRGGBB) */
+export interface DebugSeg {
+  a: Pt;
+  b: Pt;
+  y: number;
+  color: number;
+}
+let crosswalkDebug = false;
+/** 개발용: 도로 중심선·차도 경계·보행로·횡단보도 후보를 선으로 그린다 (다음 셀 빌드부터 적용) */
+export function setCrosswalkDebug(on: boolean) {
+  crosswalkDebug = on;
+}
+export function isCrosswalkDebug() {
+  return crosswalkDebug;
 }
 
 function buildRoads(
@@ -716,6 +694,8 @@ function buildRoads(
   lamps: Placement[],
   isBlocked: (p: Pt) => boolean,
   onRoad: (p: Pt, margin?: number) => boolean,
+  inCrosswalk: (p: Pt) => boolean,
+  debug: DebugSeg[] | null,
 ) {
   // 1) 교차로 패드: 리본 끝이 만드는 틈·톱니를 원판으로 덮는다.
   //    같은 패드를 이웃 셀이 또 그리면 겹쳐서 깜빡이므로 중심이 이 셀 안인 것만 그린다.
@@ -734,7 +714,18 @@ function buildRoads(
     if (r.sidewalk) ribbon(acc.sidewalk, st, halfW + SIDEWALK_W, sidewalkY(r.cls), 4, 0, (r.width + SIDEWALK_W * 2) / 4);
     ribbon(laneAcc, st, halfW, roadY, 6);
 
-    // 2) 횡단보도는 여기서 만들지 않는다 — 지도 보행로 데이터로 buildCrosswalks 가 실제 위치에 깐다
+    // 2) 횡단보도는 planCrosswalks 가 보행로·차도 경계로 따로 계획한다 (buildCell 참고)
+    if (debug) {
+      const yC = roadY + 0.3;
+      for (let i = 0; i + 1 < st.length; i += 1) {
+        debug.push({ a: st[i].p, b: st[i + 1].p, y: yC, color: 0xffd24a }); // 중심선: 노랑
+        const la = { x: st[i].p.x + st[i].nx * halfW * st[i].miter, z: st[i].p.z + st[i].nz * halfW * st[i].miter };
+        const lb = { x: st[i + 1].p.x + st[i + 1].nx * halfW * st[i + 1].miter, z: st[i + 1].p.z + st[i + 1].nz * halfW * st[i + 1].miter };
+        const ra = { x: st[i].p.x - st[i].nx * halfW * st[i].miter, z: st[i].p.z - st[i].nz * halfW * st[i].miter };
+        const rb = { x: st[i + 1].p.x - st[i + 1].nx * halfW * st[i + 1].miter, z: st[i + 1].p.z - st[i + 1].nz * halfW * st[i + 1].miter };
+        debug.push({ a: la, b: lb, y: yC, color: 0x33e0ff }, { a: ra, b: rb, y: yC, color: 0x33e0ff }); // 차도 경계: 시안
+      }
+    }
 
     // 3) 가로수·가로등: 인도 있는 길만. 건물 안이거나 다른 도로 노면 위면 건너뛴다
     if (r.sidewalk && r.width >= 9) {
@@ -748,7 +739,7 @@ function buildRoads(
         for (const side of [1, -1]) {
           const off = halfW + 1.7;
           const p = { x: pos.p.x + pos.nx * off * side, z: pos.p.z + pos.nz * off * side };
-          if (isBlocked(p) || onRoad(p, 0.8)) continue;
+          if (isBlocked(p) || onRoad(p, 0.8) || inCrosswalk(p)) continue;
           const k = hash01(r.id, Math.round(d) * 2 + side);
           if (k < 0.15) continue; // 빈자리
           trees.push({ x: p.x, y: Y.prop, z: p.z, rotY: k * Math.PI * 2, scale: 0.85 + k * 0.4 });
@@ -760,7 +751,7 @@ function buildRoads(
         if (!pos) continue;
         const off = halfW + 0.8;
         const p = { x: pos.p.x + pos.nx * off * side, z: pos.p.z + pos.nz * off * side };
-        if (!isBlocked(p) && !onRoad(p, 0.5)) {
+        if (!isBlocked(p) && !onRoad(p, 0.5) && !inCrosswalk(p)) {
           // 등 머리가 도로 쪽을 향하도록: 법선 반대 방향
           const rotY = Math.atan2(-pos.nx * side, -pos.nz * side);
           lamps.push({ x: p.x, y: Y.prop, z: p.z, rotY });
@@ -857,6 +848,11 @@ export interface CellBuild {
   lamps: Placement[];
   hvac: Placement[];
   buildings: BuildingInfo[];
+  /** 이 셀이 그린 횡단보도 (이웃 셀 중복 판정·검증용) */
+  crosswalks: CrosswalkBand[];
+  /** 검증용: 후보 전체(채택/기각 사유) */
+  crosswalkCandidates: CrosswalkCandidate[];
+  debugSegments: DebugSeg[] | null;
   dispose: () => void;
 }
 
@@ -874,9 +870,37 @@ export function buildCell(input: CellInput, mats: CityMaterials): CellBuild {
   }
   const junctions = buildJunctions(input.roadsAround);
   const onRoad = makeRoadTester(input.roadsAround);
-  buildRoads(acc, input.roads, input.roadsAround, junctions, input.cellMin, trees, lamps, input.isBlocked, onRoad);
-  buildCrosswalks(acc, input.footwaysAround, makeRoadLocator(input.roadsAround), input.cellMin);
+  const debug: DebugSeg[] | null = crosswalkDebug ? [] : null;
+
+  // 횡단보도: 이웃 셀까지 포함해 계획하고(중복·소품 회피용), 중심이 이 셀 안인 것만 그린다
+  const surface = makeSurfaceQuery(input.roadsAround, junctions, input.isBlocked);
+  const plan = planCrosswalks(input.footwaysAround, surface);
+  const inCell = (p: Pt) => p.x >= input.cellMin.x && p.x < input.cellMin.x + CELL_SIZE && p.z >= input.cellMin.z && p.z < input.cellMin.z + CELL_SIZE;
+  const ownBands = plan.bands.filter((b) => inCell(b.center));
+  const inCrosswalk = makeCrosswalkTester(plan.bands);
+
+  buildRoads(acc, input.roads, input.roadsAround, junctions, input.cellMin, trees, lamps, input.isBlocked, onRoad, inCrosswalk, debug);
+  for (const b of ownBands) drawCrosswalk(acc, b);
   buildAreas(acc, input.areas, trees, input.isBlocked, onRoad);
+
+  if (debug) {
+    for (const f of input.footwaysAround) {
+      for (let i = 0; i + 1 < f.pts.length; i += 1) debug.push({ a: f.pts[i], b: f.pts[i + 1], y: 0.35, color: 0xff4fd8 }); // 보행로: 마젠타
+    }
+    for (const cand of plan.candidates) {
+      if (!inCell({ x: (cand.e0.x + cand.e1.x) / 2, z: (cand.e0.z + cand.e1.z) / 2 })) continue;
+      const color = cand.accepted ? 0x3dff7a : 0xff3b3b; // 채택: 초록, 기각: 빨강
+      debug.push({ a: cand.e0, b: cand.e1, y: 0.5, color });
+      // 끝점 표식(작은 십자)
+      for (const e of [cand.e0, cand.e1]) {
+        debug.push({ a: { x: e.x - 0.6, z: e.z }, b: { x: e.x + 0.6, z: e.z }, y: 0.55, color }, { a: { x: e.x, z: e.z - 0.6 }, b: { x: e.x, z: e.z + 0.6 }, y: 0.55, color });
+      }
+    }
+    for (const b of ownBands) {
+      const q = b.quad;
+      for (let i = 0; i < 4; i += 1) debug.push({ a: q[i], b: q[(i + 1) % 4], y: 0.45, color: 0xffffff }); // 띠 외곽: 흰색
+    }
+  }
 
   const group = new THREE.Group();
   const geoms: THREE.BufferGeometry[] = [];
@@ -908,6 +932,9 @@ export function buildCell(input: CellInput, mats: CityMaterials): CellBuild {
     lamps,
     hvac,
     buildings: infos,
+    crosswalks: ownBands,
+    crosswalkCandidates: plan.candidates,
+    debugSegments: debug,
     dispose: () => {
       geoms.forEach((g) => g.dispose());
       group.clear();
