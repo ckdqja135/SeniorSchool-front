@@ -41,7 +41,10 @@ export interface RoadFeature {
   pts: Pt[];
   cls: RoadClass;
   width: number;
-  /** 인도를 그릴지 (service 도로는 안 그림) */
+  /**
+   * 인도 리본을 그릴지. 간선(9m 이상)에만 그린다.
+   * 좁은 골목까지 인도를 두르면 옆 도로를 덮어 조각보처럼 보인다.
+   */
   sidewalk: boolean;
   bbox: [number, number, number, number];
 }
@@ -212,7 +215,7 @@ export async function loadTile(origin: LocalOrigin, tx: number, ty: number, sign
           pts,
           cls,
           width: ROAD_WIDTH[cls],
-          sidewalk: cls !== 'service' && cls !== 'motorway',
+          sidewalk: ROAD_WIDTH[cls] >= 9 && cls !== 'motorway',
           bbox: bboxOf(pts),
         });
       });

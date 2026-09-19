@@ -13,6 +13,7 @@
 import * as THREE from 'three';
 import {
   bboxOf,
+  CELL_SIZE,
   distToSegment,
   hash01,
   pointInPolygon,
@@ -21,7 +22,7 @@ import {
   type Pt,
 } from './geo';
 import type { Placement } from './props';
-import type { AreaFeature, BuildingFeature, RoadFeature } from './tiles';
+import type { AreaFeature, BuildingFeature, RoadClass, RoadFeature } from './tiles';
 import {
   crosswalkTexture,
   facadeWindowTextures,
@@ -39,10 +40,34 @@ export const Y = {
   sidewalk: 0.02,
   area: 0.03,
   water: 0.035,
-  road: 0.04,
+  road: 0.06,
   junction: 0.045,
   crosswalk: 0.055,
+  /** 가로수·가로등 등 지면 소품 (인도보다 위, 도로보다 아래) */
+  prop: 0.05,
+  /** 차량 (가장 높은 아스팔트보다 위) */
+  vehicle: 0.14,
+  /** 보행자 */
+  person: 0.05,
 } as const;
+
+/**
+ * 도로 등급 순위. OSM 은 같은 길을 여러 선형(본선·측도·연결로)으로 나눠 주기 때문에
+ * 리본이 서로 겹친다. 등급이 높을수록 살짝 위에 깔아 큰 길이 항상 이기게 한다.
+ */
+const ROAD_RANK: Record<RoadClass, number> = {
+  service: 0,
+  pedestrian: 1,
+  minor: 2,
+  busway: 3,
+  tertiary: 4,
+  secondary: 5,
+  primary: 6,
+  trunk: 7,
+  motorway: 8,
+};
+const sidewalkY = (cls: RoadClass) => Y.sidewalk + ROAD_RANK[cls] * 0.003;
+const asphaltY = (cls: RoadClass) => Y.road + ROAD_RANK[cls] * 0.008;
 
 const SIDEWALK_W = 3.5;
 const FLOOR_H = 3.2;
@@ -130,6 +155,7 @@ export class CityMaterials {
   readonly roof: THREE.MeshStandardMaterial;
   readonly asphaltLane: THREE.MeshStandardMaterial;
   readonly asphaltPlain: THREE.MeshStandardMaterial;
+  readonly asphaltAlley: THREE.MeshStandardMaterial;
   readonly sidewalk: THREE.MeshStandardMaterial;
   readonly crosswalk: THREE.MeshStandardMaterial;
   readonly grass: THREE.MeshStandardMaterial;
@@ -161,11 +187,13 @@ export class CityMaterials {
     const roofT = roofTexture();
     this.textures.push(roofT);
     this.roof = new THREE.MeshStandardMaterial({ map: roofT, roughness: 0.95 });
-    const lane = roadTexture(true);
-    const plain = roadTexture(false, 21);
-    this.textures.push(lane, plain);
+    const lane = roadTexture('lane');
+    const plain = roadTexture('plain', 21);
+    const alley = roadTexture('alley', 23);
+    this.textures.push(lane, plain, alley);
     this.asphaltLane = new THREE.MeshStandardMaterial({ map: lane, roughness: 0.95 });
     this.asphaltPlain = new THREE.MeshStandardMaterial({ map: plain, roughness: 0.95 });
+    this.asphaltAlley = new THREE.MeshStandardMaterial({ map: alley, roughness: 0.95 });
     const paving = pavingTexture(13);
     paving.repeat.set(1, 1);
     this.textures.push(paving);
@@ -174,7 +202,16 @@ export class CityMaterials {
     cross.wrapS = THREE.RepeatWrapping;
     cross.wrapT = THREE.RepeatWrapping;
     this.textures.push(cross);
-    this.crosswalk = new THREE.MeshStandardMaterial({ map: cross, transparent: true, roughness: 0.9, depthWrite: false });
+    // 횡단보도는 아스팔트 바로 위라 폴리곤 오프셋으로 깜빡임을 막는다
+    this.crosswalk = new THREE.MeshStandardMaterial({
+      map: cross,
+      transparent: true,
+      roughness: 0.9,
+      depthWrite: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -2,
+    });
     const grass = grassTexture();
     this.textures.push(grass);
     this.grass = new THREE.MeshStandardMaterial({ map: grass, roughness: 1 });
@@ -191,7 +228,7 @@ export class CityMaterials {
   dispose() {
     this.textures.forEach((t) => t.dispose());
     [
-      ...Object.values(this.facades), this.shopfront, this.roof, this.asphaltLane, this.asphaltPlain, this.sidewalk,
+      ...Object.values(this.facades), this.shopfront, this.roof, this.asphaltLane, this.asphaltPlain, this.asphaltAlley, this.sidewalk,
       this.crosswalk, this.grass, this.pitch, this.sand, this.water, this.ground,
     ].forEach((m) => m.dispose());
   }
@@ -259,6 +296,7 @@ interface CellAccumulators {
   roof: GeomAccumulator;
   asphaltLane: GeomAccumulator;
   asphaltPlain: GeomAccumulator;
+  asphaltAlley: GeomAccumulator;
   sidewalk: GeomAccumulator;
   crosswalk: GeomAccumulator;
   grass: GeomAccumulator;
@@ -274,6 +312,7 @@ function newAccumulators(): CellAccumulators {
     roof: new GeomAccumulator(),
     asphaltLane: new GeomAccumulator(),
     asphaltPlain: new GeomAccumulator(),
+    asphaltAlley: new GeomAccumulator(),
     sidewalk: new GeomAccumulator(),
     crosswalk: new GeomAccumulator(),
     grass: new GeomAccumulator(),
@@ -422,86 +461,163 @@ function disc(acc: GeomAccumulator, c: Pt, r: number, y: number, uScale: number)
   acc.pushTrianglesUp(tris, y, uScale);
 }
 
-/** 도로 정점 공간 해시 — 교차부 판정용 */
-class VertexIndex {
-  private readonly map = new Map<string, { id: string; width: number; tx: number; tz: number }[]>();
-  private key(p: Pt) {
-    return `${Math.floor(p.x / 3)},${Math.floor(p.z / 3)}`;
+/** 여러 도로가 만나는 지점 (교차로). 리본 끝의 톱니와 틈을 덮는 원형 패드를 여기에 깐다 */
+interface Junction {
+  x: number;
+  z: number;
+  /** 모인 끝점 수 */
+  n: number;
+  /** 가장 넓은 도로의 폭 — 패드 크기와 횡단보도 위치를 정한다 */
+  maxWidth: number;
+  cls: RoadClass;
+}
+
+/** 도로 끝점을 반경 CLUSTER_R 로 묶어 교차로를 만든다 (2개 이상 모인 곳만) */
+const CLUSTER_R = 11;
+function buildJunctions(roads: RoadFeature[]): Junction[] {
+  const ends: { p: Pt; width: number; cls: RoadClass }[] = [];
+  for (const r of roads) {
+    if (r.width < 5 || r.pts.length < 2) continue;
+    ends.push({ p: r.pts[0], width: r.width, cls: r.cls }, { p: r.pts[r.pts.length - 1], width: r.width, cls: r.cls });
   }
-  add(p: Pt, entry: { id: string; width: number; tx: number; tz: number }) {
-    const k = this.key(p);
-    const list = this.map.get(k);
-    if (list) list.push(entry);
-    else this.map.set(k, [entry]);
+  const used = new Array(ends.length).fill(false);
+  const out: Junction[] = [];
+  for (let i = 0; i < ends.length; i += 1) {
+    if (used[i]) continue;
+    used[i] = true;
+    let sx = ends[i].p.x;
+    let sz = ends[i].p.z;
+    let n = 1;
+    let maxWidth = ends[i].width;
+    let cls = ends[i].cls;
+    for (let j = i + 1; j < ends.length; j += 1) {
+      if (used[j]) continue;
+      if (Math.hypot(ends[j].p.x - sx / n, ends[j].p.z - sz / n) > CLUSTER_R) continue;
+      used[j] = true;
+      sx += ends[j].p.x;
+      sz += ends[j].p.z;
+      n += 1;
+      if (ends[j].width > maxWidth) {
+        maxWidth = ends[j].width;
+        cls = ends[j].cls;
+      }
+    }
+    if (n >= 2) out.push({ x: sx / n, z: sz / n, n, maxWidth, cls });
   }
-  /** p 근처(같은/인접 셀)에서 다른 도로의 정점 중 방향이 다른 것 */
-  crossingAt(p: Pt, id: string, tx: number, tz: number): { width: number } | null {
-    const cx = Math.floor(p.x / 3);
-    const cz = Math.floor(p.z / 3);
-    let best: { width: number } | null = null;
-    for (let dx = -1; dx <= 1; dx += 1) {
-      for (let dz = -1; dz <= 1; dz += 1) {
-        const list = this.map.get(`${cx + dx},${cz + dz}`);
-        if (!list) continue;
-        for (const e of list) {
-          if (e.id === id) continue;
-          const dot = Math.abs(e.tx * tx + e.tz * tz);
-          if (dot > 0.8) continue; // 같은 길이 이어지는 것
-          if (!best || e.width > best.width) best = { width: e.width };
-        }
+  return out;
+}
+
+/** 점이 어느 도로 노면 위인지 (가로수·가로등이 차도 한가운데 서지 않게) */
+function makeRoadTester(roads: RoadFeature[]): (p: Pt, margin?: number) => boolean {
+  const CS = 32;
+  const grid = new Map<string, RoadFeature[]>();
+  for (const r of roads) {
+    const [minx, minz, maxx, maxz] = r.bbox;
+    const m = r.width / 2 + 2;
+    for (let gx = Math.floor((minx - m) / CS); gx <= Math.floor((maxx + m) / CS); gx += 1) {
+      for (let gz = Math.floor((minz - m) / CS); gz <= Math.floor((maxz + m) / CS); gz += 1) {
+        const k = `${gx},${gz}`;
+        const list = grid.get(k);
+        if (list) list.push(r);
+        else grid.set(k, [r]);
+      }
+    }
+  }
+  return (p: Pt, margin = 0.4) => {
+    const list = grid.get(`${Math.floor(p.x / CS)},${Math.floor(p.z / CS)}`);
+    if (!list) return false;
+    for (const r of list) {
+      const half = r.width / 2 + margin;
+      const [minx, minz, maxx, maxz] = r.bbox;
+      if (p.x < minx - half || p.x > maxx + half || p.z < minz - half || p.z > maxz + half) continue;
+      for (let i = 0; i + 1 < r.pts.length; i += 1) {
+        if (distToSegment(p, r.pts[i], r.pts[i + 1]) < half) return true;
+      }
+    }
+    return false;
+  };
+}
+
+function buildRoads(
+  acc: CellAccumulators,
+  roads: RoadFeature[],
+  allRoads: RoadFeature[],
+  junctions: Junction[],
+  cellMin: Pt,
+  trees: Placement[],
+  lamps: Placement[],
+  isBlocked: (p: Pt) => boolean,
+  onRoad: (p: Pt, margin?: number) => boolean,
+) {
+  // 1) 교차로 패드: 리본 끝이 만드는 틈·톱니를 원판으로 덮는다.
+  //    같은 패드를 이웃 셀이 또 그리면 겹쳐서 깜빡이므로 중심이 이 셀 안인 것만 그린다.
+  for (const j of junctions) {
+    if (j.x < cellMin.x || j.x >= cellMin.x + CELL_SIZE || j.z < cellMin.z || j.z >= cellMin.z + CELL_SIZE) continue;
+    if (j.maxWidth < 6) continue;
+    disc(acc.asphaltAlley, { x: j.x, z: j.z }, (j.maxWidth / 2) * 1.12, asphaltY(j.cls) + 0.002, 6);
+  }
+
+  // 같은 교차로·같은 진입 방향에 횡단보도가 여러 겹 깔리지 않게 (OSM 은 본선·측도를 따로 준다)
+  const drawnCrossings = new Set<string>();
+  const junctionNear = (p: Pt): Junction | null => {
+    let best: Junction | null = null;
+    let bestD = 14;
+    for (const j of junctions) {
+      const d = Math.hypot(j.x - p.x, j.z - p.z);
+      if (d < bestD) {
+        bestD = d;
+        best = j;
       }
     }
     return best;
-  }
-}
-
-function buildRoads(acc: CellAccumulators, roads: RoadFeature[], allRoads: RoadFeature[], trees: Placement[], lamps: Placement[], isBlocked: (p: Pt) => boolean) {
-  const index = new VertexIndex();
-  for (const r of allRoads) {
-    if (r.width < 6) continue;
-    const st = stations(r.pts);
-    st.forEach((s) => index.add(s.p, { id: r.id, width: r.width, tx: s.nz, tz: -s.nx }));
-  }
+  };
 
   for (const r of roads) {
     const st = stations(r.pts);
     if (st.length < 2) continue;
     const halfW = r.width / 2;
-    const laneAcc = r.width >= 9 ? acc.asphaltLane : acc.asphaltPlain;
-    if (r.sidewalk) ribbon(acc.sidewalk, st, halfW + SIDEWALK_W, Y.sidewalk, 4, 0, (r.width + SIDEWALK_W * 2) / 4);
-    ribbon(laneAcc, st, halfW, Y.road, 6);
-    // 끝점·꺾임점 원판으로 교차부 정리
-    for (const s of st) disc(acc.asphaltPlain, s.p, halfW * 0.98, Y.junction, 6);
+    const roadY = asphaltY(r.cls);
+    const laneAcc = r.width >= 11 ? acc.asphaltLane : r.width >= 7 ? acc.asphaltPlain : acc.asphaltAlley;
+    if (r.sidewalk) ribbon(acc.sidewalk, st, halfW + SIDEWALK_W, sidewalkY(r.cls), 4, 0, (r.width + SIDEWALK_W * 2) / 4);
+    ribbon(laneAcc, st, halfW, roadY, 6);
 
-    // 횡단보도: 다른 (더 넓은) 길과 만나는 끝점
-    if (r.width >= 7) {
+    // 2) 횡단보도: 교차로에 닿는 끝점에서, 교차로 패드 바로 바깥에 도로를 가로질러 깐다.
+    //    줄 간격은 약 0.9m (텍스처 1타일 = 줄 7개)로 고정해야 물결무늬가 생기지 않는다.
+    if (r.width >= 9) {
       for (const endIdx of [0, st.length - 1]) {
         const s = st[endIdx];
+        const j = junctionNear(s.p);
+        if (!j || j.maxWidth < 9) continue;
         const tx = s.nz;
         const tz = -s.nx;
-        const cross = index.crossingAt(s.p, r.id, tx, tz);
-        if (!cross) continue;
-        const back = cross.width / 2 + 1.2;
-        const dirSign = endIdx === 0 ? 1 : -1; // 끝점에서 도로 안쪽으로
-        const c0 = { x: s.p.x + tx * dirSign * back, z: s.p.z + tz * dirSign * back };
-        const c1 = { x: c0.x + tx * dirSign * 3.2, z: c0.z + tz * dirSign * 3.2 };
-        const w = halfW * 0.92;
+        const dirSignForKey = endIdx === 0 ? 1 : -1;
+        const bucket = Math.round(Math.atan2(tx * dirSignForKey, tz * dirSignForKey) / (Math.PI / 6));
+        const key = `${Math.round(j.x)},${Math.round(j.z)},${bucket}`;
+        if (drawnCrossings.has(key)) continue;
+        drawnCrossings.add(key);
+        // 끝점에서 도로 안쪽(진행) 방향
+        const dirSign = endIdx === 0 ? 1 : -1;
+        const start = j.maxWidth / 2 + 1.6;
+        const len = 3.4;
+        const c0 = { x: j.x + tx * dirSign * start, z: j.z + tz * dirSign * start };
+        const c1 = { x: c0.x + tx * dirSign * len, z: c0.z + tz * dirSign * len };
+        const w = halfW * 0.94;
         acc.crosswalk.pushFlatQuad(
           { x: c0.x + s.nx * w, z: c0.z + s.nz * w },
           { x: c0.x - s.nx * w, z: c0.z - s.nz * w },
           { x: c1.x - s.nx * w, z: c1.z - s.nz * w },
           { x: c1.x + s.nx * w, z: c1.z + s.nz * w },
-          Y.crosswalk,
+          roadY + 0.012,
           0,
           1,
           0,
-          r.width / 1.1,
+          Math.max(1, r.width / 6.3),
         );
       }
     }
 
-    // 가로수·가로등 (인도 있는 길만)
-    if (r.sidewalk && r.width >= 7) {
+    // 3) 가로수·가로등: 인도 있는 길만. 건물 안이거나 다른 도로 노면 위면 건너뛴다
+    if (r.sidewalk && r.width >= 9) {
       const total = st[st.length - 1].cum;
       const treeGap = 12;
       const lampGap = 30;
@@ -510,24 +626,24 @@ function buildRoads(acc: CellAccumulators, roads: RoadFeature[], allRoads: RoadF
         const pos = along(st, d);
         if (!pos) continue;
         for (const side of [1, -1]) {
-          const off = halfW + 1.6;
+          const off = halfW + 1.7;
           const p = { x: pos.p.x + pos.nx * off * side, z: pos.p.z + pos.nz * off * side };
-          if (isBlocked(p)) continue;
+          if (isBlocked(p) || onRoad(p, 0.8)) continue;
           const k = hash01(r.id, Math.round(d) * 2 + side);
           if (k < 0.15) continue; // 빈자리
-          trees.push({ x: p.x, y: Y.sidewalk, z: p.z, rotY: k * Math.PI * 2, scale: 0.85 + k * 0.4 });
+          trees.push({ x: p.x, y: Y.prop, z: p.z, rotY: k * Math.PI * 2, scale: 0.85 + k * 0.4 });
         }
       }
       let side = seed < 0.5 ? 1 : -1;
       for (let d = 15 + seed * 10; d < total - 4; d += lampGap) {
         const pos = along(st, d);
         if (!pos) continue;
-        const off = halfW + 0.7;
+        const off = halfW + 0.8;
         const p = { x: pos.p.x + pos.nx * off * side, z: pos.p.z + pos.nz * off * side };
-        if (!isBlocked(p)) {
+        if (!isBlocked(p) && !onRoad(p, 0.5)) {
           // 등 머리가 도로 쪽을 향하도록: 법선 반대 방향
           const rotY = Math.atan2(-pos.nx * side, -pos.nz * side);
-          lamps.push({ x: p.x, y: Y.sidewalk, z: p.z, rotY });
+          lamps.push({ x: p.x, y: Y.prop, z: p.z, rotY });
         }
         side = -side;
       }
@@ -556,7 +672,13 @@ export type { Station };
 
 // ---------- 면 ----------
 
-function buildAreas(acc: CellAccumulators, areas: AreaFeature[], trees: Placement[], isBlocked: (p: Pt) => boolean) {
+function buildAreas(
+  acc: CellAccumulators,
+  areas: AreaFeature[],
+  trees: Placement[],
+  isBlocked: (p: Pt) => boolean,
+  onRoad: (p: Pt, margin?: number) => boolean,
+) {
   for (const a of areas) {
     const tris = triangulate(a.outer, a.holes);
     switch (a.kind) {
@@ -582,7 +704,7 @@ function buildAreas(acc: CellAccumulators, areas: AreaFeature[], trees: Placemen
           const jz = (hash01(a.id, Math.round(z * 5 + x)) - 0.5) * spacing * 0.8;
           const p = { x: x + jx, z: z + jz };
           if (!pointInPolygon(p, a.outer, a.holes)) continue;
-          if (isBlocked(p)) continue;
+          if (isBlocked(p) || onRoad(p, 1)) continue;
           const k = hash01(a.id, Math.round(p.x + p.z * 7));
           if (a.kind === 'grass' && k < 0.6) continue;
           trees.push({ x: p.x, y: Y.area, z: p.z, rotY: k * Math.PI * 2, scale: 0.9 + k * 0.6 });
@@ -598,11 +720,13 @@ function buildAreas(acc: CellAccumulators, areas: AreaFeature[], trees: Placemen
 export interface CellInput {
   buildings: BuildingFeature[];
   roads: RoadFeature[];
-  /** 교차부 판정용, 이웃 셀 포함 */
+  /** 교차로·노면 판정용, 이웃 셀 포함 */
   roadsAround: RoadFeature[];
   areas: AreaFeature[];
   /** 건물 안인지 (가로수·가로등 배치 제외용), 이웃 셀 포함 */
   isBlocked: (p: Pt) => boolean;
+  /** 셀의 최소 좌표 (교차로 패드 중복 방지) */
+  cellMin: Pt;
 }
 
 export interface CellBuild {
@@ -626,8 +750,10 @@ export function buildCell(input: CellInput, mats: CityMaterials): CellBuild {
     infos.push(info);
     buildBuilding(acc, info, hvac);
   }
-  buildRoads(acc, input.roads, input.roadsAround, trees, lamps, input.isBlocked);
-  buildAreas(acc, input.areas, trees, input.isBlocked);
+  const junctions = buildJunctions(input.roadsAround);
+  const onRoad = makeRoadTester(input.roadsAround);
+  buildRoads(acc, input.roads, input.roadsAround, junctions, input.cellMin, trees, lamps, input.isBlocked, onRoad);
+  buildAreas(acc, input.areas, trees, input.isBlocked, onRoad);
 
   const group = new THREE.Group();
   const geoms: THREE.BufferGeometry[] = [];
@@ -646,6 +772,7 @@ export function buildCell(input: CellInput, mats: CityMaterials): CellBuild {
   add(acc.sidewalk, mats.sidewalk, { cast: false, receive: true });
   add(acc.asphaltLane, mats.asphaltLane, { cast: false, receive: true });
   add(acc.asphaltPlain, mats.asphaltPlain, { cast: false, receive: true });
+  add(acc.asphaltAlley, mats.asphaltAlley, { cast: false, receive: true });
   add(acc.crosswalk, mats.crosswalk, { cast: false, receive: true });
   add(acc.grass, mats.grass, { cast: false, receive: true });
   add(acc.pitch, mats.pitch, { cast: false, receive: true });

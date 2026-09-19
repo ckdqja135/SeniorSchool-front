@@ -622,9 +622,11 @@ export function roofTexture(seed = 17): THREE.CanvasTexture {
 
 /**
  * 도로: u = 진행 방향(1 타일 = 6m, 점선 주기), v = 폭 방향(0..1).
- * withCenter 면 가운데 노란 점선, 가장자리에는 흰 실선 + 어두운 연석 그림자.
+ * - lane  : 가운데 노란 점선 + 가장자리 흰 실선 (간선)
+ * - plain : 가장자리 흰 실선만 (중간 도로)
+ * - alley : 표시 없음 (골목·교차부 채움). 표시가 있으면 겹친 도로 위로 선이 지나가 어색하다
  */
-export function roadTexture(withCenter: boolean, seed = 19): THREE.CanvasTexture {
+export function roadTexture(kind: 'lane' | 'plain' | 'alley' = 'plain', seed = 19): THREE.CanvasTexture {
   const c = makeCanvas(128, 256);
   const ctx = c.getContext('2d')!;
   ctx.fillStyle = '#4a4d54';
@@ -634,22 +636,24 @@ export function roadTexture(withCenter: boolean, seed = 19): THREE.CanvasTexture
     ctx.fillStyle = `rgba(${rnd() < 0.5 ? '255,255,255' : '0,0,0'},${(rnd() * 0.07).toFixed(3)})`;
     ctx.fillRect(rnd() * 128, rnd() * 256, 2, 2);
   }
-  // 연석 그림자 (양 끝 v)
-  const g1 = ctx.createLinearGradient(0, 0, 0, 14);
-  g1.addColorStop(0, 'rgba(0,0,0,0.45)');
+  // 연석 그림자 (양 끝 v). 리본이 겹치는 곳에서 검은 줄로 도드라지지 않게 옅게
+  const g1 = ctx.createLinearGradient(0, 0, 0, 9);
+  g1.addColorStop(0, 'rgba(0,0,0,0.22)');
   g1.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = g1;
-  ctx.fillRect(0, 0, 128, 14);
-  const g2 = ctx.createLinearGradient(0, 256, 0, 242);
-  g2.addColorStop(0, 'rgba(0,0,0,0.45)');
+  ctx.fillRect(0, 0, 128, 9);
+  const g2 = ctx.createLinearGradient(0, 256, 0, 247);
+  g2.addColorStop(0, 'rgba(0,0,0,0.22)');
   g2.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = g2;
-  ctx.fillRect(0, 242, 128, 14);
-  // 가장자리 흰 실선
-  ctx.fillStyle = 'rgba(236,233,225,0.85)';
-  ctx.fillRect(0, 9, 128, 3);
-  ctx.fillRect(0, 244, 128, 3);
-  if (withCenter) {
+  ctx.fillRect(0, 247, 128, 9);
+  if (kind !== 'alley') {
+    // 가장자리 흰 실선
+    ctx.fillStyle = 'rgba(236,233,225,0.85)';
+    ctx.fillRect(0, 9, 128, 3);
+    ctx.fillRect(0, 244, 128, 3);
+  }
+  if (kind === 'lane') {
     ctx.fillStyle = '#e2cf7a';
     ctx.fillRect(0, 126, 64, 4);
   }

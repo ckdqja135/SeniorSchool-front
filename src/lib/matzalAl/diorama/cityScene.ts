@@ -17,7 +17,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import type { ExploreRestaurant, LatLng } from '@/types/MatzalAl/explore';
-import { buildCell, CityMaterials, makeBlockedTester, stations, along, type CellBuild } from './cityBuilder';
+import { buildCell, CityMaterials, makeBlockedTester, stations, along, Y, type CellBuild } from './cityBuilder';
 import { CELL_SIZE, cellIndexOf, hash01, lngLatToTile, makeOrigin, pointInRing, toLatLng, toLocal, type LocalOrigin, type Pt } from './geo';
 import {
   CAR_COLORS,
@@ -68,17 +68,21 @@ export interface CitySceneHandle {
   dispose(): void;
 }
 
-const BUILD_RADIUS = 430;
-const DROP_RADIUS = 620;
+/** 카메라 거리에 따라 커지는 빌드 반경 (멀리 볼수록 넓게 짓는다) */
+const BUILD_RADIUS_MIN = 430;
+const BUILD_RADIUS_MAX = 900;
 const CAMERA = { polar: 0.9, azimuth: 2.45, fov: 38 };
 const MIN_DIST = 28;
-const MAX_DIST = 300;
+/** 롯데월드타워(555m) 같은 초고층도 담을 수 있는 최대 거리 */
+const MAX_DIST = 1400;
+/** 이 거리보다 멀면 그림자를 끈다 (보이지도 않고 비싸다) */
+const SHADOW_MAX_DIST = 700;
 const LIGHT_POOL = 8;
 const CAR_COUNT = 22;
 
 /** 카카오 level ↔ 카메라 거리(m). level 4 ≈ 104m (디오라마는 지도보다 가깝게 본다) */
 export const levelToDistance = (level: number) => Math.min(MAX_DIST, Math.max(MIN_DIST, 6.5 * 2 ** level));
-export const distanceToLevel = (d: number) => Math.max(1, Math.min(8, Math.round(Math.log2(d / 6.5))));
+export const distanceToLevel = (d: number) => Math.max(1, Math.min(9, Math.round(Math.log2(d / 6.5))));
 
 interface CellFeatures {
   buildings: BuildingFeature[];
@@ -114,7 +118,9 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
   const signs = new SignCache();
 
   // ---------- 렌더러 · 카메라 ----------
-  const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+  // 로그 깊이 버퍼: 근경(수 m)과 초고층·원경(수 km)을 같이 담을 때 깊이 정밀도 부족으로 생기는
+  // 도로·지면 깜빡임(z-fighting)을 막는다
+  const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', logarithmicDepthBuffer: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
   renderer.setSize(container.clientWidth, container.clientHeight);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -129,9 +135,11 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
   const scene = new THREE.Scene();
   const fogColor = new THREE.Color('#cbb9ab');
   scene.background = fogColor;
-  scene.fog = new THREE.Fog(fogColor, 210, 520);
+  // 안개 거리는 빌드 반경에 맞춰 갱신한다 (지어진 영역의 가장자리를 가린다)
+  const fog = new THREE.Fog(fogColor, 210, 520);
+  scene.fog = fog;
 
-  const camera = new THREE.PerspectiveCamera(CAMERA.fov, container.clientWidth / Math.max(1, container.clientHeight), 1, 900);
+  const camera = new THREE.PerspectiveCamera(CAMERA.fov, container.clientWidth / Math.max(1, container.clientHeight), 0.5, 6000);
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = !opts.reducedMotion;
   controls.dampingFactor = 0.09;
@@ -139,7 +147,8 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
   controls.minDistance = MIN_DIST;
   controls.maxDistance = MAX_DIST;
   controls.minPolarAngle = 0.42;
-  controls.maxPolarAngle = 1.22;
+  // 초고층 건물을 올려다볼 수 있도록 수평에 가깝게까지 허용
+  controls.maxPolarAngle = 1.4;
   // 커서 기준 줌은 커서가 지평선 위를 가리킬 때 타깃을 수 km 밖으로 날려 버리므로 끈다
   controls.zoomToCursor = false;
   controls.mouseButtons = { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE };
@@ -376,7 +385,14 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
     const own = cellFeatures.get(key) ?? { buildings: [], roads: [], areas: [] };
     const around = neighborhood(cx, cz);
     const built = buildCell(
-      { buildings: own.buildings, roads: own.roads, roadsAround: around.roads, areas: own.areas, isBlocked: makeBlockedTester(around.buildings) },
+      {
+        buildings: own.buildings,
+        roads: own.roads,
+        roadsAround: around.roads,
+        areas: own.areas,
+        isBlocked: makeBlockedTester(around.buildings),
+        cellMin: { x: cx * CELL_SIZE, z: cz * CELL_SIZE },
+      },
       mats,
     );
     cellGroup.add(built.group);
@@ -389,16 +405,41 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
   };
 
   let pendingCells: { key: string; cx: number; cz: number; d: number }[] = [];
+  let buildRadius = BUILD_RADIUS_MIN;
+  let dropRadius = BUILD_RADIUS_MIN + 220;
+  /** 카메라 거리에 맞춰 빌드 반경·안개·그림자 범위를 조정한다 */
+  const updateRanges = () => {
+    const d = camera.position.distanceTo(controls.target);
+    buildRadius = Math.min(BUILD_RADIUS_MAX, Math.max(BUILD_RADIUS_MIN, d * 1.15));
+    dropRadius = buildRadius + 220;
+    // 안개는 카메라 거리 기준. 멀리 빼도 화면이 통째로 안개에 잠기지 않게 하되,
+    // 지어진 영역의 바깥 경계(= 거리 + 빌드 반경)는 안개 안으로 넣어 '섬'처럼 보이지 않게 한다
+    const far = Math.min(Math.max(d * 2.6, 480), d + buildRadius * 1.15);
+    fog.far = far;
+    fog.near = far * 0.42;
+    const shadowHalf = Math.min(260, Math.max(120, d * 0.9));
+    if (Math.abs(sun.shadow.camera.right - shadowHalf) > 8) {
+      sun.shadow.camera.left = -shadowHalf;
+      sun.shadow.camera.right = shadowHalf;
+      sun.shadow.camera.top = shadowHalf;
+      sun.shadow.camera.bottom = -shadowHalf;
+      sun.shadow.camera.updateProjectionMatrix();
+    }
+    const wantShadow = d <= SHADOW_MAX_DIST;
+    if (sun.castShadow !== wantShadow) sun.castShadow = wantShadow;
+  };
+
   const updateCells = () => {
+    updateRanges();
     const t = controls.target;
     const { cx: tcx, cz: tcz } = cellIndexOf(t.x, t.z);
-    const span = Math.ceil(BUILD_RADIUS / CELL_SIZE) + 1;
+    const span = Math.ceil(buildRadius / CELL_SIZE) + 1;
     pendingCells = [];
     for (let cx = tcx - span; cx <= tcx + span; cx += 1) {
       for (let cz = tcz - span; cz <= tcz + span; cz += 1) {
         const c = { x: (cx + 0.5) * CELL_SIZE, z: (cz + 0.5) * CELL_SIZE };
         const d = Math.hypot(c.x - t.x, c.z - t.z);
-        if (d > BUILD_RADIUS) continue;
+        if (d > buildRadius) continue;
         const key = `${cx},${cz}`;
         if (cells.has(key)) continue;
         pendingCells.push({ key, cx, cz, d });
@@ -409,7 +450,7 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
     cells.forEach((built, key) => {
       const [cx, cz] = key.split(',').map(Number);
       const c = { x: (cx + 0.5) * CELL_SIZE, z: (cz + 0.5) * CELL_SIZE };
-      if (Math.hypot(c.x - t.x, c.z - t.z) > DROP_RADIUS) {
+      if (Math.hypot(c.x - t.x, c.z - t.z) > dropRadius) {
         cellGroup.remove(built.group);
         built.dispose();
         cells.delete(key);
@@ -504,53 +545,52 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
     return h;
   };
   /**
-   * 카메라가 건물을 뚫지 않게 한다.
-   * 1) 타깃→카메라 선분 위에 건물이 끼면 카메라를 그 앞으로 당긴다 (최소 거리까지만).
-   * 2) 그래도 카메라 위치가 건물 안(지붕 아래)이면 지붕 위로 밀어 올린다.
-   * OrbitControls 는 매 update 에서 카메라 위치로 구면 좌표를 다시 계산하므로 직접 옮겨도 된다.
+   * 카메라가 건물 안으로 들어가지 않게 한다.
+   * 건물 안(지붕 아래)이면 먼저 궤도 거리를 늘려 밖으로 물러나고(높이도 자연히 올라간다),
+   * 물러날 곳이 없을 때만 지붕 위로 올린다. 시야를 가리는 건물은 그대로 둔다 —
+   * 3D 지도에서 앞 건물에 가려지는 것은 자연스럽고, 억지로 넘겨다보면 초고층 옆에서 카메라가 튄다.
    */
-  const CAM_CLEARANCE = 3.5;
+  /**
+   * 시선 중심 높이. 가까이서는 지면(0)을 보고, 멀리 뺄수록 위로 올린다.
+   * 555m 짜리 초고층이 화면 위로 잘리지 않으려면 중심이 같이 올라가야 한다.
+   * 타깃과 카메라를 같은 양만큼 올려 궤도 각도는 건드리지 않는다.
+   */
+  const applyTargetHeight = () => {
+    const t = controls.target;
+    const dist = camera.position.distanceTo(t);
+    const desiredY = Math.min(240, Math.max(0, (dist - 200) * 0.2));
+    const dy = desiredY - t.y;
+    if (Math.abs(dy) < 0.05) return;
+    const step = opts.reducedMotion ? dy : dy * 0.25;
+    t.y += step;
+    camera.position.y += step;
+  };
+
+  const CAM_CLEARANCE = 4;
   const resolveCameraCollision = () => {
     const target = controls.target;
     const cam = camera.position;
     const off = new THREE.Vector3().subVectors(cam, target);
     const dist = off.length();
     if (dist < 1) return;
-    const dir = off.clone().divideScalar(dist);
-    let hitAt = -1;
-    let needY = 0;
-    for (let sd = 6; sd < dist; sd += 2.5) {
-      const px = target.x + dir.x * sd;
-      const py = target.y + dir.y * sd;
-      const pz = target.z + dir.z * sd;
-      const roof = roofHeightAt(px, pz);
-      // 건물이 있는 곳만 본다 (지면 근처 샘플이 타깃 바로 옆에서 걸리지 않게)
-      if (roof > 0 && py < roof + CAM_CLEARANCE) {
-        if (hitAt < 0) hitAt = sd;
-        needY = Math.max(needY, roof + CAM_CLEARANCE);
-      }
-    }
-    if (hitAt > 0) {
-      // 우선 카메라를 건물 위로 들어 올려 넘겨다본다 (거리 유지). 최소 극각 안에서 안 되면 그때 앞으로 당긴다.
-      const horiz = Math.hypot(off.x, off.z);
-      const maxY = horiz / Math.tan(controls.minPolarAngle);
-      const hx = horiz > 0.01 ? off.x / horiz : 0;
-      const hz = horiz > 0.01 ? off.z / horiz : 1;
-      if (needY <= maxY) {
-        cam.set(target.x + hx * horiz, target.y + Math.max(cam.y, needY), target.z + hz * horiz);
-      } else {
-        const pulled = hitAt - 3;
-        if (pulled >= MIN_DIST) {
-          cam.copy(target).addScaledVector(dir, pulled);
-        } else {
-          const h = needY * Math.tan(controls.minPolarAngle);
-          cam.set(target.x + hx * h, target.y + needY, target.z + hz * h);
+    const roof = roofHeightAt(cam.x, cam.z);
+    if (roof > 0 && cam.y < roof + CAM_CLEARANCE) {
+      const dir = off.clone().divideScalar(dist);
+      let escaped = false;
+      for (let d = dist + 6; d <= MAX_DIST; d += 6) {
+        const px = target.x + dir.x * d;
+        const py = target.y + dir.y * d;
+        const pz = target.z + dir.z * d;
+        const rh = roofHeightAt(px, pz);
+        if (rh === 0 || py >= rh + CAM_CLEARANCE) {
+          cam.set(px, py, pz);
+          escaped = true;
+          break;
         }
       }
+      if (!escaped) cam.y = roofHeightAt(cam.x, cam.z) + CAM_CLEARANCE;
     }
-    const roofUnderCam = roofHeightAt(cam.x, cam.z);
-    const minY = roofUnderCam > 0 ? roofUnderCam + CAM_CLEARANCE : 4;
-    if (cam.y < minY) cam.y = minY;
+    if (cam.y < 3) cam.y = 3;
   };
 
   let lampPositions: Placement[] = [];
@@ -637,7 +677,7 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
         const o = 1.6 + hash01(p.restaurantId, 30 + i) * 2.2;
         staticPeople.push({
           x: p.center.x + p.frame.tx * s + p.frame.nx * o,
-          y: 0.02,
+          y: Y.person,
           z: p.center.z + p.frame.tz * s + p.frame.nz * o,
           rotY: hash01(p.restaurantId, 40 + i) * Math.PI * 2,
           scale: 0.92 + hash01(p.restaurantId, 50 + i) * 0.14,
@@ -666,7 +706,7 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
           const off = r.width / 2 + 1.2 + (k * 7) % 1.6;
           const p = { x: pos.p.x + pos.nx * off * side, z: pos.p.z + pos.nz * off * side };
           if (Math.hypot(p.x - t.x, p.z - t.z) > 220) continue;
-          staticPeople.push({ x: p.x, y: 0.02, z: p.z, rotY: k * 40, scale: 0.9 + ((k * 13) % 1) * 0.16, color: SHIRT_COLORS[Math.floor(((k * 101) % 1) * SHIRT_COLORS.length)] });
+          staticPeople.push({ x: p.x, y: Y.person, z: p.z, rotY: k * 40, scale: 0.9 + ((k * 13) % 1) * 0.16, color: SHIRT_COLORS[Math.floor(((k * 101) % 1) * SHIRT_COLORS.length)] });
           count += 1;
         }
       }
@@ -737,7 +777,7 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
       const o = (i % 2) * 0.35;
       queueItems.push({
         x: pos.x + frame.tx * s + frame.nx * o,
-        y: 0.02,
+        y: Y.person,
         z: pos.z + frame.tz * s + frame.nz * o,
         rotY: Math.atan2(-frame.tx * dirSign, -frame.tz * dirSign) + (hash01(id!, 80 + i) - 0.5) * 0.5,
         scale: 0.92 + hash01(id!, 90 + i) * 0.14,
@@ -829,7 +869,7 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
       c.x = x;
       c.z = z;
       c.rotY = Math.atan2(tx, tz);
-      items.push({ x, y: 0.04, z, rotY: c.rotY, color: c.color });
+      items.push({ x, y: Y.vehicle, z, rotY: c.rotY, color: c.color });
     }
     carBodies.set(items);
     carLights.set(items.map((it) => ({ ...it, color: undefined })));
@@ -1007,6 +1047,7 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
       }
     }
     controls.update();
+    applyTargetHeight();
     resolveCameraCollision();
     if (frame % 15 === 0) {
       updateSun();
@@ -1050,6 +1091,8 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
   emitViewport(true);
 
   if (process.env.NODE_ENV !== 'production') {
+    // 그래픽 디버그용: 그림자·톤 등을 콘솔에서 직접 만져 보기 위한 핸들
+    (window as unknown as { __cityGfx: unknown }).__cityGfx = { renderer, scene, camera, controls, sun, composer };
     (window as unknown as { __cityDebug: unknown }).__cityDebug = () => ({
       cells: cells.size,
       tiles: Array.from(tiles.keys()),
@@ -1147,6 +1190,7 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
       mats.dispose();
       sfMats.dispose();
       renderer.dispose();
+      if (process.env.NODE_ENV !== 'production') (window as unknown as { __cityGfx: unknown }).__cityGfx = null;
       if (renderer.domElement.parentElement === container) container.removeChild(renderer.domElement);
     },
   };
