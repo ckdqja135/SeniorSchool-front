@@ -227,6 +227,37 @@ export function makeTableGeometry(): THREE.BufferGeometry {
   return merged;
 }
 
+/**
+ * 소형 보트 (호수용). 선체는 흰 정점색이라 인스턴스 색이 그대로 나오고, 선실·의자는 어둡게 고정.
+ * 길이 5.2m, 폭 2.0m. 뱃머리(+z)는 좁게 스케일한 박스로 표현.
+ */
+export function makeBoatGeometry(): THREE.BufferGeometry {
+  const parts: THREE.BufferGeometry[] = [];
+  const hull = new THREE.BoxGeometry(2.0, 0.6, 3.6);
+  hull.translate(0, 0.3, -0.5);
+  parts.push(paint(hull, '#ffffff'));
+  const bow = new THREE.BoxGeometry(1.2, 0.55, 1.8);
+  bow.translate(0, 0.3, 2.0);
+  parts.push(paint(bow, '#ffffff'));
+  const deck = new THREE.BoxGeometry(1.7, 0.08, 3.2);
+  deck.translate(0, 0.62, -0.5);
+  parts.push(paint(deck, '#c9a173'));
+  const cabin = new THREE.BoxGeometry(1.3, 0.7, 1.4);
+  cabin.translate(0, 0.98, -1.0);
+  parts.push(paint(cabin, '#3a3f4a'));
+  const roof = new THREE.BoxGeometry(1.5, 0.08, 1.7);
+  roof.translate(0, 1.36, -1.0);
+  parts.push(paint(roof, '#e9e4d8'));
+  const seat = new THREE.BoxGeometry(1.2, 0.3, 0.4);
+  seat.translate(0, 0.78, 0.6);
+  parts.push(paint(seat, '#3a3f4a'));
+  const merged = stripIndexAndMerge(parts);
+  parts.forEach((g) => g.dispose());
+  return merged;
+}
+
+export const BOAT_COLORS = ['#f4f1ea', '#e9e2d4', '#d9534f', '#3b6fb6', '#f0c24a', '#7fb069'].map((c) => new THREE.Color(c));
+
 export function makeBulbGeometry(): THREE.BufferGeometry {
   return new THREE.SphereGeometry(0.1, 6, 5);
 }

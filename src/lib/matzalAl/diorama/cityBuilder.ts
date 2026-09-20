@@ -799,15 +799,17 @@ function makeSurfaceQuery(roads: RoadFeature[], junctions: Junction[], blocked: 
 }
 
 /**
- * 횡단보도 띠 그리기.
- * 흰 줄의 긴 변 = 횡단 방향(e0→e1), 줄무늬는 폭 방향으로 반복.
- * 텍스처는 v 방향으로 줄이 쌓여 있으므로(1타일 = 줄 7개) 사각형의 첫 변(l0→r0)을 **폭 방향**에 두고
- * v 반복 수를 폭/0.9m 로 잡는다. u(횡단 방향)는 0..1 로 한 줄이 끝까지 이어진다.
+ * 횡단보도 띠 그리기 — 한국 지브라 표준.
+ * 흰 막대는 **차량 진행 방향과 나란하게**(띠 폭 전체를 가로질러) 놓이고, 사람이 건너는 방향(e0→e1)으로
+ * 0.5m 막대 + 0.5m 간격, 즉 1m 주기로 반복된다.
+ * 텍스처는 v 방향으로 줄이 쌓여 있으므로(1타일 = 줄 7개, 50% 채움) 사각형의 첫 변(l0→r0)을 **횡단 방향**에 두고
+ * v 반복 수를 길이/7m 로 잡는다. u(폭 방향)는 0..1 로 막대 하나가 폭 끝까지 이어진다.
  */
 function drawCrosswalk(acc: CellAccumulators, b: CrosswalkBand) {
-  const [l0, r0, r1, l1] = b.quad; // e0 좌, e0 우, e1 우, e1 좌
-  const width = b.half * 2;
-  acc.crosswalk.pushFlatQuad(l0, r0, r1, l1, asphaltY(b.road.cls) + 0.012, 0, 1, 0, Math.max(1, width / 0.9 / 7));
+  const [e0L, e0R, e1R, e1L] = b.quad; // e0 좌, e0 우, e1 우, e1 좌
+  const len = Math.hypot(e1L.x - e0L.x, e1L.z - e0L.z);
+  // l0→r0 = e0좌→e1좌 (횡단 방향, v), l0→l1 = e0좌→e0우 (폭 방향, u)
+  acc.crosswalk.pushFlatQuad(e0L, e1L, e1R, e0R, asphaltY(b.road.cls) + 0.012, 0, 1, 0, Math.max(1, len / 7));
 }
 
 /** 디버그 오버레이용 선분 (색은 0xRRGGBB) */
@@ -925,13 +927,39 @@ export type { Station };
 
 // ---------- 면 ----------
 
+/** 점이 물(호수·강) 위인가. 공원 폴리곤이 호수까지 덮는 경우가 많아 나무 배치 전에 꼭 확인한다 */
+function makeWaterTester(areas: AreaFeature[]): (p: Pt) => boolean {
+  const water = areas.filter((a) => a.kind === 'water');
+  return (p: Pt) => {
+    for (const w of water) {
+      const [minx, minz, maxx, maxz] = w.bbox;
+      if (p.x < minx || p.x > maxx || p.z < minz || p.z > maxz) continue;
+      if (pointInPolygon(p, w.outer, w.holes)) return true;
+    }
+    return false;
+  };
+}
+
+/** 물가에서 떨어진 안쪽 점인지 (보트 배치용) */
+function distToRingEdges(p: Pt, ring: Pt[]): number {
+  let best = Infinity;
+  for (let i = 0; i < ring.length; i += 1) {
+    const d = distToSegment(p, ring[i], ring[(i + 1) % ring.length]);
+    if (d < best) best = d;
+  }
+  return best;
+}
+
 function buildAreas(
   acc: CellAccumulators,
   areas: AreaFeature[],
+  areasAround: AreaFeature[],
   trees: Placement[],
+  boats: Placement[],
   isBlocked: (p: Pt) => boolean,
   onRoad: (p: Pt, margin?: number) => boolean,
 ) {
+  const inWater = makeWaterTester(areasAround);
   for (const a of areas) {
     const tris = triangulate(a.outer, a.holes);
     // 종류별로 다른 층에 깐다 (Y 표 참고). 같은 층에 두 면이 겹치면 z-fighting
@@ -961,7 +989,7 @@ function buildAreas(
           const jz = (hash01(a.id, Math.round(z * 5 + x)) - 0.5) * spacing * 0.8;
           const p = { x: x + jx, z: z + jz };
           if (!pointInPolygon(p, a.outer, a.holes)) continue;
-          if (isBlocked(p) || onRoad(p, 1)) continue;
+          if (isBlocked(p) || onRoad(p, 1) || inWater(p)) continue;
           const k = hash01(a.id, Math.round(p.x + p.z * 7));
           if (a.kind === 'grass' && k < 0.6) continue;
           trees.push({ x: p.x, y: Y.areaProp, z: p.z, rotY: k * Math.PI * 2, scale: 0.9 + k * 0.6 });
@@ -969,7 +997,29 @@ function buildAreas(
         }
       }
     }
+    // 넓은 물(호수·강)에는 보트를 띄운다. 물가에서 7m 이상 안쪽, 6000㎡당 1대, 최대 8대
+    if (a.kind === 'water') {
+      const area = polygonAreaAbs(a.outer);
+      if (area >= 4000) {
+        const n = Math.min(8, Math.max(1, Math.round(area / 6000)));
+        const [minx, minz, maxx, maxz] = a.bbox;
+        let placed = 0;
+        for (let t = 0; t < n * 12 && placed < n; t += 1) {
+          const p = { x: minx + hash01(a.id, 500 + t) * (maxx - minx), z: minz + hash01(a.id, 900 + t) * (maxz - minz) };
+          if (!pointInPolygon(p, a.outer, a.holes)) continue;
+          if (distToRingEdges(p, a.outer) < 7) continue;
+          if (a.holes.some((h) => distToRingEdges(p, h) < 5)) continue;
+          if (boats.some((b) => Math.hypot(b.x - p.x, b.z - p.z) < 12)) continue;
+          boats.push({ x: p.x, y: Y.water + 0.02, z: p.z, rotY: hash01(a.id, 1300 + t) * Math.PI * 2, scale: 0.9 + hash01(a.id, 1700 + t) * 0.3 });
+          placed += 1;
+        }
+      }
+    }
   }
+}
+
+function polygonAreaAbs(ring: Pt[]): number {
+  return Math.abs(signedArea(ring));
 }
 
 // ---------- 셀 ----------
@@ -988,6 +1038,8 @@ export interface CellInput {
   cellMin: Pt;
   /** 보행로 (횡단보도 검출용), 이웃 셀 포함 */
   footwaysAround: FootwayFeature[];
+  /** 면(물 판정용), 이웃 셀 포함. 없으면 이 셀 면만 */
+  areasAround?: AreaFeature[];
 }
 
 export interface CellBuild {
@@ -995,6 +1047,8 @@ export interface CellBuild {
   trees: Placement[];
   lamps: Placement[];
   hvac: Placement[];
+  /** 호수·강 위 보트 */
+  boats: Placement[];
   buildings: BuildingInfo[];
   /** 이 셀이 그린 횡단보도 (이웃 셀 중복 판정·검증용) */
   crosswalks: CrosswalkBand[];
@@ -1030,7 +1084,8 @@ export function buildCell(input: CellInput, mats: CityMaterials): CellBuild {
 
   buildRoads(acc, input.roads, input.roadsAround, junctions, input.cellMin, trees, lamps, input.isBlocked, onRoad, inCrosswalk, debug);
   for (const b of ownBands) drawCrosswalk(acc, b);
-  buildAreas(acc, input.areas, trees, input.isBlocked, onRoad);
+  const boats: Placement[] = [];
+  buildAreas(acc, input.areas, input.areasAround ?? input.areas, trees, boats, input.isBlocked, onRoad);
 
   if (debug) {
     for (const f of input.footwaysAround) {
@@ -1080,6 +1135,7 @@ export function buildCell(input: CellInput, mats: CityMaterials): CellBuild {
     trees,
     lamps,
     hvac,
+    boats,
     buildings: infos,
     crosswalks: ownBands,
     crosswalkCandidates: plan.candidates,

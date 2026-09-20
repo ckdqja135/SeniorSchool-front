@@ -25,6 +25,8 @@ import {
   makeBulbGeometry,
   makeCarGeometry,
   makeHvacGeometry,
+  makeBoatGeometry,
+  BOAT_COLORS,
   makeLampGeometry,
   makePersonGeometry,
   makeTableGeometry,
@@ -236,6 +238,8 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
   pools.mesh.renderOrder = 2;
   const hvacMat = new THREE.MeshStandardMaterial({ color: '#b8b6b2', roughness: 0.7, metalness: 0.3 });
   const hvacs = new InstancedProp(makeHvacGeometry(), hvacMat, 1200, { castShadow: true });
+  const boatMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.5, metalness: 0.1 });
+  const boats = new InstancedProp(makeBoatGeometry(), boatMat, 200, { castShadow: true });
   const personMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9 });
   const people = new InstancedProp(makePersonGeometry(), personMat, 400, { castShadow: true });
   const carGeo = makeCarGeometry();
@@ -252,7 +256,7 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
   aoGeo.rotateX(-Math.PI / 2);
   const aoBlobs = new InstancedProp(aoGeo, new THREE.MeshBasicMaterial({ map: aoTex, transparent: true, depthWrite: false }), 2000);
   aoBlobs.mesh.renderOrder = 1;
-  [trunks, canopies, poles, heads, pools, hvacs, people, carBodies, carLights, bulbs, tables, aoBlobs].forEach((p) => scene.add(p.mesh));
+  [trunks, canopies, poles, heads, pools, hvacs, boats, people, carBodies, carLights, bulbs, tables, aoBlobs].forEach((p) => scene.add(p.mesh));
 
   // 선택 강조 링
   const ring = new THREE.Mesh(new THREE.RingGeometry(3.2, 3.9, 40), new THREE.MeshBasicMaterial({ color: '#f43f5e', transparent: true, opacity: 0.8, depthWrite: false }));
@@ -405,6 +409,7 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
         isBlocked: makeBlockedTester(around.buildings),
         cellMin: { x: cx * CELL_SIZE, z: cz * CELL_SIZE },
         footwaysAround: around.footways,
+        areasAround: around.areas,
       },
       mats,
     );
@@ -519,10 +524,12 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
     const treeItems: Placement[] = [];
     const lampItems: Placement[] = [];
     const hvacItems: Placement[] = [];
+    const boatItems: Placement[] = [];
     cells.forEach((c) => {
       treeItems.push(...c.trees);
       lampItems.push(...c.lamps);
       hvacItems.push(...c.hvac);
+      boatItems.push(...c.boats);
     });
     const treeColored = treeItems.map((t, i) => ({ ...t, color: TREE_COLORS[i % TREE_COLORS.length] }));
     trunks.set(treeItems);
@@ -531,6 +538,7 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
     heads.set(lampItems);
     pools.set(lampItems);
     hvacs.set(hvacItems);
+    boats.set(boatItems.map((b, i) => ({ ...b, color: BOAT_COLORS[i % BOAT_COLORS.length] })));
     lampPositions = lampItems;
     assignLights();
     rebuildCars();
@@ -1236,7 +1244,7 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
       cells.clear();
       if (batch) batch.dispose();
       signs.dispose();
-      [trunks, canopies, poles, heads, pools, hvacs, people, carBodies, carLights, bulbs, tables, aoBlobs].forEach((p) => p.dispose());
+      [trunks, canopies, poles, heads, pools, hvacs, boats, people, carBodies, carLights, bulbs, tables, aoBlobs].forEach((p) => p.dispose());
       poolTex.dispose();
       aoTex.dispose();
       groundGeom.dispose();
