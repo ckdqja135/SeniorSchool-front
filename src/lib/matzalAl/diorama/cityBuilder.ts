@@ -956,6 +956,9 @@ function buildAreas(
   areasAround: AreaFeature[],
   trees: Placement[],
   boats: Placement[],
+  ducks: Placement[],
+  mallards: Placement[],
+  rubberDucks: Placement[],
   isBlocked: (p: Pt) => boolean,
   onRoad: (p: Pt, margin?: number) => boolean,
 ) {
@@ -1014,6 +1017,43 @@ function buildAreas(
           placed += 1;
         }
       }
+      // 오리 무리: 물가(1.5~12m 안쫙)에 3~6마리씩, 1500㎡당 1무리(최대 10무리). 무리마다 흰오리 또는 청둥오리
+      if (area >= 800) {
+        const groups = Math.min(10, Math.max(1, Math.round(area / 1500)));
+        const [minx, minz, maxx, maxz] = a.bbox;
+        let made = 0;
+        for (let t = 0; t < groups * 14 && made < groups; t += 1) {
+          const c0 = { x: minx + hash01(a.id, 2100 + t) * (maxx - minx), z: minz + hash01(a.id, 2500 + t) * (maxz - minz) };
+          if (!pointInPolygon(c0, a.outer, a.holes)) continue;
+          const dEdge = distToRingEdges(c0, a.outer);
+          if (dEdge < 1.5 || dEdge > 12) continue;
+          const isMallard = hash01(a.id, 2900 + t) < 0.45;
+          const n = 3 + Math.floor(hash01(a.id, 3300 + t) * 4);
+          const heading = hash01(a.id, 3700 + t) * Math.PI * 2;
+          for (let k = 0; k < n; k += 1) {
+            const ang = hash01(a.id, 4100 + t * 7 + k) * Math.PI * 2;
+            const rad = 0.6 + hash01(a.id, 4500 + t * 7 + k) * 2.2;
+            const q = { x: c0.x + Math.cos(ang) * rad, z: c0.z + Math.sin(ang) * rad };
+            if (!pointInPolygon(q, a.outer, a.holes) || distToRingEdges(q, a.outer) < 0.8) continue;
+            const item: Placement = { x: q.x, y: Y.water + 0.03, z: q.z, rotY: heading + (hash01(a.id, 4900 + t * 7 + k) - 0.5) * 1.2, scale: 0.9 + hash01(a.id, 5300 + t * 7 + k) * 0.25 };
+            (isMallard ? mallards : ducks).push(item);
+          }
+          made += 1;
+        }
+      }
+      // 러버덕: 큰 호수(3만㎡ 이상) 한가운데 한 마리 (석촌호수의 그 오리). 물가에서 15m 이상
+      if (area >= 30000) {
+        const [minx, minz, maxx, maxz] = a.bbox;
+        for (let t = 0; t < 60; t += 1) {
+          const p = { x: minx + hash01(a.id, 6100 + t) * (maxx - minx), z: minz + hash01(a.id, 6500 + t) * (maxz - minz) };
+          if (!pointInPolygon(p, a.outer, a.holes)) continue;
+          if (distToRingEdges(p, a.outer) < 15) continue;
+          if (a.holes.some((h) => distToRingEdges(p, h) < 15)) continue;
+          if (boats.some((b) => Math.hypot(b.x - p.x, b.z - p.z) < 14)) continue;
+          rubberDucks.push({ x: p.x, y: Y.water + 0.02, z: p.z, rotY: hash01(a.id, 6900 + t) * Math.PI * 2, scale: 20 });
+          break;
+        }
+      }
     }
   }
 }
@@ -1049,6 +1089,10 @@ export interface CellBuild {
   hvac: Placement[];
   /** 호수·강 위 보트 */
   boats: Placement[];
+  /** 흰오리 / 청둥오리 / 러버덕 */
+  ducks: Placement[];
+  mallards: Placement[];
+  rubberDucks: Placement[];
   buildings: BuildingInfo[];
   /** 이 셀이 그린 횡단보도 (이웃 셀 중복 판정·검증용) */
   crosswalks: CrosswalkBand[];
@@ -1085,7 +1129,10 @@ export function buildCell(input: CellInput, mats: CityMaterials): CellBuild {
   buildRoads(acc, input.roads, input.roadsAround, junctions, input.cellMin, trees, lamps, input.isBlocked, onRoad, inCrosswalk, debug);
   for (const b of ownBands) drawCrosswalk(acc, b);
   const boats: Placement[] = [];
-  buildAreas(acc, input.areas, input.areasAround ?? input.areas, trees, boats, input.isBlocked, onRoad);
+  const ducks: Placement[] = [];
+  const mallards: Placement[] = [];
+  const rubberDucks: Placement[] = [];
+  buildAreas(acc, input.areas, input.areasAround ?? input.areas, trees, boats, ducks, mallards, rubberDucks, input.isBlocked, onRoad);
 
   if (debug) {
     for (const f of input.footwaysAround) {
@@ -1136,6 +1183,9 @@ export function buildCell(input: CellInput, mats: CityMaterials): CellBuild {
     lamps,
     hvac,
     boats,
+    ducks,
+    mallards,
+    rubberDucks,
     buildings: infos,
     crosswalks: ownBands,
     crosswalkCandidates: plan.candidates,

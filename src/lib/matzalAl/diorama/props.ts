@@ -256,6 +256,47 @@ export function makeBoatGeometry(): THREE.BufferGeometry {
   return merged;
 }
 
+/**
+ * 오리. 몸통(납작한 타원)·머리·부리·꼬리. 종류별로 정점색을 고정해 두어 인스턴스 색은 흰색으로 둔다.
+ * - white  : 흰오리(집오리) — 흰 몸, 주황 부리
+ * - mallard: 청둥오리 — 갈색 몸, 진녹색 머리, 노란 부리, 목에 흰 띠
+ * - rubber : 러버덕 — 노란 몸, 주황 부리, 검은 눈. 큰 호수에 한 마리, 스케일 20 (약 10m)
+ * 길이 약 0.5m(스케일 1). 머리가 +z 를 본다.
+ */
+export function makeDuckGeometry(kind: 'white' | 'mallard' | 'rubber'): THREE.BufferGeometry {
+  const body = kind === 'rubber' ? '#ffd21f' : kind === 'mallard' ? '#8a6a4a' : '#f7f3ea';
+  const head = kind === 'rubber' ? '#ffd21f' : kind === 'mallard' ? '#1f6b3a' : '#f7f3ea';
+  const beak = kind === 'rubber' ? '#ff7a1a' : kind === 'mallard' ? '#e8c53a' : '#f2a23a';
+  const parts: THREE.BufferGeometry[] = [];
+  const b = new THREE.SphereGeometry(0.2, 10, 8);
+  b.scale(1, 0.7, 1.35);
+  b.translate(0, 0.16, 0);
+  parts.push(paint(b, body));
+  const tail = new THREE.BoxGeometry(0.08, 0.06, 0.12);
+  tail.rotateX(-0.5);
+  tail.translate(0, 0.24, -0.3);
+  parts.push(paint(tail, body));
+  const neck = new THREE.CylinderGeometry(0.06, 0.08, 0.16, 8);
+  neck.translate(0, 0.32, 0.2);
+  parts.push(paint(neck, kind === 'mallard' ? '#f4f0e6' : head));
+  const h = new THREE.SphereGeometry(0.12, 10, 8);
+  h.translate(0, 0.44, 0.24);
+  parts.push(paint(h, head));
+  const bk = new THREE.BoxGeometry(0.07, 0.045, 0.13);
+  bk.translate(0, 0.42, 0.38);
+  parts.push(paint(bk, beak));
+  if (kind === 'rubber') {
+    for (const sx of [-0.06, 0.06]) {
+      const eye = new THREE.SphereGeometry(0.022, 6, 5);
+      eye.translate(sx, 0.48, 0.32);
+      parts.push(paint(eye, '#1b1b1b'));
+    }
+  }
+  const merged = stripIndexAndMerge(parts);
+  parts.forEach((g) => g.dispose());
+  return merged;
+}
+
 export const BOAT_COLORS = ['#f4f1ea', '#e9e2d4', '#d9534f', '#3b6fb6', '#f0c24a', '#7fb069'].map((c) => new THREE.Color(c));
 
 export function makeBulbGeometry(): THREE.BufferGeometry {
