@@ -36,21 +36,43 @@ import {
   type FacadeKind,
 } from './textures';
 
+/**
+ * 바닥 레이어 높이표. 겹쳐 깔리는 평면은 **반드시 서로 다른 층**에 두고, 층 간격은 최소 1cm 로 유지한다.
+ * 타일 데이터는 park 폴리곤 위에 landcover(grass/sand) · landuse(pitch) 가 그대로 겹쳐 오는데,
+ * 같은 높이에 두면 깊이 버퍼 정밀도와 상관없이 매 프레임 앞뒤가 뒤바뀌어 카메라를 움직일 때 반짝인다(z-fighting).
+ * 순서: 넓고 일반적인 면(공원)이 아래, 작고 구체적인 면(모래·운동장·물)이 위. 인도는 모든 면 위, 도로는 인도 위.
+ */
 export const Y = {
   ground: 0,
-  sidewalk: 0.02,
-  area: 0.03,
-  water: 0.035,
-  road: 0.06,
-  junction: 0.045,
-  crosswalk: 0.055,
-  /** 가로수·가로등 등 지면 소품 (인도보다 위, 도로보다 아래) */
-  prop: 0.05,
-  /** 차량 (가장 높은 아스팔트보다 위) */
-  vehicle: 0.14,
+  /** park 레이어 (공원 전체 외곽) */
+  park: 0.01,
+  /** landcover grass · wood · garden 등 */
+  grass: 0.02,
+  /** landcover sand (운동장·광장 바닥) */
+  sand: 0.03,
+  /** landuse pitch · playground · track */
+  pitch: 0.04,
+  water: 0.05,
+  /** 공원 안 나무 밑동 (모든 면보다 위) */
+  areaProp: 0.06,
+  /** 인도. 도로 등급마다 +0.003 (0.08 ~ 0.104) */
+  sidewalk: 0.08,
+  /** 가로수·가로등 등 인도 소품 (인도보다 위, 도로보다 아래) */
+  prop: 0.11,
   /** 보행자 */
-  person: 0.05,
+  person: 0.11,
+  /** 차도. 도로 등급마다 +0.008 (0.13 ~ 0.194) */
+  road: 0.13,
+  junction: 0.2,
+  crosswalk: 0.215,
+  /** 차량 (가장 높은 아스팔트보다 위) */
+  vehicle: 0.21,
+  /** 바닥 장식(선택 링·가로등 빛 웅덩이) — 횡단보도 포함 모든 바닥 위 */
+  decal: 0.23,
 } as const;
+
+/** 소품 밑동에 깔리는 AO 그림자 원판의 밑동 대비 높이. 공원 나무(0.07)는 인도 아래, 가로수(0.12)는 도로 아래로 숨는다 */
+export const AO_BLOB_LIFT = 0.01;
 
 /**
  * 도로 등급 순위. OSM 은 같은 길을 여러 선형(본선·측도·연결로)으로 나눠 주기 때문에
@@ -323,7 +345,120 @@ function newAccumulators(): CellAccumulators {
   };
 }
 
-function wallRing(acc: CellAccumulators, info: BuildingInfo, ring: Pt[], isHole: boolean) {
+// ---------- 겹치는 벽 제거 ----------
+
+/**
+ * 타일 데이터에는 같은 벽면을 공유하는 건물이 흔하다: 저층부(포디움)와 타워가 같은 외곽선을 쓰거나,
+ * 외곽선과 building:part 가 둘 다 base 0 으로 오거나, footprint 가 완전히 같은 중복 피처.
+ * 그대로 그리면 같은 평면에 벽이 두 장 겹쳐 카메라를 움직일 때 반짝인다(z-fighting) — 특히 높은 건물 밑부분.
+ *
+ * 한 변(벽)이 **같은 선 위 · 같은 바깥 방향 · 높이 구간을 완전히 포함하는** 다른 건물의 벽에 덮이는 구간은
+ * 그리지 않는다. 덮이는 벽은 어차피 더 큰 벽 안에 숨어 있어서 빼도 보이는 게 달라지지 않는다.
+ * (서로 마주 보는 벽 — 이웃 건물끼리 맞댄 벽 — 은 방향이 반대라 대상이 아니다)
+ */
+interface WallEdge {
+  id: string;
+  a: Pt;
+  b: Pt;
+  /** 바깥 법선 */
+  nx: number;
+  nz: number;
+  y0: number;
+  y1: number;
+}
+
+const WALL_GRID = 32;
+/** 같은 선으로 볼 거리 허용치(m). 타일 좌표 양자화 오차보다 크게 */
+const WALL_LINE_EPS = 0.08;
+
+export class WallOccluder {
+  private readonly grid = new Map<string, WallEdge[]>();
+
+  constructor(features: BuildingFeature[]) {
+    for (const f of features) {
+      this.addRing(f, f.outer, false);
+      for (const h of f.holes) this.addRing(f, h, true);
+    }
+  }
+
+  private addRing(f: BuildingFeature, ring: Pt[], isHole: boolean) {
+    const n = ring.length;
+    for (let i = 0; i < n; i += 1) {
+      const a = ring[i];
+      const b = ring[(i + 1) % n];
+      if (Math.hypot(b.x - a.x, b.z - a.z) < 0.2) continue;
+      const o = edgeOutward(a, b, isHole ? f.outer : ring, isHole ? [] : f.holes);
+      const e: WallEdge = { id: f.id, a, b, nx: isHole ? -o.nx : o.nx, nz: isHole ? -o.nz : o.nz, y0: f.base, y1: f.base + f.height };
+      const gx0 = Math.floor(Math.min(a.x, b.x) / WALL_GRID);
+      const gx1 = Math.floor(Math.max(a.x, b.x) / WALL_GRID);
+      const gz0 = Math.floor(Math.min(a.z, b.z) / WALL_GRID);
+      const gz1 = Math.floor(Math.max(a.z, b.z) / WALL_GRID);
+      for (let gx = gx0; gx <= gx1; gx += 1) {
+        for (let gz = gz0; gz <= gz1; gz += 1) {
+          const key = `${gx},${gz}`;
+          const list = this.grid.get(key);
+          if (list) list.push(e);
+          else this.grid.set(key, [e]);
+        }
+      }
+    }
+  }
+
+  /**
+   * 변 a→b(바깥 법선 nx,nz · 높이 y0~y1)에서 **보이는 구간**을 [t0,t1] (a 로부터의 거리, m) 목록으로 돌려준다.
+   * 덮는 벽이 없으면 [[0, len]].
+   */
+  visibleSpans(id: string, a: Pt, b: Pt, nx: number, nz: number, y0: number, y1: number): [number, number][] {
+    const dx = b.x - a.x;
+    const dz = b.z - a.z;
+    const len = Math.hypot(dx, dz);
+    if (len < 1e-6) return [];
+    const ux = dx / len;
+    const uz = dz / len;
+    const covered: [number, number][] = [];
+    const seen = new Set<WallEdge>();
+    const gx0 = Math.floor(Math.min(a.x, b.x) / WALL_GRID);
+    const gx1 = Math.floor(Math.max(a.x, b.x) / WALL_GRID);
+    const gz0 = Math.floor(Math.min(a.z, b.z) / WALL_GRID);
+    const gz1 = Math.floor(Math.max(a.z, b.z) / WALL_GRID);
+    for (let gx = gx0; gx <= gx1; gx += 1) {
+      for (let gz = gz0; gz <= gz1; gz += 1) {
+        const list = this.grid.get(`${gx},${gz}`);
+        if (!list) continue;
+        for (const e of list) {
+          if (e.id === id || seen.has(e)) continue;
+          seen.add(e);
+          // 높이 구간이 이 벽을 완전히 포함해야 가려진다. 같은 구간이면 id 순서로 한쪽만 남긴다
+          if (e.y0 > y0 + 1e-6 || e.y1 < y1 - 1e-6) continue;
+          if (e.y0 === y0 && e.y1 === y1 && e.id > id) continue;
+          // 같은 바깥 방향
+          if (e.nx * nx + e.nz * nz < 0.995) continue;
+          // 같은 선 위 (양 끝점이 이 변의 직선에서 EPS 이내)
+          const da = (e.a.x - a.x) * -uz + (e.a.z - a.z) * ux;
+          const db = (e.b.x - a.x) * -uz + (e.b.z - a.z) * ux;
+          if (Math.abs(da) > WALL_LINE_EPS || Math.abs(db) > WALL_LINE_EPS) continue;
+          const ta = (e.a.x - a.x) * ux + (e.a.z - a.z) * uz;
+          const tb = (e.b.x - a.x) * ux + (e.b.z - a.z) * uz;
+          const t0 = Math.max(0, Math.min(ta, tb));
+          const t1 = Math.min(len, Math.max(ta, tb));
+          if (t1 - t0 > 0.05) covered.push([t0, t1]);
+        }
+      }
+    }
+    if (covered.length === 0) return [[0, len]];
+    covered.sort((p, q) => p[0] - q[0]);
+    const spans: [number, number][] = [];
+    let cursor = 0;
+    for (const [c0, c1] of covered) {
+      if (c0 > cursor + 0.05) spans.push([cursor, c0]);
+      cursor = Math.max(cursor, c1);
+    }
+    if (len > cursor + 0.05) spans.push([cursor, len]);
+    return spans;
+  }
+}
+
+function wallRing(acc: CellAccumulators, info: BuildingInfo, ring: Pt[], isHole: boolean, occluder: WallOccluder | null) {
   const f = info.feature;
   const y0 = f.base;
   const y1 = f.base + f.height;
@@ -341,45 +476,52 @@ function wallRing(acc: CellAccumulators, info: BuildingInfo, ring: Pt[], isHole:
     const { nx, nz } = edgeOutward(a, b, outerRing, isHole ? [] : f.holes);
     const normal = new THREE.Vector3(nx, 0, nz);
     if (isHole) normal.negate(); // 구멍 안쪽 벽은 건물 바깥이 구멍 쪽
-    const u0 = cum;
-    const u1 = cum + len;
+    const edgeU0 = cum;
     cum += len;
-    if (bandH > 0) {
-      acc.shopfront.pushQuad(
-        new THREE.Vector3(a.x, y0, a.z),
-        new THREE.Vector3(b.x, y0, b.z),
-        new THREE.Vector3(b.x, y0 + bandH, b.z),
-        new THREE.Vector3(a.x, y0 + bandH, a.z),
-        normal,
-        [u0 / SHOP_TILE_W + uOff, 0, u1 / SHOP_TILE_W + uOff, 1],
-      );
-      if (y1 - (y0 + bandH) > 0.3) {
-        acc.facades[info.kind].pushQuad(
-          new THREE.Vector3(a.x, y0 + bandH, a.z),
-          new THREE.Vector3(b.x, y0 + bandH, b.z),
-          new THREE.Vector3(b.x, y1, b.z),
-          new THREE.Vector3(a.x, y1, a.z),
+    // 다른 건물 벽에 완전히 덮이는 구간은 건너뛴다 (WallOccluder 참고). UV 는 변 전체 기준으로 이어 붙인다
+    const spans = occluder ? occluder.visibleSpans(f.id, a, b, normal.x, normal.z, y0, y1) : [[0, len] as [number, number]];
+    for (const [t0, t1] of spans) {
+      const pa = { x: a.x + ((b.x - a.x) * t0) / len, z: a.z + ((b.z - a.z) * t0) / len };
+      const pb = { x: a.x + ((b.x - a.x) * t1) / len, z: a.z + ((b.z - a.z) * t1) / len };
+      const u0 = edgeU0 + t0;
+      const u1 = edgeU0 + t1;
+      if (bandH > 0) {
+        acc.shopfront.pushQuad(
+          new THREE.Vector3(pa.x, y0, pa.z),
+          new THREE.Vector3(pb.x, y0, pb.z),
+          new THREE.Vector3(pb.x, y0 + bandH, pb.z),
+          new THREE.Vector3(pa.x, y0 + bandH, pa.z),
           normal,
-          [u0 / FACADE_TILE_W + uOff, vOff, u1 / FACADE_TILE_W + uOff, vOff + (y1 - y0 - bandH) / FACADE_TILE_H],
+          [u0 / SHOP_TILE_W + uOff, 0, u1 / SHOP_TILE_W + uOff, 1],
+        );
+        if (y1 - (y0 + bandH) > 0.3) {
+          acc.facades[info.kind].pushQuad(
+            new THREE.Vector3(pa.x, y0 + bandH, pa.z),
+            new THREE.Vector3(pb.x, y0 + bandH, pb.z),
+            new THREE.Vector3(pb.x, y1, pb.z),
+            new THREE.Vector3(pa.x, y1, pa.z),
+            normal,
+            [u0 / FACADE_TILE_W + uOff, vOff, u1 / FACADE_TILE_W + uOff, vOff + (y1 - y0 - bandH) / FACADE_TILE_H],
+          );
+        }
+      } else {
+        acc.facades[info.kind].pushQuad(
+          new THREE.Vector3(pa.x, y0, pa.z),
+          new THREE.Vector3(pb.x, y0, pb.z),
+          new THREE.Vector3(pb.x, y1, pb.z),
+          new THREE.Vector3(pa.x, y1, pa.z),
+          normal,
+          [u0 / FACADE_TILE_W + uOff, vOff, u1 / FACADE_TILE_W + uOff, vOff + (y1 - y0) / FACADE_TILE_H],
         );
       }
-    } else {
-      acc.facades[info.kind].pushQuad(
-        new THREE.Vector3(a.x, y0, a.z),
-        new THREE.Vector3(b.x, y0, b.z),
-        new THREE.Vector3(b.x, y1, b.z),
-        new THREE.Vector3(a.x, y1, a.z),
-        normal,
-        [u0 / FACADE_TILE_W + uOff, vOff, u1 / FACADE_TILE_W + uOff, vOff + (y1 - y0) / FACADE_TILE_H],
-      );
     }
   }
 }
 
-function buildBuilding(acc: CellAccumulators, info: BuildingInfo, hvac: Placement[]) {
+function buildBuilding(acc: CellAccumulators, info: BuildingInfo, hvac: Placement[], occluder: WallOccluder | null) {
   const f = info.feature;
-  wallRing(acc, info, f.outer, false);
-  for (const h of f.holes) wallRing(acc, info, h, true);
+  wallRing(acc, info, f.outer, false, occluder);
+  for (const h of f.holes) wallRing(acc, info, h, true, occluder);
   const tris = triangulate(f.outer, f.holes);
   acc.roof.pushTrianglesUp(tris, f.base + f.height + 0.02, 8);
   // 옥상 설비: 넓고 어느 정도 높은 건물에 1~2개
@@ -792,18 +934,22 @@ function buildAreas(
 ) {
   for (const a of areas) {
     const tris = triangulate(a.outer, a.holes);
+    // 종류별로 다른 층에 깐다 (Y 표 참고). 같은 층에 두 면이 겹치면 z-fighting
     switch (a.kind) {
       case 'water':
         acc.water.pushTrianglesUp(tris, Y.water, 10);
         break;
       case 'pitch':
-        acc.pitch.pushTrianglesUp(tris, Y.area, 6);
+        acc.pitch.pushTrianglesUp(tris, Y.pitch, 6);
         break;
       case 'sand':
-        acc.sand.pushTrianglesUp(tris, Y.area, 6);
+        acc.sand.pushTrianglesUp(tris, Y.sand, 6);
+        break;
+      case 'park':
+        acc.grass.pushTrianglesUp(tris, Y.park, 10);
         break;
       default:
-        acc.grass.pushTrianglesUp(tris, Y.area, 10);
+        acc.grass.pushTrianglesUp(tris, Y.grass, 10);
     }
     if (a.kind === 'park' || a.kind === 'wood' || a.kind === 'grass') {
       const [minx, minz, maxx, maxz] = a.bbox;
@@ -818,7 +964,7 @@ function buildAreas(
           if (isBlocked(p) || onRoad(p, 1)) continue;
           const k = hash01(a.id, Math.round(p.x + p.z * 7));
           if (a.kind === 'grass' && k < 0.6) continue;
-          trees.push({ x: p.x, y: Y.area, z: p.z, rotY: k * Math.PI * 2, scale: 0.9 + k * 0.6 });
+          trees.push({ x: p.x, y: Y.areaProp, z: p.z, rotY: k * Math.PI * 2, scale: 0.9 + k * 0.6 });
           count += 1;
         }
       }
@@ -830,6 +976,8 @@ function buildAreas(
 
 export interface CellInput {
   buildings: BuildingFeature[];
+  /** 겹치는 벽 판정용, 이웃 셀 포함 (없으면 이 셀 건물만으로 판정) */
+  buildingsAround?: BuildingFeature[];
   roads: RoadFeature[];
   /** 교차로·노면 판정용, 이웃 셀 포함 */
   roadsAround: RoadFeature[];
@@ -863,10 +1011,11 @@ export function buildCell(input: CellInput, mats: CityMaterials): CellBuild {
   const hvac: Placement[] = [];
   const infos: BuildingInfo[] = [];
 
+  const occluder = new WallOccluder(input.buildingsAround ?? input.buildings);
   for (const f of input.buildings) {
     const info = buildingInfo(f);
     infos.push(info);
-    buildBuilding(acc, info, hvac);
+    buildBuilding(acc, info, hvac, occluder);
   }
   const junctions = buildJunctions(input.roadsAround);
   const onRoad = makeRoadTester(input.roadsAround);

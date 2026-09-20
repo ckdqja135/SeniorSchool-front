@@ -17,7 +17,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import type { ExploreRestaurant, LatLng } from '@/types/MatzalAl/explore';
-import { buildCell, CityMaterials, isCrosswalkDebug, makeBlockedTester, setCrosswalkDebug, stations, along, Y, type CellBuild } from './cityBuilder';
+import { AO_BLOB_LIFT, buildCell, CityMaterials, isCrosswalkDebug, makeBlockedTester, setCrosswalkDebug, stations, along, Y, type CellBuild } from './cityBuilder';
 import { CELL_SIZE, cellIndexOf, hash01, lngLatToTile, makeOrigin, pointInRing, toLatLng, toLocal, type LocalOrigin, type Pt } from './geo';
 import {
   CAR_COLORS,
@@ -230,7 +230,8 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
   const poolTex = lightPoolTexture();
   const poolGeo = new THREE.PlaneGeometry(9, 9);
   poolGeo.rotateX(-Math.PI / 2);
-  poolGeo.translate(0, 0.03, 1.2);
+  // 가로등 밑동(Y.prop) 기준으로 Y.decal 높이에 깔린다 → 차도·횡단보도 위에서도 잘리지 않는다
+  poolGeo.translate(0, Y.decal - Y.prop, 1.2);
   const pools = new InstancedProp(poolGeo, new THREE.MeshBasicMaterial({ map: poolTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }), 1200);
   pools.mesh.renderOrder = 2;
   const hvacMat = new THREE.MeshStandardMaterial({ color: '#b8b6b2', roughness: 0.7, metalness: 0.3 });
@@ -397,6 +398,7 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
     const built = buildCell(
       {
         buildings: own.buildings,
+        buildingsAround: around.buildings,
         roads: own.roads,
         roadsAround: around.roads,
         areas: own.areas,
@@ -744,7 +746,7 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
   const pushPeople = () => {
     const items = [...queueItems, ...staticPeople];
     people.set(items);
-    aoBlobs.set(items.map((p) => ({ x: p.x, y: p.y + 0.012, z: p.z, rotY: 0, scale: 1.1 })));
+    aoBlobs.set(items.map((p) => ({ x: p.x, y: p.y + AO_BLOB_LIFT, z: p.z, rotY: 0, scale: 1.1 })));
   };
 
   // ---------- 선택 ----------
@@ -812,7 +814,7 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
         color: SHIRT_COLORS[Math.floor(hash01(id!, 100 + i) * SHIRT_COLORS.length)],
       });
     }
-    ring.position.set(pos.x + frame.nx * 1.4, 0.06, pos.z + frame.nz * 1.4);
+    ring.position.set(pos.x + frame.nx * 1.4, Y.decal, pos.z + frame.nz * 1.4);
     ring.visible = true;
     pushPeople();
   };

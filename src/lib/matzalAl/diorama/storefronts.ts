@@ -329,6 +329,9 @@ function fromFrame(center: Pt, f: Frame, s: number, y: number, o: number): THREE
 }
 
 /** 프레임 기준 박스를 누적기에 넣는다 (6면) */
+/** 문 앞 계단 높이. 바닥층표(Y)의 최상단(횡단보도 0.215)보다 높게 */
+const STEP_H = Y.crosswalk + 0.045;
+
 function pushBox(acc: GeomAccumulator, center: Pt, f: Frame, s0: number, s1: number, y0: number, y1: number, o0: number, o1: number) {
   const P = (s: number, y: number, o: number) => fromFrame(center, f, s, y, o);
   const n = new THREE.Vector3(f.nx, 0, f.nz);
@@ -457,7 +460,9 @@ export function buildStorefronts(plans: StorefrontPlan[], mats: StorefrontMateri
       }
       const doorS = half * 0.6;
       pushBox(accDoor, center, f, doorS - 0.7, doorS + 0.7, y0 + 0.08, y0 + 2.5, 0.38, 0.44);
-      pushBox(accStep, center, f, doorS - 1.2, doorS + 1.2, y0, y0 + 0.14, 0.4, 1.4);
+      // 계단 윗면은 가장 높은 바닥층(횡단보도 Y.crosswalk)보다 위에 둔다. 인도 없이 차도(보행자 거리·골목)에
+      // 바로 붙은 매장에서는 계단이 아스팔트 위에 놓이는데, 같은 높이대면 윗면이 아스팔트와 z-fighting 한다
+      pushBox(accStep, center, f, doorS - 1.2, doorS + 1.2, y0, y0 + STEP_H, 0.4, 1.4);
       if (style.awning) {
         const idx = AWNINGS.indexOf(style.awning);
         const acc = accAwning[idx < 0 ? 0 : idx];
