@@ -69,7 +69,6 @@ const PER_PAGE = 14;
 const SESS_PER_PAGE = 9;
 const RANGES: RangeKey[] = ["오늘", "7일", "30일", "전체"];
 const DOW = ["일", "월", "화", "수", "목", "금", "토"];
-const LIMITS = ["순 방문자(UV)", "세션 지속 시간", "재방문율", "체류 시간·스크롤", "유입 캠페인(UTM)", "지역·언어", "전환·클릭"];
 
 /* ───────── API ───────── */
 
@@ -810,21 +809,6 @@ export default function AnalyticsPage() {
                   </div>
                 ))}
               </div>
-            </div>
-          </div>
-
-          {/* 한계 안내 */}
-          <div style={{ background: "#FBFBFD", border: "1px dashed #DCDFE8", borderRadius: 14, padding: "16px 20px" }}>
-            <div style={{ fontSize: 12.5, fontWeight: 700, color: "#5A5F6E" }}>이 화면에서 알 수 없는 것</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
-              {LIMITS.map((l) => (
-                <span key={l} style={{ fontSize: 11.5, color: MUTED, background: "#fff", border: "1px solid #E8E9EF", padding: "5px 10px", borderRadius: 7 }}>
-                  {l}
-                </span>
-              ))}
-            </div>
-            <div style={{ fontSize: 11.5, color: FAINT, marginTop: 11, lineHeight: 1.6 }}>
-              방문자 수는 IP + User-Agent 조합으로 추정한 값입니다. 같은 IP를 쓰는 다른 사람은 한 명으로, 모바일 네트워크에서 IP가 바뀐 한 사람은 여러 명으로 세어집니다.
             </div>
           </div>
         </div>
