@@ -1701,7 +1701,18 @@ export default function MatzalAlMentorPage() {
               
                 <div className="p-3">
                   <div className="grid grid-cols-1 gap-1.5">
-                    {popularBoards.length > 0 ? (
+                    {popularBoards.length === 0 && (topCommentsLoading || isBoardRefreshing) ? (
+                      // 로딩 중에는 "후기 없음" 대신 스켈레톤 (지역별 핫플레이스 카드와 같은 형태)
+                      Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} className="p-1.5 rounded-lg border border-gray-200 flex items-center space-x-1.5">
+                          <SkeletonCircle className="w-4 h-4 flex-shrink-0" />
+                          <div className="flex-1 min-w-0 space-y-1">
+                            <Skeleton className="h-3 w-2/3" />
+                            <Skeleton className="h-2.5 w-1/3" />
+                          </div>
+                        </div>
+                      ))
+                    ) : popularBoards.length > 0 ? (
                       popularBoards.map((board, index) => (
                         <div
                           key={board.boardIdx}
