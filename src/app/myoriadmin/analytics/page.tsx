@@ -5,6 +5,7 @@
 // 사이드바/상단바는 myoriadmin/layout 의 DashboardLayout 이 제공하므로 여기서는 본문만 그린다.
 
 import React, { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { Skeleton } from "@/components/common/Skeleton";
 import {
   Ev,
   RangeKey,
@@ -231,6 +232,197 @@ const TipLayer = React.forwardRef<TipApi>(function TipLayer(_, ref) {
 });
 
 const pct = (n: number, tot: number) => `${tot ? ((n / tot) * 100).toFixed(1) : "0.0"}%`;
+
+/* ───────── 스켈레톤 (로딩 중 레이아웃 자리표시) ───────── */
+
+function Sk({ w, h, r = 6, style }: { w: number | string; h: number; r?: number; style?: React.CSSProperties }) {
+  return <Skeleton style={{ width: w, height: h, borderRadius: r, ...style }} />;
+}
+
+/** 카드 머리(제목 + 부제) 자리표시 */
+function SkHead({ w1 = 120, w2 = 180 }: { w1?: number; w2?: number }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <Sk w={w1} h={14} />
+      <Sk w={w2} h={10} />
+    </div>
+  );
+}
+
+/** 순위/이름 + 진행 막대 행 */
+function SkRows({ n, bar = true }: { n: number; bar?: boolean }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 16 }}>
+      {Array.from({ length: n }).map((_, i) => (
+        <div key={i}>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <Sk w={`${34 + ((i * 23) % 40)}%`} h={12} />
+            <Sk w={56} h={12} />
+          </div>
+          {bar && <Sk w="100%" h={6} r={4} style={{ marginTop: 8 }} />}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// 막대 높이 패턴(결정적): 매 렌더마다 흔들리지 않게 고정
+const SK_BARS = Array.from({ length: 30 }, (_, i) => 22 + ((i * 37) % 61));
+
+function StatsSkeleton() {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }} aria-busy="true">
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(196px,1fr))", gap: 14 }}>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} style={{ ...card, padding: "16px 18px" }}>
+            <Sk w={64} h={12} />
+            <Sk w={110} h={27} style={{ marginTop: 10 }} />
+            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginTop: 12 }}>
+              <Sk w={120} h={10} />
+              <Sk w={86} h={26} r={4} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ ...card, padding: "18px 20px 14px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <SkHead w1={96} w2={150} />
+          <Sk w={160} h={12} />
+        </div>
+        <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 188, marginTop: 18 }}>
+          {SK_BARS.map((h, i) => (
+            <Sk key={i} w="100%" h={Math.round((h / 100) * 188)} r={4} style={{ flex: 1, minWidth: 0 }} />
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
+          {SK_BARS.map((_, i) => (
+            <div key={i} style={{ flex: 1, minWidth: 0, display: "flex", justifyContent: "center" }}>{i % 5 === 0 && <Sk w={26} h={9} r={3} />}</div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(340px,1fr))", gap: 16 }}>
+        <div style={card}>
+          <SkHead w1={140} w2={200} />
+          <div style={{ display: "grid", gridTemplateColumns: "22px repeat(24,1fr)", gap: 3, marginTop: 16 }}>
+            {Array.from({ length: 7 * 25 }).map((_, i) => (
+              <div key={i} className="skeleton-box" style={{ aspectRatio: "1", borderRadius: 3, opacity: i % 25 === 0 ? 0 : 0.35 + ((i * 7) % 10) / 20 }} />
+            ))}
+          </div>
+          <Sk w={180} h={12} style={{ marginTop: 22 }} />
+        </div>
+        <div style={card}>
+          <SkHead w1={70} w2={170} />
+          <div style={{ display: "flex", alignItems: "center", gap: 24, marginTop: 18 }}>
+            <Sk w={148} h={148} r={74} style={{ flex: "0 0 148px" }} />
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 14 }}>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                  <Sk w={9} h={9} r={3} />
+                  <Sk w={`${30 + i * 8}%`} h={12} />
+                  <span style={{ flex: 1 }} />
+                  <Sk w={34} h={12} />
+                  <Sk w={44} h={10} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(250px,1fr))", gap: 16 }}>
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} style={card}>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <Sk w={64} h={14} />
+              <Sk w={40} h={10} />
+            </div>
+            <SkRows n={4} />
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(360px,1fr))", gap: 16 }}>
+        <div style={card}>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <SkHead w1={70} w2={140} />
+            <Sk w={120} h={28} r={9} />
+          </div>
+          <SkRows n={8} />
+        </div>
+        <div style={card}>
+          <SkHead w1={70} w2={160} />
+          <SkRows n={8} bar={false} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LogsSkeleton() {
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "flex-start" }} aria-busy="true">
+      <div style={{ display: "flex", flexDirection: "column", gap: 14, minWidth: 300, flex: "1 1 440px" }}>
+        <div style={{ ...card, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+          <Sk w="40%" h={36} r={10} style={{ flex: 1 }} />
+          <Sk w={132} h={30} r={9} />
+          <Sk w={84} h={30} r={9} />
+          <Sk w={70} h={12} style={{ marginLeft: "auto" }} />
+        </div>
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} style={{ ...card, padding: "14px 16px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+              <Sk w={30} h={30} r={9} />
+              <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                <div style={{ display: "flex", gap: 7 }}>
+                  <Sk w={110} h={12} />
+                  <Sk w={90} h={14} r={6} />
+                  <Sk w={36} h={14} r={6} />
+                </div>
+                <Sk w={150} h={10} />
+              </div>
+              <div style={{ marginLeft: "auto", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5 }}>
+                <Sk w={24} h={16} />
+                <Sk w={36} h={9} />
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 6, marginTop: 12, paddingTop: 12, borderTop: "1px solid #F2F3F7" }}>
+              {Array.from({ length: 3 + (i % 3) }).map((_, j) => (
+                <Sk key={j} w={54 + ((j * 29) % 60)} h={24} r={7} />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 14, flex: "1 1 264px", minWidth: 260 }}>
+        <div style={{ ...card, padding: "16px 18px" }}>
+          <Sk w={70} h={13} />
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 14 }}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} style={{ display: "flex", gap: 10 }}>
+                <Sk w={52} h={11} />
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 5 }}>
+                  <Sk w={`${50 + ((i * 17) % 45)}%`} h={11} />
+                  <Sk w="40%" h={9} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{ ...card, padding: "16px 18px" }}>
+          <SkHead w1={64} w2={80} />
+          <Sk w={70} h={25} style={{ marginTop: 12 }} />
+          <SkRows n={3} bar={false} />
+        </div>
+        <div style={{ ...card, padding: "16px 18px" }}>
+          <SkHead w1={64} w2={190} />
+          <SkRows n={4} bar={false} />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* ───────── 페이지 ───────── */
 
@@ -505,7 +697,8 @@ export default function AnalyticsPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: 16, fontFamily: SANS, color: INK, fontSize: 14, paddingBottom: 32, WebkitFontSmoothing: "antialiased" }}>
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" />
-      <style>{`
+      {/* style 텍스트를 children 으로 주면 SSR 시 '>' 가 &gt; 로 이스케이프돼 하이드레이션 불일치가 난다 → innerHTML 로 주입 */}
+      <style dangerouslySetInnerHTML={{ __html: `
         .ta-row:hover{background:#F7F8FB}
         .ta-tr:hover{background:#FAFAFC}
         .ta-in:focus{outline:none;border-color:#C9CBE8 !important}
@@ -514,7 +707,7 @@ export default function AnalyticsPage() {
         .ta-cell:hover{outline:2px solid #14161C;outline-offset:-1px}
         .ta-date{outline:none;color-scheme:light}
         .ta-date::-webkit-calendar-picker-indicator{opacity:.55;cursor:pointer}
-      `}</style>
+      ` }} />
       <TipLayer ref={tipRef} />
 
       {/* 헤더 */}
@@ -606,8 +799,9 @@ export default function AnalyticsPage() {
       </div>
 
       {/* ═══════════ 방문 통계 ═══════════ */}
-      {tab === "stats" && (
-        <div className="ta-fade" style={{ display: "flex", flexDirection: "column", gap: 16, opacity: loading ? 0.55 : 1 }}>
+      {tab === "stats" && loading && <StatsSkeleton />}
+      {tab === "stats" && !loading && (
+        <div className="ta-fade" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {/* KPI */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(196px,1fr))", gap: 14 }}>
             {kpis.map((k) => (
@@ -815,8 +1009,9 @@ export default function AnalyticsPage() {
       )}
 
       {/* ═══════════ 방문자 로그 ═══════════ */}
-      {tab === "logs" && (
-        <div className="ta-fade" style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "flex-start", opacity: loading ? 0.55 : 1 }}>
+      {tab === "logs" && loading && <LogsSkeleton />}
+      {tab === "logs" && !loading && (
+        <div className="ta-fade" style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "flex-start" }}>
           {/* 좌: 필터 + 목록 */}
           <div style={{ display: "flex", flexDirection: "column", gap: 14, minWidth: 300, flex: "1 1 440px" }}>
             <div style={{ ...card, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
