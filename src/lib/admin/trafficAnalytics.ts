@@ -42,7 +42,8 @@ export interface Sess {
 export type RangeKey = "오늘" | "7일" | "30일" | "전체";
 
 export interface RangeSpec {
-  key: RangeKey;
+  /** 프리셋 키. 직접 지정한 기간은 "기간" */
+  key: RangeKey | "기간";
   /** 현재 구간 시작(포함). 전체면 null */
   start: Date | null;
   /** 현재 구간 끝(미포함) = 내일 00:00 KST */
@@ -107,11 +108,26 @@ export function rangeSpec(key: RangeKey, now: Date = new Date()): RangeSpec {
   };
 }
 
+/** 직접 지정한 기간(YYYY-MM-DD ~ YYYY-MM-DD, KST, 양끝 포함). 순서가 뒤집혀 있으면 바꿔서 해석 */
+export function rangeSpecCustom(startYmd: string, endYmd: string): RangeSpec {
+  const parse = (ymd: string) => {
+    const [y, m, d] = ymd.split("-").map(Number);
+    return kstDayStart(y, m - 1, d);
+  };
+  let a = parse(startYmd);
+  let b = parse(endYmd);
+  if (a.getTime() > b.getTime()) [a, b] = [b, a];
+  const end = new Date(b.getTime() + 86400_000);
+  const days = Math.round((end.getTime() - a.getTime()) / 86400_000);
+  return { key: "기간", start: a, end, prevStart: new Date(a.getTime() - days * 86400_000), days };
+}
+
 /** 헤더 부제: "최근 30일 (2026-08-23 ~ 2026-09-21)" */
 export function rangeLabel(spec: RangeSpec): string {
   const last = new Date(spec.end.getTime() - 1);
   if (spec.key === "전체") return "전체 기간";
   if (spec.key === "오늘") return `오늘 (${kstDayKey(last)})`;
+  if (spec.key === "기간") return `${kstDayKey(spec.start as Date)} ~ ${kstDayKey(last)} (${spec.days}일)`;
   return `최근 ${spec.days}일 (${kstDayKey(spec.start as Date)} ~ ${kstDayKey(last)})`;
 }
 
@@ -355,7 +371,7 @@ export interface Bucket {
  * events/sessions 는 봇 제외 현재 구간 데이터.
  */
 export function buildBuckets(spec: RangeSpec, events: Ev[], sessions: Sess[]): { hourly: boolean; buckets: Bucket[] } {
-  const hourly = spec.key === "오늘";
+  const hourly = spec.days === 1;
   const buckets: Bucket[] = [];
   const idx = new Map<string, number>();
 

@@ -24,6 +24,7 @@ import {
   pathLabel,
   rangeLabel,
   rangeSpec,
+  rangeSpecCustom,
   safeDecode,
   sessionChannel,
   shortPath,
@@ -235,7 +236,12 @@ const pct = (n: number, tot: number) => `${tot ? ((n / tot) * 100).toFixed(1) : 
 /* ───────── 페이지 ───────── */
 
 export default function AnalyticsPage() {
-  const [range, setRange] = useState<RangeKey>("30일");
+  const [range, setRange] = useState<RangeKey | "기간">("30일");
+  // 직접 지정 기간: 입력값(draft)과 조회 버튼으로 확정된 값(applied)을 분리
+  const todayYmd = kstDayKey(new Date());
+  const [draftStart, setDraftStart] = useState(todayYmd);
+  const [draftEnd, setDraftEnd] = useState(todayYmd);
+  const [applied, setApplied] = useState<{ start: string; end: string } | null>(null);
   const [tab, setTab] = useState<"stats" | "logs">("stats");
   const [pathMode, setPathMode] = useState<"raw" | "section">("raw");
   const [logMode, setLogMode] = useState<"session" | "raw">("session");
@@ -254,7 +260,20 @@ export default function AnalyticsPage() {
   const show = (e: React.MouseEvent, title: string, lines: string[]) => tipRef.current?.show(e, title, lines);
   const hide = () => tipRef.current?.hide();
 
-  const spec = useMemo(() => rangeSpec(range), [range, tick]); // eslint-disable-line react-hooks/exhaustive-deps
+  const spec = useMemo(
+    () => (range === "기간" && applied ? rangeSpecCustom(applied.start, applied.end) : rangeSpec(range === "기간" ? "30일" : range)),
+    [range, applied, tick], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+
+  const applyCustom = () => {
+    if (!draftStart || !draftEnd) return;
+    const same = applied && applied.start === draftStart && applied.end === draftEnd && range === "기간";
+    if (same) setTick((t) => t + 1);
+    else {
+      setApplied({ start: draftStart, end: draftEnd });
+      setRange("기간");
+    }
+  };
 
   // 구간이 바뀌면 (이전 비교 구간 포함) 원본 로그를 새로 받는다.
   // 서버는 startDate 를 UTC 자정으로 해석하므로 KST 하루 여유를 두고 받아 클라이언트에서 정확히 자른다.
@@ -341,7 +360,7 @@ export default function AnalyticsPage() {
   }, [events, spec]);
 
   /* ── 통계 탭 뷰모델 ── */
-  const prevLabel = range === "오늘" ? "어제" : range === "7일" ? "이전 7일" : range === "30일" ? "이전 30일" : null;
+  const prevLabel = spec.key === "전체" ? null : spec.days === 1 ? (spec.key === "오늘" ? "어제" : "전날") : `이전 ${spec.days}일`;
   const kpiSub = prevLabel ? `봇 제외 · ${prevLabel} 대비` : "봇 제외 · 전체 기간";
   const bucketN = d.buckets.map((b) => b.n);
 
@@ -464,7 +483,7 @@ export default function AnalyticsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `ori-traffic-${range}-${kstDayKey(new Date())}.csv`;
+    a.download = `ori-traffic-${range === "기간" && applied ? `${applied.start}_${applied.end}` : range}-${kstDayKey(new Date())}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -494,6 +513,8 @@ export default function AnalyticsPage() {
         .ta-fade{transition:opacity .2s}
         .ta-col:hover > div{filter:brightness(.82)}
         .ta-cell:hover{outline:2px solid #14161C;outline-offset:-1px}
+        .ta-date{outline:none;color-scheme:light}
+        .ta-date::-webkit-calendar-picker-indicator{opacity:.55;cursor:pointer}
       `}</style>
       <TipLayer ref={tipRef} />
 
@@ -519,6 +540,35 @@ export default function AnalyticsPage() {
                 </button>
               );
             })}
+          </div>
+          {/* 직접 기간 지정 */}
+          <div style={{ display: "flex", alignItems: "center", gap: 2, background: "#fff", border: `1px solid ${range === "기간" ? A : "#E5E7EE"}`, borderRadius: 10, padding: 3 }}>
+            <input
+              type="date"
+              className="ta-date"
+              value={draftStart}
+              max={draftEnd || undefined}
+              onChange={(e) => setDraftStart(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && applyCustom()}
+              style={{ border: "none", background: "transparent", fontSize: 12.5, color: "#4A4F60", padding: "4px 6px", fontFamily: MONO, width: 128 }}
+            />
+            <span style={{ fontSize: 12, color: FAINTER }}>~</span>
+            <input
+              type="date"
+              className="ta-date"
+              value={draftEnd}
+              min={draftStart || undefined}
+              onChange={(e) => setDraftEnd(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && applyCustom()}
+              style={{ border: "none", background: "transparent", fontSize: 12.5, color: "#4A4F60", padding: "4px 6px", fontFamily: MONO, width: 128 }}
+            />
+            <button
+              onClick={applyCustom}
+              disabled={!draftStart || !draftEnd}
+              style={{ border: "none", background: range === "기간" ? A : "#F3F4F7", color: range === "기간" ? "#fff" : "#4A4F60", fontSize: 12.5, fontWeight: 700, padding: "6px 13px", borderRadius: 8, cursor: "pointer", marginLeft: 4 }}
+            >
+              조회
+            </button>
           </div>
           <button onClick={exportCsv} disabled={!d.cur.length} style={{ border: "1px solid #E5E7EE", background: "#fff", color: "#4A4F60", fontSize: 12.5, fontWeight: 600, padding: "8px 14px", borderRadius: 10, cursor: "pointer", opacity: d.cur.length ? 1 : 0.5 }}>
             CSV 내보내기
