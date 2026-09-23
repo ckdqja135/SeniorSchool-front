@@ -978,6 +978,9 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
   const tmp = new THREE.Vector3();
   const ICON_W = 48;
   const ICON_H = 58;
+  // 라벨 너비 캐시: compact/hidden 이면 라벨이 display:none 이라 offsetWidth 가 0 으로 읽혀
+  // 다음 프레임에 '안 겹침 → full → 겹침 → compact' 가 매 프레임 반복(깜빡임)되므로, 마지막으로 보였을 때 너비를 쓴다
+  const labelWidths = new Map<string, number>();
   const updatePins = () => {
     const els = opts.pinElements();
     if (els.size === 0) return;
@@ -1003,7 +1006,9 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
         continue;
       }
       const label = el.querySelector<HTMLElement>('[data-pin-label]');
-      const labelW = label ? label.offsetWidth + 8 : 0;
+      const measured = label ? label.offsetWidth : 0;
+      if (measured > 0) labelWidths.set(it.id, measured);
+      const labelW = label ? (labelWidths.get(it.id) ?? measured) + 8 : 0;
       const full = { l: it.x - ICON_W / 2, t: it.y - ICON_H, r: it.x + ICON_W / 2 + labelW, b: it.y };
       let mode: 'full' | 'compact' | 'hidden' = 'full';
       let rect = full;

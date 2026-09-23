@@ -1031,6 +1031,8 @@ export function createDioramaScene(container: HTMLElement, opts: DioramaOptions)
   const anchors = PROTOTYPE_RESTAURANTS.map((r) => ({ id: r.id, anchor: built.get(r.buildingId)?.anchor ?? new THREE.Vector3() }));
   const ICON_W = 48;
   const ICON_H = 58;
+  // 라벨 너비 캐시 (cityScene 과 동일): 숨긴 라벨은 offsetWidth 가 0 이라 매 프레임 full/compact 가 번갈아 깜빡이는 것을 막는다
+  const labelWidths = new Map<string, number>();
   const updatePins = () => {
     const els = opts.pinElements();
     const w = renderer.domElement.clientWidth;
@@ -1051,7 +1053,9 @@ export function createDioramaScene(container: HTMLElement, opts: DioramaOptions)
         continue;
       }
       const label = el.querySelector<HTMLElement>('[data-pin-label]');
-      const labelW = label ? label.offsetWidth + 8 : 0;
+      const measured = label ? label.offsetWidth : 0;
+      if (measured > 0) labelWidths.set(it.id, measured);
+      const labelW = label ? (labelWidths.get(it.id) ?? measured) + 8 : 0;
       const full = { l: it.x - ICON_W / 2, t: it.y - ICON_H, r: it.x + ICON_W / 2 + labelW, b: it.y };
       let mode: 'full' | 'compact' | 'hidden' = 'full';
       let rect = full;
