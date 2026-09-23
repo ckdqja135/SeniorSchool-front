@@ -162,11 +162,12 @@ export default function MatzalAlMentorPage() {
     fetchPopularMatzalAl();
   }, []);
 
-  // 지역별 핫플레이스용 전체 식당 데이터 로드 (새로고침 버튼에서도 재사용)
+  // 지역별 핫플레이스용 식당 데이터 로드 (새로고침 버튼에서도 재사용)
+  // /restaurant/hotplaces 는 전체 목록 중 핫플(전국·도시별 TOP)과 인기 후기 식당만, 같은 필드·순서로 준다
   const fetchHotplaceData = useCallback(async () => {
     try {
       const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
-      const res = await fetch(`${backendURL}/restaurant`);
+      const res = await fetch(`${backendURL}/restaurant/hotplaces`);
       if (!res.ok) return;
       const raw = await res.json();
       const list = (Array.isArray(raw) ? raw : raw.data || [])
@@ -742,12 +743,14 @@ export default function MatzalAlMentorPage() {
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     };
 
-    // 전체 식당 목록 확보 (mapRestaurants가 비어있으면 직접 fetch)
-    const getAllRestaurants = async (): Promise<any[]> => {
+    // 후보 식당 확보: 내 위치 주변만 서버에서 받는다 (mapRestaurants가 있으면 그대로 사용)
+    // 반경은 1km 보다 살짝 넓게 받고, 아래 doRoulette 의 1km 필터가 최종 기준이다
+    const getNearbyCandidates = async (loc: { lat: number; lng: number }): Promise<any[]> => {
       if (mapRestaurants.length > 0) return mapRestaurants;
       try {
         const backendURL = process.env.NEXT_PUBLIC_BASE_URL;
-        const res = await fetch(`${backendURL}/restaurant`);
+        const params = new URLSearchParams({ lat: String(loc.lat), lng: String(loc.lng), radius: '1.05', limit: '1000' });
+        const res = await fetch(`${backendURL}/restaurant/nearby?${params.toString()}`);
         if (!res.ok) throw new Error();
         const data = await res.json();
         const list = (Array.isArray(data) ? data : data.data || []).map((item: any) => ({
@@ -763,8 +766,6 @@ export default function MatzalAlMentorPage() {
           averageRating: item.averageRating != null ? parseFloat(Number(item.averageRating).toFixed(1)) : null,
           ratingCount: item.ratingCount || 0,
         }));
-        setMapRestaurants(list);
-        hasFetchedMapRestaurants.current = true;
         return list;
       } catch {
         return [];
@@ -808,8 +809,8 @@ export default function MatzalAlMentorPage() {
     };
 
     const runWithLocation = async (loc: { lat: number; lng: number }) => {
-      const allRestaurants = await getAllRestaurants();
-      doRoulette(loc, allRestaurants);
+      const candidates = await getNearbyCandidates(loc);
+      doRoulette(loc, candidates);
     };
 
     if (userLocation) {
