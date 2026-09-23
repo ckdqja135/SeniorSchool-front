@@ -205,6 +205,24 @@ export default function ExploreShell({
     if (id) setPanelState((s) => (s === 'collapsed' ? 'default' : s));
   }, []);
 
+  /** 주변 목록에서 고르면 핀을 누른 것처럼 선택하고 그 식당으로 카메라를 옮긴다 */
+  const handleListSelect = useCallback(
+    (id: string | null) => {
+      handleSelect(id);
+      if (!id) return;
+      const token = Date.now();
+      // 입체: 핀 클릭과 같은 정면 카메라
+      if (renderer === 'tilt') {
+        setFocusRequest({ id, token });
+        return;
+      }
+      // 지도·위성: 지금 확대 단계를 유지한 채 식당 위치로 이동
+      const r = sourceList.find((x) => x.id === id);
+      if (r?.coord) setFlyTo({ center: r.coord, level: lastViewport?.level ?? INITIAL_LEVEL, token });
+    },
+    [handleSelect, renderer, sourceList, lastViewport],
+  );
+
   // ---- 핫플 · 후기 → 지도 이동 + 자동 선택 ----
   /** 핫플 목록에서 idx 로 좌표 찾기 (후기 탭의 핀 버튼도 같은 목록을 쓴다) */
   const hotplaceByIdx = useMemo(() => {
@@ -457,7 +475,7 @@ export default function ExploreShell({
         reducedMotion={reducedMotion}
         isSaved={isSaved}
         onToggleSave={handleToggleSave}
-        onSelect={handleSelect}
+        onSelect={handleListSelect}
         onNotice={showNotice}
         onSizeChange={setPanelSize}
         tab={panelTab}
