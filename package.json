@@ -12,7 +12,12 @@
     "lint": "next lint",
     "lint:fix": "eslint --fix .",
     "kakao:restaurants": "node scripts/fetchRestaurantsFromKakao.mjs",
-    "kakao:church": "node scripts/fetchChurchFromKakao.mjs"
+    "kakao:church": "node scripts/fetchChurchFromKakao.mjs",
+    "e2e": "playwright test",
+    "e2e:headed": "playwright test --headed",
+    "e2e:ui": "playwright test --ui",
+    "e2e:report": "playwright show-report",
+    "e2e:codegen": "playwright codegen http://localhost:3000/matzal-al-mentor"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -34,6 +39,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@playwright/test": "^1.63.0",
     "@types/mapbox__vector-tile": "^1.3.4",
     "@types/node": "^20",
     "@types/pbf": "^3.0.5",

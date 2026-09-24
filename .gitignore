@@ -225,3 +225,10 @@ sketch
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,intellij,visualstudiocode,react,nextjs
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
