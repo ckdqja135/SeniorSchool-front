@@ -49,6 +49,8 @@ test.describe('지도 — PC 배치', () => {
     await openMapTab(page);
 
     const shell = await box(mapShell(page));
+    // min(calc(100dvh - 96px), 1080px) @ 900 => 804 (모바일 704 보다 크다)
+    expect(Math.round(shell.height)).toBe(804);
 
     // 기본 펼침이지만 접힘 → 펼침 높이 애니메이션(260ms)이 있어 값이 앉을 때까지 기다린다
     await expect.poll(async () => (await box(listPanel(page))).height).toBeGreaterThan(shell.height * 0.6);
@@ -182,6 +184,12 @@ test.describe('지도 — 모바일은 그대로', () => {
     // 별도 패널이 아니라 교체 — 목록 패널 자체가 상세로 바뀐다
     await expect(listPanel(page)).toBeHidden();
     await expect(page.getByRole('region', { name: `${name} 정보` })).toBeVisible();
+  });
+
+  test('지도 높이가 예전 값 그대로다 (PC 확대가 모바일로 새지 않는다)', async ({ page }) => {
+    await openMapTab(page);
+    // min(calc(100dvh - 140px), 920px) @ 844 => 704. PC 는 100dvh - 96px 로 따로 간다
+    expect(Math.round((await box(mapShell(page))).height)).toBe(704);
   });
 
   test('컨트롤이 흐려지지 않고 모드 컨트롤은 세로 스택을 유지한다', async ({ page }) => {

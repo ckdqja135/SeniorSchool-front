@@ -434,13 +434,19 @@ export default function ExploreShell({
     <div
       ref={containerRef}
       className="relative w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-100"
-      style={{ height: 'min(calc(100dvh - 96px), 1080px)', minHeight: 560 }}
+      // 지도 영역은 PC 에서만 키운다 (모바일은 기존 높이 그대로)
+      style={
+        isDesktop
+          ? { height: 'min(calc(100dvh - 96px), 1080px)', minHeight: 560 }
+          : { height: 'min(calc(100dvh - 140px), 920px)', minHeight: 520 }
+      }
       data-explore-renderer={renderer}
-      onPointerDown={handleMapPointerDown}
-      onPointerMove={handleMapPointerMove}
-      onPointerUp={endMapDrag}
-      onPointerCancel={endMapDrag}
-      onPointerLeave={endMapDrag}
+      // 드래그 감지도 PC 전용 — 모바일은 패널을 비추지 않으므로 리스너를 달 이유가 없다
+      onPointerDown={isDesktop ? handleMapPointerDown : undefined}
+      onPointerMove={isDesktop ? handleMapPointerMove : undefined}
+      onPointerUp={isDesktop ? endMapDrag : undefined}
+      onPointerCancel={isDesktop ? endMapDrag : undefined}
+      onPointerLeave={isDesktop ? endMapDrag : undefined}
     >
       {/* 렌더러 — 셋 다 같은 DB 데이터(pinned)를 그린다 */}
       {renderer === 'tilt' ? (
