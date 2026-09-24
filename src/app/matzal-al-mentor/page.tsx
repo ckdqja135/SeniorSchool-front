@@ -1521,8 +1521,11 @@ export default function MatzalAlMentorPage() {
               </div>
             )}
 
-            {/* 지도 탭 (입체 탐색, 지연 로딩, 별도 컴포넌트). 핫플·후기는 지도 안 패널 탭으로 들어간다 */}
+            {/* 지도 탭 (입체 탐색, 지연 로딩, 별도 컴포넌트). 핫플·후기는 지도 안 패널 탭으로 들어간다.
+                본문(max-w-6xl)보다 넓게 빼낸다 — 좌측 목록·상세 패널이 700px 넘게 차지해서
+                본문 폭 그대로면 정작 지도가 좁아진다. 100vw 에서 2rem 빼서 스크롤바 폭을 흡수한다 */}
             {viewTab === 'explore' && (
+              <div className="relative left-1/2 w-[min(1560px,calc(100vw-2rem))] -translate-x-1/2">
               <ExploreShell
                 hotplaces={hotplaces}
                 hotplaceCities={hotplaceCities}
@@ -1534,6 +1537,7 @@ export default function MatzalAlMentorPage() {
                 reviewsRefreshing={isBoardRefreshing}
                 onRefreshReviews={handleBoardRefresh}
               />
+              </div>
             )}
 
             {/* 지도 뷰 */}

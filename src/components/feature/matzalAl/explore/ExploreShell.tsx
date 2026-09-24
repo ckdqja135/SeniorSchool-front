@@ -41,6 +41,7 @@ import { ExploreModeControl } from './ExploreModeControl';
 import { ExploreTopBar } from './ExploreTopBar';
 import { KakaoExploreMap, type FlyToRequest } from './KakaoExploreMap';
 import { RestaurantPanel } from './RestaurantPanel';
+import { RestaurantDetailPanel } from './RestaurantDetailPanel';
 import { DioramaExploreMap, type FocusRequest } from './DioramaExploreMap';
 import { HotplaceList } from './HotplaceList';
 import { PopularReviewList } from './PopularReviewList';
@@ -54,6 +55,21 @@ const NEARBY_MAX_RADIUS_KM = 8;
 const INITIAL_LEVEL = 4;
 /** flyTo 후 nearby 결과에 식당이 안 들어오면 이 시간 뒤 대기 선택을 접고 안내한다 */
 const PENDING_SELECT_TIMEOUT_MS = 6000;
+
+/** PC 목록 패널 폭. `RestaurantPanel` 의 `w-[380px]` 과 같은 값 —
+ *  측정값(panelSize)은 첫 렌더가 모바일(전폭)로 잡혀 한동안 어긋나므로 상수를 쓴다 */
+const LIST_PANEL_WIDTH = 380;
+/** PC 상세 패널: 목록 패널 오른쪽에 나란히 선다 */
+const DETAIL_PANEL_WIDTH = 340;
+const DETAIL_PANEL_GAP = 12;
+/** PC 좌우 여백 (목록 패널 `left-4` · 모드 컨트롤과 같은 값) */
+const EDGE_GAP = 16;
+/**
+ * PC 우하단 모드 컨트롤이 차지하는 높이 + 여백.
+ * 두 렌더러가 자기 확대/축소 버튼을 `visibleInsets.bottom + 12` 에 두므로,
+ * 이 값만큼 바닥을 비워 두면 버튼이 모드 컨트롤 위로 알아서 올라간다.
+ */
+const MODE_CONTROL_RESERVE = 60;
 
 export interface ExploreShellProps {
   /** 지역별 핫플레이스 원본 (`GET /restaurant` 전체 목록). page.tsx 가 받아 둔 것 */
@@ -134,6 +150,40 @@ export default function ExploreShell({
     },
     [],
   );
+
+  // ---- 지도 드래그 중에는 PC 패널을 비춰준다 (패널에 가린 지도를 보면서 옮기도록) ----
+  // 렌더러마다 드래그 이벤트가 달라(카카오 idle / OrbitControls end) 셸에서 포인터로 직접 잡는다.
+  // 패널·컨트롤(`data-map-overlay`) 위에서 시작한 포인터는 지도 드래그가 아니다.
+  const [mapDragging, setMapDragging] = useState(false);
+  const dragProbeRef = useRef<{ x: number; y: number; active: boolean } | null>(null);
+
+  const handleMapPointerDown = useCallback((e: React.PointerEvent) => {
+    if ((e.target as HTMLElement).closest?.('[data-map-overlay]')) return;
+    dragProbeRef.current = { x: e.clientX, y: e.clientY, active: false };
+  }, []);
+
+  const handleMapPointerMove = useCallback((e: React.PointerEvent) => {
+    const probe = dragProbeRef.current;
+    if (!probe || probe.active) return;
+    // 클릭과 구분: 6px 넘게 움직여야 드래그로 본다
+    if (Math.hypot(e.clientX - probe.x, e.clientY - probe.y) < 6) return;
+    probe.active = true;
+    setMapDragging(true);
+  }, []);
+
+  const endMapDrag = useCallback(() => {
+    dragProbeRef.current = null;
+    setMapDragging(false);
+  }, []);
+
+  // 데스크톱 좌측 기둥은 펼친 상태로 시작한다 (모바일 하단 시트는 접힘 유지).
+  // useMediaQuery 가 SSR 에서 false 라 첫 렌더 뒤 한 번만 올려준다.
+  const desktopPanelInitRef = useRef(false);
+  useEffect(() => {
+    if (!isDesktop || desktopPanelInitRef.current) return;
+    desktopPanelInitRef.current = true;
+    setPanelState('expanded');
+  }, [isDesktop]);
 
   /** 짧은 안내 토스트 */
   const showNotice = useCallback((message: string) => {
@@ -358,14 +408,18 @@ export default function ExploreShell({
   }, []);
 
   // ---- 가시 영역 인셋 ----
+  // PC 에서 상세 패널이 열리면 그만큼 왼쪽이 더 가려진다. 이걸 반영하지 않으면
+  // 카카오의 panBy 보정이 선택된 핀을 상세 패널 밑으로 밀어 넣는다.
   const visibleInsets: VisibleInsets = useMemo(
     () => ({
       top: topBarHeight,
       right: 0,
-      bottom: isDesktop ? 0 : panelSize.height,
-      left: isDesktop ? panelSize.width + 16 : 0,
+      bottom: isDesktop ? MODE_CONTROL_RESERVE : panelSize.height,
+      left: isDesktop
+        ? LIST_PANEL_WIDTH + EDGE_GAP + (selected ? DETAIL_PANEL_GAP + DETAIL_PANEL_WIDTH : 0)
+        : 0,
     }),
-    [topBarHeight, panelSize, isDesktop],
+    [topBarHeight, panelSize, isDesktop, selected],
   );
 
   const displayRegionLabel = regionLabel ?? (lastViewport ? '위치 확인 중…' : regionPreset.label);
@@ -380,8 +434,13 @@ export default function ExploreShell({
     <div
       ref={containerRef}
       className="relative w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-100"
-      style={{ height: 'min(calc(100dvh - 140px), 920px)', minHeight: 520 }}
+      style={{ height: 'min(calc(100dvh - 96px), 1080px)', minHeight: 560 }}
       data-explore-renderer={renderer}
+      onPointerDown={handleMapPointerDown}
+      onPointerMove={handleMapPointerMove}
+      onPointerUp={endMapDrag}
+      onPointerCancel={endMapDrag}
+      onPointerLeave={endMapDrag}
     >
       {/* 렌더러 — 셋 다 같은 DB 데이터(pinned)를 그린다 */}
       {renderer === 'tilt' ? (
@@ -440,19 +499,23 @@ export default function ExploreShell({
         onFiltersChange={setFilters}
         resultCount={filtered.length}
         onHeightChange={setTopBarHeight}
+        isDesktop={isDesktop}
       />
 
-      {/* 지도 모드. 데스크톱은 패널 오른쪽, 모바일은 패널 위에 배치.
+      {/* 지도 모드. 데스크톱은 우하단 가로 배치(확대/축소 버튼이 그 위로 올라온다),
+          모바일은 패널 위에 세로로 배치.
           위성(카카오 하이브리드)은 어느 렌더러든 준비된 뒤에 노출한다 */}
       <ExploreModeControl
         renderer={renderer}
         onChange={handleRendererChange}
         satelliteAvailable={kakaoReady || tiltReady || renderer === 'sky'}
-        className="absolute z-20"
-        style={{
-          left: isDesktop ? panelSize.width + 28 : 12,
-          bottom: isDesktop ? 16 : panelSize.height + 12,
-        }}
+        orientation={isDesktop ? 'horizontal' : 'vertical'}
+        className="absolute z-40"
+        style={
+          isDesktop
+            ? { right: EDGE_GAP, bottom: EDGE_GAP }
+            : { left: 12, bottom: panelSize.height + 12 }
+        }
       />
 
       {/* 정보 패널 */}
@@ -470,6 +533,7 @@ export default function ExploreShell({
         state={panelState}
         onStateChange={setPanelState}
         isDesktop={isDesktop}
+        translucent={isDesktop && mapDragging}
         containerHeight={containerHeight}
         topInset={topBarHeight}
         reducedMotion={reducedMotion}
@@ -506,12 +570,34 @@ export default function ExploreShell({
         }
       />
 
+      {/* PC 전용 상세 패널: 목록 패널 오른쪽에 나란히. 모바일은 목록 패널 안에서 목록 대신 그려진다 */}
+      {isDesktop && selected && (
+        <RestaurantDetailPanel
+          restaurant={selected}
+          isFilteredOut={selectedFilteredOut}
+          category={category}
+          hasQuery={query.trim().length > 0}
+          onResetFilters={resetFilters}
+          distanceFor={distanceFor}
+          isSaved={isSaved}
+          onToggleSave={handleToggleSave}
+          onClose={() => handleSelect(null)}
+          translucent={mapDragging}
+          style={{
+            left: EDGE_GAP + LIST_PANEL_WIDTH + DETAIL_PANEL_GAP,
+            width: DETAIL_PANEL_WIDTH,
+            top: topBarHeight + 8,
+            bottom: EDGE_GAP,
+          }}
+        />
+      )}
+
       {/* 토스트 */}
       {notice && (
         <div
           role="status"
           aria-live="polite"
-          className="pointer-events-none absolute left-1/2 z-40 -translate-x-1/2 rounded-full bg-gray-900/90 px-4 py-2 text-sm text-white shadow-lg"
+          className="pointer-events-none absolute left-1/2 z-50 -translate-x-1/2 rounded-full bg-gray-900/90 px-4 py-2 text-sm text-white shadow-lg"
           style={{ bottom: (isDesktop ? 24 : panelSize.height + 56) }}
         >
           {notice}

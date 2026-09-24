@@ -8,12 +8,15 @@
 'use client';
 
 import type { ExploreRenderer } from '@/types/MatzalAl/explore';
+import { MAP_CONTROL_DIM } from './mapControlStyles';
 
 interface ExploreModeControlProps {
   renderer: ExploreRenderer;
   onChange: (renderer: ExploreRenderer) => void;
   /** 지도 준비 완료 여부 → 위성 버튼 노출 조건 */
   satelliteAvailable: boolean;
+  /** PC 는 우하단 가로 배치, 모바일은 세로 스택 */
+  orientation?: 'vertical' | 'horizontal';
   className?: string;
   style?: React.CSSProperties;
 }
@@ -39,7 +42,14 @@ const ICONS = {
   ),
 };
 
-export function ExploreModeControl({ renderer, onChange, satelliteAvailable, className = '', style }: ExploreModeControlProps) {
+export function ExploreModeControl({
+  renderer,
+  onChange,
+  satelliteAvailable,
+  orientation = 'vertical',
+  className = '',
+  style,
+}: ExploreModeControlProps) {
   const items: { key: ExploreRenderer; label: string; hint: string; show: boolean }[] = [
     { key: 'tilt', label: '입체', hint: '입체 동네 (3D 디오라마)', show: true },
     { key: 'road', label: '지도', hint: '카카오 일반 지도', show: true },
@@ -50,7 +60,10 @@ export function ExploreModeControl({ renderer, onChange, satelliteAvailable, cla
     <div
       role="group"
       aria-label="지도 모드"
-      className={`flex flex-col overflow-hidden rounded-2xl bg-gray-900/80 text-white shadow-lg ${className}`}
+      data-map-overlay
+      className={`flex overflow-hidden rounded-2xl bg-gray-900/80 text-white shadow-lg ${
+        orientation === 'horizontal' ? 'flex-row' : 'flex-col'
+      } ${MAP_CONTROL_DIM} ${className}`}
       style={style}
     >
       {items

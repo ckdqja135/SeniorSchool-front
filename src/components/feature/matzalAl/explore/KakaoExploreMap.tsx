@@ -21,6 +21,7 @@ import { haversineKm } from '@/lib/matzalAl/exploreAdapter';
 import { loadKakaoMapSdk } from '@/lib/matzalAl/kakaoMapLoader';
 import type { ExploreRestaurant, ExploreViewport, LatLng, VisibleInsets } from '@/types/MatzalAl/explore';
 import { RestaurantPin } from './RestaurantPin';
+import { MAP_CONTROL_DIM } from './mapControlStyles';
 
 export interface FlyToRequest {
   center: LatLng;
@@ -373,7 +374,7 @@ export function KakaoExploreMap({
       {/* 확대/축소 */}
       {sdkState === 'ready' && (
         <div
-          className="absolute right-3 z-20 flex flex-col overflow-hidden rounded-xl bg-white/90 shadow-md"
+          className={`absolute right-3 z-20 flex flex-col overflow-hidden rounded-xl bg-white/90 shadow-md ${MAP_CONTROL_DIM}`}
           style={{ bottom: visibleInsets.bottom + 12 }}
         >
           <button

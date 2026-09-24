@@ -4,6 +4,8 @@
  * - 래퍼는 pointer-events-none 으로 두고 요소만 pointer-events-auto 로 켜서, 요소 사이 빈 공간에서는
  *   지도 드래그가 그대로 동작하게 한다.
  * - 자신의 높이를 `onHeightChange` 로 알려 셸이 가시 영역 인셋(카메라 보정)에 반영한다.
+ * - PC 는 지도 위에 뜬 좁은 카드(중앙 정렬)로, 모바일은 전폭으로 배치한다.
+ *   PC 에서는 마우스를 얹기 전까지 흐려지지만, 위치 권한 안내 문구만은 항상 또렷하게 둔다.
  */
 'use client';
 
@@ -11,6 +13,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import type { ExploreCategory, ExploreFilters, LocateStatus } from '@/types/MatzalAl/explore';
 import type { RegionPreset } from '@/lib/matzalAl/exploreRegions';
 import { CATEGORY_CHIPS, CategoryIcon } from './categoryIcons';
+import { MAP_CONTROL_DIM_GROUP } from './mapControlStyles';
 
 export interface ExploreTopBarProps {
   regionLabel: string;
@@ -26,6 +29,8 @@ export interface ExploreTopBarProps {
   onFiltersChange: (f: ExploreFilters) => void;
   resultCount: number;
   onHeightChange: (h: number) => void;
+  /** PC 는 지도 위에 뜬 좁은 카드로, 모바일은 지금처럼 전폭으로 배치한다 */
+  isDesktop: boolean;
 }
 
 const LOCATE_MESSAGES: Partial<Record<LocateStatus, string>> = {
@@ -49,6 +54,7 @@ export function ExploreTopBar({
   onFiltersChange,
   resultCount,
   onHeightChange,
+  isDesktop,
 }: ExploreTopBarProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [regionOpen, setRegionOpen] = useState(false);
@@ -103,10 +109,16 @@ export function ExploreTopBar({
   const activeFilterCount = (filters.ratedOnly ? 1 : 0) + (filters.savedOnly ? 1 : 0) + (filters.sort !== 'distance' ? 1 : 0);
 
   return (
-    <div ref={rootRef} className="pointer-events-none absolute inset-x-0 top-0 z-30 p-3 sm:p-4">
+    <div
+      ref={rootRef}
+      data-map-overlay
+      className={`group pointer-events-none absolute top-0 z-40 p-3 sm:p-4 ${
+        isDesktop ? 'left-1/2 w-full max-w-[552px] -translate-x-1/2' : 'inset-x-0'
+      }`}
+    >
       {/* 1행: 지역 · 내 주변 */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="relative min-w-0 max-w-[62%]">
+      <div className={`flex items-start justify-between gap-2 ${MAP_CONTROL_DIM_GROUP}`}>
+        <div className={`relative min-w-0 ${isDesktop ? '' : 'max-w-[62%]'}`}>
           <button
             type="button"
             aria-haspopup="listbox"
@@ -176,7 +188,7 @@ export function ExploreTopBar({
       )}
 
       {/* 2행: 검색창 · 필터 */}
-      <div className="mt-2.5 flex items-center gap-2">
+      <div className={`mt-2.5 flex items-center gap-2 ${MAP_CONTROL_DIM_GROUP}`}>
         <div className="pointer-events-auto relative flex min-h-[46px] flex-1 items-center rounded-full bg-white/95 pl-4 pr-2 shadow-md focus-within:ring-2 focus-within:ring-rose-400">
           <svg className="h-5 w-5 shrink-0 text-gray-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -290,11 +302,13 @@ export function ExploreTopBar({
         </div>
       </div>
 
-      {/* 3행: 카테고리 칩 (가로 스크롤) */}
+      {/* 3행: 카테고리 칩 (PC 중앙 정렬 / 모바일 가로 스크롤) */}
       <div
         role="radiogroup"
         aria-label="업종 카테고리"
-        className="pointer-events-auto mt-2.5 flex gap-2 overflow-x-auto pb-1"
+        className={`pointer-events-auto mt-2.5 flex gap-2 pb-1 ${MAP_CONTROL_DIM_GROUP} ${
+          isDesktop ? 'flex-wrap justify-center' : 'overflow-x-auto'
+        }`}
         style={{ scrollbarWidth: 'none' }}
       >
         {CATEGORY_CHIPS.map((chip) => {

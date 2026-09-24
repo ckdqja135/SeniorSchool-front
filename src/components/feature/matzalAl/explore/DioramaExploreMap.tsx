@@ -14,6 +14,7 @@ import { loadKakaoMapSdk } from '@/lib/matzalAl/kakaoMapLoader';
 import type { CitySceneHandle } from '@/lib/matzalAl/diorama/cityScene';
 import type { ExploreRestaurant, ExploreViewport, LatLng, VisibleInsets } from '@/types/MatzalAl/explore';
 import type { FlyToRequest } from './KakaoExploreMap';
+import { MAP_CONTROL_DIM } from './mapControlStyles';
 
 /** 매장 정면 카메라 요청 (패널 핫플·후기에서 식당을 골랐을 때). 같은 id 라도 다시 잡도록 토큰을 둔다 */
 export interface FocusRequest {
@@ -249,7 +250,7 @@ export function DioramaExploreMap({
 
       {/* 조작 버튼 */}
       {state === 'ready' && (
-        <div className="absolute right-3 z-20 flex flex-col overflow-hidden rounded-xl bg-white/90 shadow-md" style={{ bottom: visibleInsets.bottom + 12 }}>
+        <div className={`absolute right-3 z-20 flex flex-col overflow-hidden rounded-xl bg-white/90 shadow-md ${MAP_CONTROL_DIM}`} style={{ bottom: visibleInsets.bottom + 12 }}>
           <button type="button" aria-label="확대" onClick={() => handleRef.current?.zoomBy(1.25)} className={`${buttonClass} text-xl font-bold`}>
             +
           </button>
