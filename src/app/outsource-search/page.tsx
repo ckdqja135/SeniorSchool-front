@@ -113,7 +113,7 @@ function OutsourceSearchContent() {
             <p className="text-gray-500 mb-6">"{searchName}"에 대한 검색 결과를 찾을 수 없습니다.</p>
             <button
               onClick={handleNewSearch}
-              className="px-6 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+              className="whitespace-nowrap px-6 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
             >
               새로 검색하기
             </button>

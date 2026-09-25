@@ -593,38 +593,38 @@ export default function SchoolPage() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-green-200 transition-all duration-200">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                    <div className="shrink-0 w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
                       <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
                     </div>
-                    <span className="text-sm text-gray-500 font-medium">위치</span>
+                    <span className="shrink-0 whitespace-nowrap text-sm text-gray-500 font-medium">위치</span>
                   </div>
-                  <span className="text-sm font-bold text-gray-900">{university.univLocate}</span>
+                  <span className="min-w-0 text-right text-sm font-bold text-gray-900">{university.univLocate}</span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
                   <div className="flex flex-col gap-2 p-3 bg-white rounded-xl border border-gray-100 hover:border-green-200 transition-all duration-200">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0">
+                      <div className="shrink-0 w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0">
                         <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                         </svg>
                       </div>
-                      <span className="text-xs text-gray-500 font-medium">구분</span>
+                      <span className="shrink-0 whitespace-nowrap text-xs text-gray-500 font-medium">구분</span>
                     </div>
                     <span className="text-sm font-bold text-gray-900 truncate text-right">{university.univType}</span>
                   </div>
 
                   <div className="flex flex-col gap-2 p-3 bg-white rounded-xl border border-gray-100 hover:border-green-200 transition-all duration-200">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
+                      <div className="shrink-0 w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
                         <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                       </div>
-                      <span className="text-xs text-gray-500 font-medium">설립</span>
+                      <span className="shrink-0 whitespace-nowrap text-xs text-gray-500 font-medium">설립</span>
                     </div>
                     <span className="text-sm font-bold text-gray-900 text-right">
                       {university.univEstablish ? `${university.univEstablish}년` : '정보 없음'}
@@ -634,14 +634,14 @@ export default function SchoolPage() {
 
                 <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-green-200 transition-all duration-200">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center">
+                    <div className="shrink-0 w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center">
                       <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                     </div>
-                    <span className="text-sm text-gray-500 font-medium">총장</span>
+                    <span className="shrink-0 whitespace-nowrap text-sm text-gray-500 font-medium">총장</span>
                   </div>
-                  <span className="text-sm font-bold text-gray-900">{university.univPresident}</span>
+                  <span className="min-w-0 text-right text-sm font-bold text-gray-900">{university.univPresident}</span>
                 </div>
               </div>
 
@@ -765,12 +765,12 @@ export default function SchoolPage() {
                       >
                         <h3 className="font-semibold text-gray-900 mb-2">{review.boardTitle}</h3>
                         <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
-                          <span>작성자: {review.boardID}</span>
-                          <span>{review.boardRegDate}</span>
+                          <span className="min-w-0 truncate">작성자: {review.boardID}</span>
+                          <span className="shrink-0 whitespace-nowrap">{review.boardRegDate}</span>
                         </div>
                         <div className="flex justify-between items-center text-xs text-gray-400">
-                          <span>조회수: {review.boardHits}</span>
-                          <span>좋아요: {review.boardLike}</span>
+                          <span className="whitespace-nowrap">조회수: {review.boardHits}</span>
+                          <span className="whitespace-nowrap">좋아요: {review.boardLike}</span>
                         </div>
                       </div>
                     ))}

@@ -1012,7 +1012,7 @@ export default function ChurchBoardDetailPage() {
           <p className="text-gray-600 mb-6">{error || '요청하신 게시글이 존재하지 않습니다.'}</p>
           <Link
             href="/church-mentor"
-            className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            className="whitespace-nowrap inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
           >
             교회 오빠로 돌아가기
           </Link>

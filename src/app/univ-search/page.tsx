@@ -122,7 +122,7 @@ function UnivSearchContent() {
             <div className="text-red-600 text-6xl mb-4">⚠️</div>
             <h2 className="text-2xl font-bold text-gray-800 mb-4">오류 발생</h2>
             <p className="text-gray-600 mb-8">{error}</p>
-            <Link href="/univ-mentor" className="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition-colors">
+            <Link href="/univ-mentor" className="whitespace-nowrap bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition-colors">
               대학 오빠로 돌아가기
             </Link>
           </div>
@@ -131,7 +131,7 @@ function UnivSearchContent() {
             <div className="text-gray-400 text-6xl mb-4">🔍</div>
             <h2 className="text-2xl font-bold text-gray-800 mb-4">검색 결과가 없습니다</h2>
             <p className="text-gray-600 mb-8">다른 검색어로 시도해보세요.</p>
-            <Link href="/univ-mentor" className="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition-colors">
+            <Link href="/univ-mentor" className="whitespace-nowrap bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition-colors">
               대학 오빠로 돌아가기
             </Link>
           </div>

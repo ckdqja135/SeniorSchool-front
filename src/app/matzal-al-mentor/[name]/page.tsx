@@ -414,7 +414,7 @@ export default function RestaurantDetailPage() {
             <p className="text-gray-500 mb-6">{error}</p>
             <Link
               href="/matzal-al-mentor"
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="whitespace-nowrap px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               맛잘알 오빠로 돌아가기
             </Link>
@@ -458,51 +458,51 @@ export default function RestaurantDetailPage() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-sky-200 transition-all duration-200">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                    <div className="shrink-0 w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
                       <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
                     </div>
-                    <span className="text-sm text-gray-500 font-medium">위치</span>
+                    <span className="shrink-0 whitespace-nowrap text-sm text-gray-500 font-medium">위치</span>
                   </div>
-                  <span className="text-sm font-bold text-gray-900">{restaurant.restaurantAddr || '정보 없음'}</span>
+                  <span className="min-w-0 text-right text-sm font-bold text-gray-900">{restaurant.restaurantAddr || '정보 없음'}</span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
                   <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-sky-200 transition-all duration-200">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
+                      <div className="shrink-0 w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
                         <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                         </svg>
                       </div>
-                      <span className="text-xs text-gray-500 font-medium">업종</span>
+                      <span className="shrink-0 whitespace-nowrap text-xs text-gray-500 font-medium">업종</span>
                     </div>
-                    <span className="text-sm font-bold text-gray-900">{restaurant.restaurantType || '정보 없음'}</span>
+                    <span className="min-w-0 text-right text-sm font-bold text-gray-900">{restaurant.restaurantType || '정보 없음'}</span>
                   </div>
 
                   <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-sky-200 transition-all duration-200">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
+                      <div className="shrink-0 w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
                         <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
                       </div>
-                      <span className="text-xs text-gray-500 font-medium">대표자</span>
+                      <span className="shrink-0 whitespace-nowrap text-xs text-gray-500 font-medium">대표자</span>
                     </div>
-                    <span className="text-sm font-bold text-gray-900">{restaurant.restaurantOwner || '정보 없음'}</span>
+                    <span className="min-w-0 text-right text-sm font-bold text-gray-900">{restaurant.restaurantOwner || '정보 없음'}</span>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-sky-200 transition-all duration-200">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
+                    <div className="shrink-0 w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
                       <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
-                    <span className="text-sm text-gray-500 font-medium">상태</span>
+                    <span className="shrink-0 whitespace-nowrap text-sm text-gray-500 font-medium">상태</span>
                   </div>
                   <span className="text-sm font-bold text-emerald-600">운영중</span>
                 </div>
@@ -536,9 +536,9 @@ export default function RestaurantDetailPage() {
                 <div className="divide-y divide-gray-100">
                   {(Array.isArray(restaurant.restaurantMenu) ? restaurant.restaurantMenu : (() => { try { return JSON.parse(restaurant.restaurantMenu as any); } catch { return []; } })()).map((item: any, idx: number) => (
                     <div key={idx} className="flex justify-between items-center py-3">
-                      <span className="text-gray-700">{item.name}</span>
+                      <span className="min-w-0 truncate text-gray-700">{item.name}</span>
                       {item.price > 0 && (
-                        <span className="text-gray-900 font-medium">
+                        <span className="shrink-0 whitespace-nowrap text-gray-900 font-medium">
                           {Number(item.price).toLocaleString()}원
                         </span>
                       )}

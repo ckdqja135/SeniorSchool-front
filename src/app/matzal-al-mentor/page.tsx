@@ -1585,7 +1585,7 @@ export default function MatzalAlMentorPage() {
                         <button
                           key={city}
                           onClick={() => setHotplaceCity(city)}
-                          className={`flex-shrink-0 px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-200 ${
+                          className={`flex-shrink-0 whitespace-nowrap px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-200 ${
                             hotplaceCity === city ? 'bg-blue-500 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                           }`}
                         >
@@ -1656,7 +1656,7 @@ export default function MatzalAlMentorPage() {
                                   ) : (
                                     <>
                                       {renderStarRating(null, 'sm')}
-                                      <span className="text-xs text-gray-400">평점 없음</span>
+                                      <span className="shrink-0 whitespace-nowrap text-xs text-gray-400">평점 없음</span>
                                     </>
                                   )}
                                   <span className="text-xs text-gray-400">•</span>

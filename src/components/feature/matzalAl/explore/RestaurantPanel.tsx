@@ -422,7 +422,7 @@ export function RestaurantPanel({
                             {r.averageRating !== null ? (
                               <span className="font-bold text-amber-500">★ {r.averageRating.toFixed(1)}</span>
                             ) : (
-                              <span className="text-gray-400">평점 없음</span>
+                              <span className="whitespace-nowrap text-gray-400">평점 없음</span>
                             )}
                           </span>
                           {isSaved(r.id) && <span className="h-2 w-2 shrink-0 rounded-full bg-amber-400" aria-label="저장됨" />}

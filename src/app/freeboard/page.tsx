@@ -275,7 +275,7 @@ export default function FreeBoardPage() {
                 />
                 <button
                   type="submit"
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 px-5 py-1.5 bg-indigo-600 text-white text-sm font-bold rounded-full shadow-md hover:bg-indigo-700 active:scale-95 transition-all"
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 whitespace-nowrap px-5 py-1.5 bg-indigo-600 text-white text-sm font-bold rounded-full shadow-md hover:bg-indigo-700 active:scale-95 transition-all"
                 >
                   검색
                 </button>

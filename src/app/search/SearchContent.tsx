@@ -313,27 +313,27 @@ export default function SearchContent() {
             <form onSubmit={handleSearch} className="relative" ref={searchRef}>
               <div className="flex items-center bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
                 {/* 검색 아이콘 */}
-                <div className="pl-6 pr-4 text-gray-400">
+                <div className="shrink-0 pl-4 pr-2 text-gray-400 sm:pl-6 sm:pr-4">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
-                
-                {/* 검색 입력창 */}
+
+                {/* 검색 입력창 — min-w-0 이 없으면 input 의 기본 너비 때문에 버튼이 화면 밖으로 밀린다 */}
                 <input
                   type="text"
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   placeholder="찾고 싶은 대학교를 입력해보세요..."
                   required
-                  className="flex-1 px-4 py-4 text-lg font-medium text-gray-900 bg-transparent border-0 focus:outline-none focus:ring-0 placeholder-gray-400"
+                  className="min-w-0 flex-1 bg-transparent border-0 px-2 py-4 text-base font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0 sm:px-4 sm:text-lg"
                   autoComplete="off"
                 />
-                
+
                 {/* 검색 버튼 */}
                 <button
                   type="submit"
-                  className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold text-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2 flex items-center space-x-2"
+                  className="flex shrink-0 items-center space-x-2 whitespace-nowrap bg-gradient-to-r from-green-500 to-emerald-600 px-4 py-4 text-base font-semibold text-white transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2 sm:px-8 sm:text-lg"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -445,19 +445,20 @@ export default function SearchContent() {
                       }`}
                     >
                       <div className="flex items-center space-x-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+                        <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
                           index < 3 ? 'bg-gradient-to-r from-yellow-400 to-orange-500' : 'bg-gradient-to-r from-gray-400 to-gray-600'
                         }`}>
                           {index + 1}
                         </div>
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900 group-hover:text-green-600 transition-colors duration-200">
+                        {/* 좁은 화면에서 한글이 단어 중간에서 잘리지 않도록 min-w-0 + break-keep */}
+                        <div className="min-w-0 flex-1">
+                          <h3 className="truncate font-semibold text-gray-900 group-hover:text-green-600 transition-colors duration-200">
                             {university.univName}
                           </h3>
-                          <p className="text-sm text-gray-500">📍 {university.univLocate}</p>
-                          <p className="text-xs text-gray-400">{university.univType} • {university.univCampos}</p>
+                          <p className="truncate text-sm text-gray-500">📍 {university.univLocate}</p>
+                          <p className="break-keep text-xs text-gray-400">{university.univType} • {university.univCampos}</p>
                         </div>
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <div className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                           <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                           </svg>

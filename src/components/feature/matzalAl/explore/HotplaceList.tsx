@@ -129,7 +129,7 @@ export function HotplaceList({
                         <span className="ml-0.5 font-normal text-gray-400">({r.ratingCount})</span>
                       </span>
                     ) : (
-                      <span className="text-gray-400">평점 없음</span>
+                      <span className="whitespace-nowrap text-gray-400">평점 없음</span>
                     )}
                     {r.coord && (
                       <svg className="h-4 w-4 text-rose-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>

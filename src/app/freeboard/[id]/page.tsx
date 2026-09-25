@@ -753,7 +753,7 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
 
               {/* 카테고리 */}
               <div>
-                <span className="inline-block text-xs sm:text-sm text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full font-medium">
+                <span className="inline-block whitespace-nowrap text-xs sm:text-sm text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full font-medium">
                   {post.category}
                 </span>
               </div>
@@ -999,7 +999,7 @@ export default function FreeBoardDetailPage({ params }: FreeBoardDetailPageProps
                     maxLength={500}
                     disabled={isSubmittingComment}
                   />
-                  <div className="absolute bottom-2 sm:bottom-3 right-2 sm:right-3 text-xs text-gray-400">
+                  <div className="absolute bottom-2 sm:bottom-3 right-2 sm:right-3 whitespace-nowrap text-xs text-gray-400">
                     {newComment.length}/500
                   </div>
                 </div>

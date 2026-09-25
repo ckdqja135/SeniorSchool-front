@@ -946,7 +946,7 @@ export default function CompanyDetailPage() {
           <p className="text-gray-600 mb-6">{error || '요청하신 회사가 존재하지 않습니다.'}</p>
           <Link
             href="/company-mentor"
-            className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            className="whitespace-nowrap inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
           >
             회사 오빠로 돌아가기
           </Link>
@@ -989,40 +989,40 @@ export default function CompanyDetailPage() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 transition-all duration-200">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                    <div className="shrink-0 w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
                       <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
                     </div>
-                    <span className="text-sm text-gray-500 font-medium">위치</span>
+                    <span className="shrink-0 whitespace-nowrap text-sm text-gray-500 font-medium">위치</span>
                   </div>
-                  <span className="text-sm font-bold text-gray-900">{company.compLocate}</span>
+                  <span className="min-w-0 text-right text-sm font-bold text-gray-900">{company.compLocate}</span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
                   <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 transition-all duration-200">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
+                      <div className="shrink-0 w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
                         <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                         </svg>
                       </div>
-                      <span className="text-xs text-gray-500 font-medium">구분</span>
+                      <span className="shrink-0 whitespace-nowrap text-xs text-gray-500 font-medium">구분</span>
                     </div>
-                    <span className="text-sm font-bold text-gray-900">{company.compType}</span>
+                    <span className="min-w-0 text-right text-sm font-bold text-gray-900">{company.compType}</span>
                   </div>
 
                   <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 transition-all duration-200">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
+                      <div className="shrink-0 w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
                         <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                       </div>
-                      <span className="text-xs text-gray-500 font-medium">설립</span>
+                      <span className="shrink-0 whitespace-nowrap text-xs text-gray-500 font-medium">설립</span>
                     </div>
-                    <span className="text-sm font-bold text-gray-900">
+                    <span className="min-w-0 text-right text-sm font-bold text-gray-900">
                       {company.compEstablish ? `${company.compEstablish}년` : '정보 없음'}
                     </span>
                   </div>
@@ -1030,14 +1030,14 @@ export default function CompanyDetailPage() {
 
                 <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 transition-all duration-200">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center">
+                    <div className="shrink-0 w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center">
                       <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                     </div>
-                    <span className="text-sm text-gray-500 font-medium">CEO</span>
+                    <span className="shrink-0 whitespace-nowrap text-sm text-gray-500 font-medium">CEO</span>
                   </div>
-                  <span className="text-sm font-bold text-gray-900">{company.compCEO}</span>
+                  <span className="min-w-0 text-right text-sm font-bold text-gray-900">{company.compCEO}</span>
                 </div>
               </div>
 
@@ -1082,7 +1082,7 @@ export default function CompanyDetailPage() {
               <div className="flex items-center border-b border-gray-200 mb-6">
                 <button
                   onClick={() => setCompanyInfoTab('employee')}
-                  className={`px-4 py-2 text-sm font-semibold transition-all duration-200 border-b-2 ${
+                  className={`whitespace-nowrap px-4 py-2 text-sm font-semibold transition-all duration-200 border-b-2 ${
                     companyInfoTab === 'employee'
                       ? 'text-purple-600 border-purple-600'
                       : 'text-gray-500 border-transparent hover:text-gray-700'
@@ -1092,7 +1092,7 @@ export default function CompanyDetailPage() {
                 </button>
                 <button
                   onClick={() => setCompanyInfoTab('debt')}
-                  className={`px-4 py-2 text-sm font-semibold transition-all duration-200 border-b-2 ${
+                  className={`whitespace-nowrap px-4 py-2 text-sm font-semibold transition-all duration-200 border-b-2 ${
                     companyInfoTab === 'debt'
                       ? 'text-purple-600 border-purple-600'
                       : 'text-gray-500 border-transparent hover:text-gray-700'
@@ -1102,7 +1102,7 @@ export default function CompanyDetailPage() {
                 </button>
                 <button
                   onClick={() => setCompanyInfoTab('revenue')}
-                  className={`px-4 py-2 text-sm font-semibold transition-all duration-200 border-b-2 ${
+                  className={`whitespace-nowrap px-4 py-2 text-sm font-semibold transition-all duration-200 border-b-2 ${
                     companyInfoTab === 'revenue'
                       ? 'text-purple-600 border-purple-600'
                       : 'text-gray-500 border-transparent hover:text-gray-700'
@@ -1126,12 +1126,12 @@ export default function CompanyDetailPage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 transition-all duration-200">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                      <div className="shrink-0 w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
                         <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
                       </div>
-                      <span className="text-sm text-gray-500 font-medium">총 직원 수</span>
+                      <span className="shrink-0 whitespace-nowrap text-sm text-gray-500 font-medium">총 직원 수</span>
                     </div>
                     <span className="text-lg font-bold text-gray-900">
                       {(company.totalEmployees || company.compEmployeeCount)
@@ -1142,12 +1142,12 @@ export default function CompanyDetailPage() {
 
                   <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 transition-all duration-200">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
+                      <div className="shrink-0 w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
                         <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
-                      <span className="text-sm text-gray-500 font-medium">평균 연봉</span>
+                      <span className="shrink-0 whitespace-nowrap text-sm text-gray-500 font-medium">평균 연봉</span>
                     </div>
                     <span className="text-lg font-bold text-gray-900">
                       {company.compAvgSalary
@@ -1156,15 +1156,15 @@ export default function CompanyDetailPage() {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
                     <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 transition-all duration-200">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
+                        <div className="shrink-0 w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
                           <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                           </svg>
                         </div>
-                        <span className="text-xs text-gray-500 font-medium">신규 입사</span>
+                        <span className="shrink-0 whitespace-nowrap text-xs text-gray-500 font-medium">신규 입사</span>
                       </div>
                       <span className="text-base font-bold text-gray-900">
                         {company.newHires !== null && company.newHires !== undefined
@@ -1175,12 +1175,12 @@ export default function CompanyDetailPage() {
 
                     <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 transition-all duration-200">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center">
+                        <div className="shrink-0 w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center">
                           <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6" />
                           </svg>
                         </div>
-                        <span className="text-xs text-gray-500 font-medium">퇴사자</span>
+                        <span className="shrink-0 whitespace-nowrap text-xs text-gray-500 font-medium">퇴사자</span>
                       </div>
                       <span className="text-base font-bold text-gray-900">
                         {company.resignations !== null && company.resignations !== undefined
@@ -1192,12 +1192,12 @@ export default function CompanyDetailPage() {
 
                   <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 transition-all duration-200">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-pink-50 flex items-center justify-center">
+                      <div className="shrink-0 w-10 h-10 rounded-lg bg-pink-50 flex items-center justify-center">
                         <svg className="w-5 h-5 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
-                      <span className="text-sm text-gray-500 font-medium">평균 근속 연수</span>
+                      <span className="shrink-0 whitespace-nowrap text-sm text-gray-500 font-medium">평균 근속 연수</span>
                     </div>
                     <span className="text-lg font-bold text-gray-900">
                       {company.compAvgTenure !== null && company.compAvgTenure !== undefined
@@ -1213,12 +1213,12 @@ export default function CompanyDetailPage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 transition-all duration-200">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                      <div className="shrink-0 w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
                         <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                         </svg>
                       </div>
-                      <span className="text-sm text-gray-500 font-medium">자본금</span>
+                      <span className="shrink-0 whitespace-nowrap text-sm text-gray-500 font-medium">자본금</span>
                     </div>
                     <span className="text-lg font-bold text-gray-900">
                       {company.compCapital
@@ -1229,12 +1229,12 @@ export default function CompanyDetailPage() {
 
                   <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 transition-all duration-200">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
+                      <div className="shrink-0 w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
                         <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                         </svg>
                       </div>
-                      <span className="text-sm text-gray-500 font-medium">자산 총계</span>
+                      <span className="shrink-0 whitespace-nowrap text-sm text-gray-500 font-medium">자산 총계</span>
                     </div>
                     <span className="text-lg font-bold text-gray-900">
                       {company.compTotalAssets
@@ -1245,12 +1245,12 @@ export default function CompanyDetailPage() {
 
                   <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 transition-all duration-200">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center">
+                      <div className="shrink-0 w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center">
                         <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
                         </svg>
                       </div>
-                      <span className="text-sm text-gray-500 font-medium">부채 총계</span>
+                      <span className="shrink-0 whitespace-nowrap text-sm text-gray-500 font-medium">부채 총계</span>
                     </div>
                     <span className="text-lg font-bold text-red-600">
                       {company.compTotalLiabilities
@@ -1261,12 +1261,12 @@ export default function CompanyDetailPage() {
 
                   <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 transition-all duration-200">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
+                      <div className="shrink-0 w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
                         <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
                         </svg>
                       </div>
-                      <span className="text-sm text-gray-500 font-medium">자본 총계</span>
+                      <span className="shrink-0 whitespace-nowrap text-sm text-gray-500 font-medium">자본 총계</span>
                     </div>
                     <span className="text-lg font-bold text-gray-900">
                       {company.compTotalEquity
@@ -1289,15 +1289,15 @@ export default function CompanyDetailPage() {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
                     <div className="flex flex-col p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 transition-all duration-200">
                       <div className="flex items-center gap-2 mb-3">
-                        <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
+                        <div className="shrink-0 w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
                           <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                           </svg>
                         </div>
-                        <span className="text-xs text-gray-500 font-medium">영업 이익</span>
+                        <span className="shrink-0 whitespace-nowrap text-xs text-gray-500 font-medium">영업 이익</span>
                       </div>
                       <span className="text-base font-bold text-gray-900">
                         {company.compOperatingProfit
@@ -1308,12 +1308,12 @@ export default function CompanyDetailPage() {
 
                     <div className="flex flex-col p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 transition-all duration-200">
                       <div className="flex items-center gap-2 mb-3">
-                        <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                        <div className="shrink-0 w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
                           <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                         </div>
-                        <span className="text-xs text-gray-500 font-medium">당기 순이익</span>
+                        <span className="shrink-0 whitespace-nowrap text-xs text-gray-500 font-medium">당기 순이익</span>
                       </div>
                       <span className="text-base font-bold text-gray-900">
                         {company.compNetIncome
@@ -1395,7 +1395,7 @@ export default function CompanyDetailPage() {
               <div className="flex border-b border-gray-200 mb-4">
                 <button
                   onClick={() => handleTabChange('company')}
-                  className={`px-4 py-2 text-sm font-semibold transition-all duration-200 border-b-2 ${
+                  className={`whitespace-nowrap px-4 py-2 text-sm font-semibold transition-all duration-200 border-b-2 ${
                     activeTab === 'company'
                       ? 'text-purple-600 border-purple-600'
                       : 'text-gray-500 border-transparent hover:text-gray-700'
@@ -1405,7 +1405,7 @@ export default function CompanyDetailPage() {
                 </button>
                 <button
                   onClick={() => handleTabChange('interview')}
-                  className={`px-4 py-2 text-sm font-semibold transition-all duration-200 border-b-2 ${
+                  className={`whitespace-nowrap px-4 py-2 text-sm font-semibold transition-all duration-200 border-b-2 ${
                     activeTab === 'interview'
                       ? 'text-purple-600 border-purple-600'
                       : 'text-gray-500 border-transparent hover:text-gray-700'
@@ -1415,7 +1415,7 @@ export default function CompanyDetailPage() {
                 </button>
                 <button
                   onClick={() => handleTabChange('salary')}
-                  className={`px-4 py-2 text-sm font-semibold transition-all duration-200 border-b-2 ${
+                  className={`whitespace-nowrap px-4 py-2 text-sm font-semibold transition-all duration-200 border-b-2 ${
                     activeTab === 'salary'
                       ? 'text-purple-600 border-purple-600'
                       : 'text-gray-500 border-transparent hover:text-gray-700'
@@ -1548,7 +1548,7 @@ export default function CompanyDetailPage() {
                                   </span>
                                 </div>
                               ) : (
-                                <span className="text-xs text-gray-400">평점 없음</span>
+                                <span className="shrink-0 whitespace-nowrap text-xs text-gray-400">평점 없음</span>
                               );
                             })()}
                           </div>
@@ -1572,7 +1572,7 @@ export default function CompanyDetailPage() {
                         <button
                           onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                           disabled={currentPage === 1}
-                          className="px-4 py-2 text-sm font-medium bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 flex items-center space-x-1"
+                          className="whitespace-nowrap px-4 py-2 text-sm font-medium bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 flex items-center space-x-1"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -1597,7 +1597,7 @@ export default function CompanyDetailPage() {
                         <button
                           onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                           disabled={currentPage === totalPages}
-                          className="px-4 py-2 text-sm font-medium bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 flex items-center space-x-1"
+                          className="whitespace-nowrap px-4 py-2 text-sm font-medium bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 flex items-center space-x-1"
                         >
                           <span>다음</span>
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
