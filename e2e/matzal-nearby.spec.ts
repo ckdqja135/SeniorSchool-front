@@ -2,6 +2,10 @@ import { expect, test, type Page } from '@playwright/test';
 
 const PAGE_PATH = '/matzal-al-mentor';
 
+// 식당 전체 목록(7천여 건) 외부 API 에 의존한다. 여러 스펙을 이어 돌리면 느려져
+// 기본 90초 안에 못 끝날 때가 있어 이 파일만 여유를 준다.
+test.describe.configure({ timeout: 150_000 });
+
 /** 서울 강동구 천호동 — 1km 안에 등록 맛집이 있는 좌표 */
 const CHEONHO = { latitude: 37.5368, longitude: 127.1325 };
 /** 태평양 한가운데 — 1km 안에 맛집이 하나도 없는 좌표 */
@@ -22,7 +26,8 @@ async function runNearbyRoulette(page: Page) {
   await nearbyButton(page).click();
 
   const card = resultCard(page);
-  await expect(card).toBeVisible();
+  // 전체 목록(7천여 건) 조회 + 연출 1.5초 → 콜드 캐시에서는 기본 15초로 모자란다
+  await expect(card).toBeVisible({ timeout: 45_000 });
 
   const name = (await card.locator('h4').innerText()).trim();
   const distText = await card.getByText(/📍\s*\d+(?:\.\d+)?km/).innerText();
@@ -47,7 +52,7 @@ test.describe('맛잘알 오빠 — 내 주변 추천', () => {
     await expect(spinning).toBeDisabled();
 
     const card = resultCard(page);
-    await expect(card).toBeVisible();
+    await expect(card).toBeVisible({ timeout: 45_000 });
 
     // 이름 / 주소 / 업종 / 거리가 모두 채워져 있어야 한다
     await expect(card.locator('h4')).not.toBeEmpty();
