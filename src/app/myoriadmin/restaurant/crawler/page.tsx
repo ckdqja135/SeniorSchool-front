@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Skeleton } from "@/components/common/Skeleton";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
@@ -82,13 +82,6 @@ interface RestaurantRow {
   restaurantOwner?: string;
   restaurantLotAddr?: string;
   createdAt?: string;
-}
-
-interface ManageResult {
-  restaurants: RestaurantRow[];
-  totalCount: number;
-  totalPages: number;
-  currentPage: number;
 }
 
 const REGION_OPTIONS = [
@@ -180,7 +173,7 @@ const MatIcon: React.FC<{ name: string; className?: string; fill?: 0 | 1; size?:
 
 const RestaurantCrawlerPage: React.FC = () => {
   // 탭 상태
-  const [activeTab, setActiveTab] = useState<"batch" | "single" | "enrich" | "manage">("batch");
+  const [activeTab, setActiveTab] = useState<"batch" | "single" | "enrich">("batch");
 
   // 소스 상태
   const [sources, setSources] = useState<SourceInfo[]>([]);
@@ -236,22 +229,26 @@ const RestaurantCrawlerPage: React.FC = () => {
   const [enrichRestaurants, setEnrichRestaurants] = useState<any[]>([]);
   const [enrichFilter, setEnrichFilter] = useState("all");
   const [enrichLoading, setEnrichLoading] = useState(false);
+  /** 더 불러올 게 남았는지 (마지막 페이지가 꽉 안 차면 끝) */
+  const [enrichHasMore, setEnrichHasMore] = useState(true);
+  const [enrichLoadingMore, setEnrichLoadingMore] = useState(false);
+  /** 필터 칩 숫자는 전체 기준이어야 해서 서버 집계를 쓴다 */
+  const [enrichCounts, setEnrichCounts] = useState<{ noMenu: number; noImage: number; noURL: number; total: number } | null>(null);
+  const enrichSentinelRef = useRef<HTMLDivElement | null>(null);
+  /** 표가 자체 스크롤(max-h-[600px])이라 관찰 기준을 창이 아니라 이 컨테이너로 잡아야 한다 */
+  const enrichScrollRef = useRef<HTMLDivElement | null>(null);
+  /** 행을 누르면 펼쳐지는 상세 (데이터 관리에 있던 UX 를 여기로 합쳤다) */
+  const [enrichExpanded, setEnrichExpanded] = useState<Set<string>>(new Set());
+  const [enrichSearchName, setEnrichSearchName] = useState("");
+  const [enrichSearchType, setEnrichSearchType] = useState("");
+  const [enrichSearchLocation, setEnrichSearchLocation] = useState("");
+  /** 입력 중인 값이 아니라 '검색' 을 누른 시점 값으로 조회한다 */
+  const [enrichQuery, setEnrichQuery] = useState({ name: "", type: "", location: "" });
   const [enrichProgress, setEnrichProgress] = useState<
     Array<{ index: number; total: number; name: string; status: string; matched?: string; elapsedMs?: number }>
   >([]);
   const [enrichTotal, setEnrichTotal] = useState(0);
   const [enrichCurrent, setEnrichCurrent] = useState(0);
-
-  // 관리 탭 상태 (NEW)
-  const [mgSearchName, setMgSearchName] = useState("");
-  const [mgSearchType, setMgSearchType] = useState("");
-  const [mgSearchLocation, setMgSearchLocation] = useState("");
-  const [mgAppliedQuery, setMgAppliedQuery] = useState({ name: "", type: "", location: "" });
-  const [mgPage, setMgPage] = useState(1);
-  const [mgLimit] = useState(20);
-  const [mgResult, setMgResult] = useState<ManageResult | null>(null);
-  const [mgLoading, setMgLoading] = useState(false);
-  const [mgExpanded, setMgExpanded] = useState<Set<number>>(new Set());
   const [mgEditing, setMgEditing] = useState<{
     idx: number;
     field: "restaurantMenu" | "restaurantImage" | "restaurantURL";
@@ -555,35 +552,110 @@ const RestaurantCrawlerPage: React.FC = () => {
   }, [singleSource, singleQuery, singleRegion, singleSubRegion, singleCount, singlePreview.length]);
 
   // ─── 보강 ─────────────────────────────────────────────
-  const fetchEnrichData = async () => {
-    setEnrichLoading(true);
+  /** 한 번에 받아오는 개수. 전체(7천여 건 7MB)를 받던 걸 페이지 단위로 바꿨다 */
+  const ENRICH_PAGE_SIZE = 100;
+
+  /**
+   * 보강 목록을 페이지 단위로 받는다.
+   * reset=true 면 처음부터(필터가 바뀌었을 때), 아니면 이어서 붙인다.
+   * 빈 값 필터도 서버에서 건다 — 클라이언트에서 거르려면 결국 전체를 받아야 한다.
+   */
+  const fetchEnrichData = useCallback(async (reset = false) => {
+    if (reset) setEnrichLoading(true);
+    else setEnrichLoadingMore(true);
     try {
       const accessToken = localStorage.getItem("accessToken");
-      const res = await fetch(`${API_BASE_URL}/restaurant`, {
+      const offset = reset ? 0 : enrichRestaurants.length;
+      const params = new URLSearchParams({ limit: String(ENRICH_PAGE_SIZE), offset: String(offset) });
+      if (enrichFilter === "noMenu") params.set("missing", "menu");
+      else if (enrichFilter === "noImage") params.set("missing", "image");
+      else if (enrichFilter === "noURL") params.set("missing", "url");
+      if (enrichQuery.name.trim()) params.set("name", enrichQuery.name.trim());
+      if (enrichQuery.type.trim()) params.set("type", enrichQuery.type.trim());
+      if (enrichQuery.location.trim()) params.set("location", enrichQuery.location.trim());
+
+      const res = await fetch(`${API_BASE_URL}/restaurant?${params}`, {
         headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
       });
       if (res.ok) {
         const data = await res.json();
         const list = Array.isArray(data) ? data : data.data || [];
-        setEnrichRestaurants(list);
+        setEnrichRestaurants((prev) => (reset ? list : [...prev, ...list]));
+        // 페이지가 꽉 차지 않으면 마지막이다
+        setEnrichHasMore(list.length === ENRICH_PAGE_SIZE);
       }
     } catch (err) {
       console.error("식당 목록 조회 실패:", err);
     } finally {
       setEnrichLoading(false);
+      setEnrichLoadingMore(false);
     }
-  };
+  }, [enrichFilter, enrichQuery, enrichRestaurants.length]);
+
+  // restaurantIdx 는 BigInt 라 응답에서 문자열로 온다
+  const toggleEnrichExpand = useCallback((idx: string | number) => {
+    setEnrichExpanded((prev) => {
+      const next = new Set(prev);
+      idx = String(idx);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
+  }, []);
+
+  /**
+   * 목록을 바닥까지 내리면 다음 페이지를 이어붙인다.
+   * IntersectionObserver 를 쓰면 이미 교차한 상태에서 재부착될 때 한 번만 걸리고
+   * 이후로는 전이가 없어 멈춰버린다. 스크롤 이벤트가 이 화면에서는 더 확실하다.
+   */
+  const handleEnrichScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    if (!enrichHasMore || enrichLoading || enrichLoadingMore) return;
+    const el = e.currentTarget;
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 240) fetchEnrichData(false);
+  }, [enrichHasMore, enrichLoading, enrichLoadingMore, fetchEnrichData]);
+
+  const applyEnrichSearch = useCallback(() => {
+    setEnrichQuery({ name: enrichSearchName, type: enrichSearchType, location: enrichSearchLocation });
+  }, [enrichSearchName, enrichSearchType, enrichSearchLocation]);
+
+  const resetEnrichSearch = useCallback(() => {
+    setEnrichSearchName(""); setEnrichSearchType(""); setEnrichSearchLocation("");
+    setEnrichQuery({ name: "", type: "", location: "" });
+  }, []);
+
+  /** 필터 칩에 붙는 숫자. 목록이 페이지 단위라 전체 집계는 서버에서 따로 받는다 */
+  const fetchEnrichCounts = useCallback(async () => {
+    try {
+      const accessToken = localStorage.getItem("accessToken");
+      const res = await fetch(`${API_BASE_URL}/admin/crawler/missing-stats`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!res.ok) return;
+      const d = await res.json();
+      const byKey = (k: string) => (Array.isArray(d) ? d.find((x: any) => x.key === k) : null);
+      setEnrichCounts({
+        total: (Array.isArray(d) && d[0]?.total) || 0,
+        noMenu: byKey("restaurantMenu")?.missing ?? 0,
+        noImage: byKey("restaurantImage")?.missing ?? 0,
+        noURL: byKey("restaurantURL")?.missing ?? 0,
+      });
+    } catch {
+      /* 숫자는 없어도 목록은 동작한다 */
+    }
+  }, []);
 
   useEffect(() => {
-    if (activeTab === "enrich" && enrichRestaurants.length === 0) fetchEnrichData();
-  }, [activeTab]);
+    if (activeTab !== "enrich") return;
+    setEnrichHasMore(true);
+    fetchEnrichData(true);
+    fetchEnrichCounts();
+    // 필터가 바뀌면 서버 조건이 달라지므로 처음부터 다시 받는다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, enrichFilter, enrichQuery]);
 
-  const enrichFiltered = enrichRestaurants.filter((r: any) => {
-    if (enrichFilter === "noMenu") return !r.restaurantMenu;
-    if (enrichFilter === "noImage") return !r.restaurantImage;
-    if (enrichFilter === "noURL") return !r.restaurantURL || r.restaurantURL === "";
-    return true;
-  });
+
+  // 필터는 서버(`missing` 파라미터)에서 이미 걸린 상태로 온다
+  const enrichFiltered = enrichRestaurants;
 
   const handleEnrich = async (field: string) => {
     if (enriching) return;
@@ -675,73 +747,6 @@ const RestaurantCrawlerPage: React.FC = () => {
   };
 
   // ─── 관리 탭 (NEW) ─────────────────────────────────────
-  const fetchManage = useCallback(
-    async (page = 1, q = mgAppliedQuery) => {
-      setMgLoading(true);
-      setMgEditing(null);
-      try {
-        const accessToken = localStorage.getItem("accessToken");
-        const params = new URLSearchParams({
-          page: String(page),
-          rowsPerPage: String(mgLimit),
-        });
-        if (q.name.trim()) params.set("restaurantName", q.name.trim());
-        if (q.type.trim()) params.set("restaurantType", q.type.trim());
-        if (q.location.trim()) params.set("restaurantLocation", q.location.trim());
-
-        const res = await fetch(`${API_BASE_URL}/admin/restaurant/searchRestaurant?${params}`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setMgResult({
-            restaurants: data.restaurants || [],
-            totalCount: data.totalCount || 0,
-            totalPages: data.totalPages || 1,
-            currentPage: data.currentPage || page,
-          });
-          setMgPage(page);
-        } else {
-          console.error("식당 검색 실패:", res.status);
-        }
-      } catch (err) {
-        console.error("식당 검색 실패:", err);
-      } finally {
-        setMgLoading(false);
-      }
-    },
-    [mgAppliedQuery, mgLimit]
-  );
-
-  useEffect(() => {
-    if (activeTab === "manage" && !mgResult) {
-      fetchManage(1, { name: "", type: "", location: "" });
-    }
-  }, [activeTab, mgResult, fetchManage]);
-
-  const handleMgSearch = () => {
-    const q = { name: mgSearchName, type: mgSearchType, location: mgSearchLocation };
-    setMgAppliedQuery(q);
-    fetchManage(1, q);
-  };
-
-  const handleMgReset = () => {
-    setMgSearchName("");
-    setMgSearchType("");
-    setMgSearchLocation("");
-    const q = { name: "", type: "", location: "" };
-    setMgAppliedQuery(q);
-    fetchManage(1, q);
-  };
-
-  const toggleMgExpand = (idx: number) => {
-    setMgExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(idx)) next.delete(idx);
-      else next.add(idx);
-      return next;
-    });
-  };
 
   const updateField = async (
     idx: number,
@@ -759,15 +764,9 @@ const RestaurantCrawlerPage: React.FC = () => {
         body: JSON.stringify(body),
       });
       if (!res.ok) return false;
-      setMgResult((prev) =>
-        prev
-          ? {
-              ...prev,
-              restaurants: prev.restaurants.map((r) =>
-                r.restaurantIdx === idx ? ({ ...r, ...body } as RestaurantRow) : r
-              ),
-            }
-          : prev
+      // 수정 결과를 화면 목록에도 바로 반영한다 (다시 불러오지 않고)
+      setEnrichRestaurants((prev) =>
+        prev.map((r: any) => (String(r.restaurantIdx) === String(idx) ? { ...r, ...body } : r))
       );
       return true;
     } catch (err) {
@@ -858,7 +857,6 @@ const RestaurantCrawlerPage: React.FC = () => {
     { key: "batch", label: "통합 크롤링", icon: "hub" },
     { key: "single", label: "개별 수집", icon: "capture" },
     { key: "enrich", label: "데이터 보강", icon: "auto_fix_high" },
-    { key: "manage", label: "데이터 관리", icon: "table_view" },
   ] as const;
 
   return (
@@ -1545,11 +1543,11 @@ const RestaurantCrawlerPage: React.FC = () => {
                         {f.label}
                         {f.key !== "all" && (
                           <span className="ml-1 opacity-80">
-                            ({enrichRestaurants.filter((r: any) =>
-                              f.key === "noMenu" ? !r.restaurantMenu :
-                              f.key === "noImage" ? !r.restaurantImage :
-                              !r.restaurantURL || r.restaurantURL === ""
-                            ).length})
+                            ({(enrichCounts
+                              ? f.key === "noMenu" ? enrichCounts.noMenu
+                                : f.key === "noImage" ? enrichCounts.noImage
+                                  : enrichCounts.noURL
+                              : 0).toLocaleString()})
                           </span>
                         )}
                       </button>
@@ -1584,7 +1582,7 @@ const RestaurantCrawlerPage: React.FC = () => {
                     </>
                   )}
                   <button
-                    onClick={fetchEnrichData}
+                    onClick={() => { fetchEnrichData(true); fetchEnrichCounts(); }}
                     className="px-4 py-2 bg-[color:var(--surface-container)] text-[color:var(--on-surface-variant)] rounded-lg hover:bg-[color:var(--surface-container-high)] text-[13px] font-medium flex items-center gap-1"
                   >
                     <MatIcon name="refresh" size={16} /> 새로고침
@@ -1604,118 +1602,6 @@ const RestaurantCrawlerPage: React.FC = () => {
               />
             )}
 
-            <div className="glass-card rounded-xl overflow-hidden">
-              {enrichLoading ? (
-                <div className="p-4 space-y-3">
-                  {Array.from({ length: 8 }).map((_, i) => (
-                    <Skeleton key={i} className="h-10 w-full" />
-                  ))}
-                </div>
-              ) : enrichRestaurants.length === 0 ? (
-                <div className="text-center py-16">
-                  <p className="text-[color:var(--outline)] mb-2">식당 데이터가 없습니다.</p>
-                  <button onClick={fetchEnrichData} className="text-[13px] text-[color:var(--primary)] hover:underline">
-                    다시 로드
-                  </button>
-                </div>
-              ) : (
-                <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
-                  <table className="w-full text-left">
-                    <thead className="bg-[color:var(--surface-container-low)] sticky top-0 z-10">
-                      <tr>
-                        <Th>#</Th><Th>식당명</Th><Th>업종</Th><Th>주소</Th>
-                        <Th className="text-center">메뉴</Th>
-                        <Th className="text-center">이미지</Th>
-                        <Th className="text-center">URL</Th>
-                        <Th>조회수</Th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[color:var(--outline-variant)]/30">
-                      {enrichFiltered.slice(0, 200).map((r: any, idx: number) => (
-                        <tr key={r.restaurantIdx || idx} className="hover:bg-[color:var(--surface-container-low)]">
-                          <Td className="text-[color:var(--outline)]">{idx + 1}</Td>
-                          <Td className="font-semibold max-w-[200px] truncate">{r.restaurantName}</Td>
-                          <Td className="text-[color:var(--on-surface-variant)] max-w-[120px] truncate">{r.restaurantType}</Td>
-                          <Td className="text-[color:var(--outline)] max-w-[250px] truncate">{r.restaurantAddr}</Td>
-                          <Td className="text-center"><FieldBadge filled={!!r.restaurantMenu} /></Td>
-                          <Td className="text-center"><FieldBadge filled={!!r.restaurantImage} /></Td>
-                          <Td className="text-center"><FieldBadge filled={!!r.restaurantURL} /></Td>
-                          <Td className="text-[color:var(--on-surface-variant)]">{(r.restaurantViewCount || 0).toLocaleString()}</Td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  {enrichFiltered.length > 200 && (
-                    <p className="text-[11px] text-[color:var(--outline)] text-center py-3 bg-[color:var(--surface-container-low)]">
-                      상위 200개만 표시 (전체 {enrichFiltered.length.toLocaleString()}개)
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* 보강 결과 상세 (식당 목록 아래) */}
-            {enrichResult && (
-              <div className="glass-card rounded-xl overflow-hidden">
-                <div
-                  className={`px-5 py-4 flex items-center justify-between gap-3 ${
-                    enrichResult.success
-                      ? "bg-[color:var(--secondary-container)]/30 border-b border-[color:var(--secondary)]/30"
-                      : "bg-[color:var(--error-container)] border-b border-[color:var(--error)]/30"
-                  }`}
-                >
-                  <p
-                    className={`text-[13px] font-semibold flex items-center gap-2 ${
-                      enrichResult.success ? "text-[color:var(--secondary)]" : "text-[color:var(--error)]"
-                    }`}
-                  >
-                    <MatIcon name={enrichResult.success ? "task_alt" : "error"} size={18} fill={1} />
-                    보강 결과 — {enrichResult.message}
-                  </p>
-                  <button
-                    onClick={() => {
-                      setEnrichResult(null);
-                      setEnrichProgress([]);
-                      setEnrichTotal(0);
-                      setEnrichCurrent(0);
-                    }}
-                    className="text-[11px] text-[color:var(--outline)] hover:text-[color:var(--on-surface)] flex items-center gap-1"
-                  >
-                    <MatIcon name="close" size={14} /> 닫기
-                  </button>
-                </div>
-                {enrichResult.results && enrichResult.results.length > 0 && (
-                  <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
-                    <table className="w-full text-left">
-                      <thead className="bg-[color:var(--surface-container-low)] sticky top-0 z-10">
-                        <tr>
-                          <Th>#</Th><Th>식당명</Th><Th>매칭된 이름</Th><Th>결과</Th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[color:var(--outline-variant)]/30">
-                        {enrichResult.results.map((r: any, i: number) => (
-                          <tr key={i} className="hover:bg-[color:var(--surface-container-low)]">
-                            <Td className="text-[color:var(--outline)]">{i + 1}</Td>
-                            <Td className="font-semibold">{r.name}</Td>
-                            <Td className="text-[color:var(--on-surface-variant)]">{r.matched || "-"}</Td>
-                            <Td>
-                              <EnrichStatusBadge status={r.status} />
-                            </Td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── Manage Tab (NEW) ──────────────────── */}
-        {activeTab === "manage" && (
-          <div className="space-y-6">
-            {/* Search */}
             <section className="glass-card rounded-xl p-6">
               <h3 className="text-[18px] font-semibold mb-4 flex items-center gap-2">
                 <MatIcon name="search" className="text-[color:var(--primary)]" />
@@ -1726,9 +1612,9 @@ const RestaurantCrawlerPage: React.FC = () => {
                   <label className="block text-[11px] font-medium text-[color:var(--on-surface-variant)] mb-1.5">식당명</label>
                   <input
                     type="text"
-                    value={mgSearchName}
-                    onChange={(e) => setMgSearchName(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleMgSearch()}
+                    value={enrichSearchName}
+                    onChange={(e) => setEnrichSearchName(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && applyEnrichSearch()}
                     placeholder="식당 이름 일부"
                     className="w-full px-3 py-2.5 bg-white border border-[color:var(--outline-variant)] rounded-lg text-[14px] focus:outline-none focus:ring-1 focus:ring-[color:var(--primary)] focus:border-[color:var(--primary)]"
                   />
@@ -1737,9 +1623,9 @@ const RestaurantCrawlerPage: React.FC = () => {
                   <label className="block text-[11px] font-medium text-[color:var(--on-surface-variant)] mb-1.5">업종 (정확히)</label>
                   <input
                     type="text"
-                    value={mgSearchType}
-                    onChange={(e) => setMgSearchType(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleMgSearch()}
+                    value={enrichSearchType}
+                    onChange={(e) => setEnrichSearchType(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && applyEnrichSearch()}
                     placeholder="한식, 카페 등"
                     className="w-full px-3 py-2.5 bg-white border border-[color:var(--outline-variant)] rounded-lg text-[14px] focus:outline-none focus:ring-1 focus:ring-[color:var(--primary)] focus:border-[color:var(--primary)]"
                   />
@@ -1748,9 +1634,9 @@ const RestaurantCrawlerPage: React.FC = () => {
                   <label className="block text-[11px] font-medium text-[color:var(--on-surface-variant)] mb-1.5">지역/주소</label>
                   <input
                     type="text"
-                    value={mgSearchLocation}
-                    onChange={(e) => setMgSearchLocation(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleMgSearch()}
+                    value={enrichSearchLocation}
+                    onChange={(e) => setEnrichSearchLocation(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && applyEnrichSearch()}
                     placeholder="강남, 서울 등"
                     className="w-full px-3 py-2.5 bg-white border border-[color:var(--outline-variant)] rounded-lg text-[14px] focus:outline-none focus:ring-1 focus:ring-[color:var(--primary)] focus:border-[color:var(--primary)]"
                   />
@@ -1758,55 +1644,29 @@ const RestaurantCrawlerPage: React.FC = () => {
               </div>
               <div className="flex justify-end gap-2">
                 <button
-                  onClick={handleMgReset}
+                  onClick={resetEnrichSearch}
                   className="px-5 py-2.5 rounded-lg border border-[color:var(--outline-variant)] text-[color:var(--on-surface)] text-[13px] font-medium hover:bg-[color:var(--surface-container-low)] transition-colors"
                 >
                   초기화
                 </button>
                 <button
-                  onClick={handleMgSearch}
-                  disabled={mgLoading}
+                  onClick={applyEnrichSearch}
+                  disabled={enrichLoading}
                   className="px-6 py-2.5 rounded-lg bg-[color:var(--primary)] text-white text-[13px] font-semibold hover:bg-[color:var(--primary-container)] transition-colors active:scale-95 disabled:bg-[color:var(--outline-variant)] flex items-center gap-2"
                 >
-                  {mgLoading ? <Spinner /> : <MatIcon name="search" size={18} fill={1} />}
+                  {enrichLoading ? <Spinner /> : <MatIcon name="search" size={18} fill={1} />}
                   검색
                 </button>
               </div>
             </section>
-
-            {/* Count + refresh */}
-            {mgResult && (
-              <div className="glass-card rounded-xl px-6 py-4 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-3 text-[13px]">
-                  <span className="text-[color:var(--outline)]">
-                    전체 <strong className="text-[color:var(--on-surface)]">{mgResult.totalCount.toLocaleString()}</strong>건
-                    {mgAppliedQuery.name || mgAppliedQuery.type || mgAppliedQuery.location ? (
-                      <span className="ml-2 text-[color:var(--primary)]">(검색 결과)</span>
-                    ) : null}
-                  </span>
-                  <span className="hidden sm:inline text-[11px] text-[color:var(--outline)]">
-                    식당을 펼쳐 메뉴·이미지·URL을 개별 수정/삭제할 수 있습니다.
-                  </span>
-                </div>
-                <button
-                  onClick={() => fetchManage(mgPage)}
-                  disabled={mgLoading}
-                  className="px-4 py-2 rounded-lg bg-[color:var(--surface-container)] text-[color:var(--on-surface-variant)] text-[13px] font-medium hover:bg-[color:var(--surface-container-high)] flex items-center gap-1"
-                >
-                  <MatIcon name="refresh" size={16} /> 새로고침
-                </button>
-              </div>
-            )}
-
-            {/* Result table */}
             <div className="glass-card rounded-xl overflow-hidden">
-              {mgLoading ? (
+              {enrichLoading ? (
                 <div className="p-4 space-y-3">
                   {Array.from({ length: 6 }).map((_, i) => (
                     <Skeleton key={i} className="h-10 w-full" />
                   ))}
                 </div>
-              ) : !mgResult || mgResult.restaurants.length === 0 ? (
+              ) : enrichFiltered.length === 0 ? (
                 <div className="text-center py-16">
                   <MatIcon name="search_off" size={40} className="text-[color:var(--outline-variant)]" />
                   <p className="text-[color:var(--outline)] mt-3 text-[14px]">검색 결과가 없습니다.</p>
@@ -1814,7 +1674,7 @@ const RestaurantCrawlerPage: React.FC = () => {
                 </div>
               ) : (
                 <>
-                  <div className="overflow-x-auto">
+                  <div ref={enrichScrollRef} onScroll={handleEnrichScroll} className="overflow-x-auto max-h-[600px] overflow-y-auto">
                     <table className="w-full text-left">
                       <thead className="bg-[color:var(--surface-container-low)] sticky top-0 z-10">
                         <tr>
@@ -1828,21 +1688,21 @@ const RestaurantCrawlerPage: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[color:var(--outline-variant)]/30">
-                        {mgResult.restaurants.map((r) => {
-                          const expanded = mgExpanded.has(r.restaurantIdx);
+                        {enrichFiltered.map((r: any) => {
+                          const expanded = enrichExpanded.has(String(r.restaurantIdx));
                           const menu = parseMenu(r.restaurantMenu);
-                          const editingMenu = mgEditing?.idx === r.restaurantIdx && mgEditing.field === "restaurantMenu";
-                          const editingImage = mgEditing?.idx === r.restaurantIdx && mgEditing.field === "restaurantImage";
-                          const editingUrl = mgEditing?.idx === r.restaurantIdx && mgEditing.field === "restaurantURL";
+                          const editingMenu = mgEditing?.idx === r.restaurantIdx && mgEditing?.field === "restaurantMenu";
+                          const editingImage = mgEditing?.idx === r.restaurantIdx && mgEditing?.field === "restaurantImage";
+                          const editingUrl = mgEditing?.idx === r.restaurantIdx && mgEditing?.field === "restaurantURL";
                           return (
                             <React.Fragment key={r.restaurantIdx}>
                               <tr
                                 className="transition-colors hover:bg-[color:var(--surface-container-low)] cursor-pointer"
-                                onClick={() => toggleMgExpand(r.restaurantIdx)}
+                                onClick={() => toggleEnrichExpand(r.restaurantIdx)}
                               >
                                 <td className="px-2 py-3">
                                   <button
-                                    onClick={(e) => { e.stopPropagation(); toggleMgExpand(r.restaurantIdx); }}
+                                    onClick={(e) => { e.stopPropagation(); toggleEnrichExpand(r.restaurantIdx); }}
                                     className="p-1 rounded hover:bg-[color:var(--surface-container)] text-[color:var(--outline)]"
                                     aria-label="상세 보기"
                                   >
@@ -2063,18 +1923,79 @@ const RestaurantCrawlerPage: React.FC = () => {
                         })}
                       </tbody>
                     </table>
+                    {/* 스크롤 컨테이너 '안'에 둬야 한다 — 관찰 기준(root)이 이 컨테이너다 */}
+                    <div ref={enrichSentinelRef} />
                   </div>
-                  {/* Pagination */}
-                  <Pagination
-                    currentPage={mgResult.currentPage}
-                    totalPages={mgResult.totalPages}
-                    onPage={(p) => fetchManage(p)}
-                  />
+                  <p className="text-[11px] text-[color:var(--outline)] text-center py-3 bg-[color:var(--surface-container-low)]">
+                    {enrichLoadingMore
+                      ? "불러오는 중…"
+                      : enrichHasMore
+                        ? `${enrichFiltered.length.toLocaleString()}개 표시 중 · 스크롤하면 더 불러옵니다`
+                        : `${enrichFiltered.length.toLocaleString()}개 전부 표시됨`}
+                  </p>
                 </>
               )}
             </div>
+
+            {/* 보강 결과 상세 (식당 목록 아래) */}
+            {enrichResult && (
+              <div className="glass-card rounded-xl overflow-hidden">
+                <div
+                  className={`px-5 py-4 flex items-center justify-between gap-3 ${
+                    enrichResult.success
+                      ? "bg-[color:var(--secondary-container)]/30 border-b border-[color:var(--secondary)]/30"
+                      : "bg-[color:var(--error-container)] border-b border-[color:var(--error)]/30"
+                  }`}
+                >
+                  <p
+                    className={`text-[13px] font-semibold flex items-center gap-2 ${
+                      enrichResult.success ? "text-[color:var(--secondary)]" : "text-[color:var(--error)]"
+                    }`}
+                  >
+                    <MatIcon name={enrichResult.success ? "task_alt" : "error"} size={18} fill={1} />
+                    보강 결과 — {enrichResult.message}
+                  </p>
+                  <button
+                    onClick={() => {
+                      setEnrichResult(null);
+                      setEnrichProgress([]);
+                      setEnrichTotal(0);
+                      setEnrichCurrent(0);
+                    }}
+                    className="text-[11px] text-[color:var(--outline)] hover:text-[color:var(--on-surface)] flex items-center gap-1"
+                  >
+                    <MatIcon name="close" size={14} /> 닫기
+                  </button>
+                </div>
+                {enrichResult.results && enrichResult.results.length > 0 && (
+                  <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+                    <table className="w-full text-left">
+                      <thead className="bg-[color:var(--surface-container-low)] sticky top-0 z-10">
+                        <tr>
+                          <Th>#</Th><Th>식당명</Th><Th>매칭된 이름</Th><Th>결과</Th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[color:var(--outline-variant)]/30">
+                        {enrichResult.results.map((r: any, i: number) => (
+                          <tr key={i} className="hover:bg-[color:var(--surface-container-low)]">
+                            <Td className="text-[color:var(--outline)]">{i + 1}</Td>
+                            <Td className="font-semibold">{r.name}</Td>
+                            <Td className="text-[color:var(--on-surface-variant)]">{r.matched || "-"}</Td>
+                            <Td>
+                              <EnrichStatusBadge status={r.status} />
+                            </Td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
+
+        {/* ── Manage Tab (NEW) ──────────────────── */}
       </main>
     </div>
   );
@@ -2250,55 +2171,6 @@ const LogPanel: React.FC<{ logs: CrawlLog[]; compact?: boolean }> = ({ logs, com
     )}
   </div>
 );
-
-const Pagination: React.FC<{ currentPage: number; totalPages: number; onPage: (p: number) => void }> = ({
-  currentPage,
-  totalPages,
-  onPage,
-}) => {
-  if (totalPages <= 1) return null;
-  const windowSize = 7;
-  const start = Math.max(1, Math.min(currentPage - Math.floor(windowSize / 2), totalPages - windowSize + 1));
-  const end = Math.min(totalPages, start + windowSize - 1);
-  const pages = [];
-  for (let i = start; i <= end; i++) pages.push(i);
-
-  return (
-    <div className="flex items-center justify-between px-6 py-4 bg-[color:var(--surface-container-low)] border-t border-[color:var(--outline-variant)]/40">
-      <button
-        onClick={() => onPage(Math.max(1, currentPage - 1))}
-        disabled={currentPage === 1}
-        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[12px] font-medium text-[color:var(--on-surface-variant)] hover:bg-[color:var(--surface-container)] disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        <MatIcon name="chevron_left" size={18} /> 이전
-      </button>
-      <div className="flex items-center gap-1">
-        {start > 1 && (
-          <>
-            <PageButton page={1} active={false} onClick={onPage} />
-            {start > 2 && <span className="text-[color:var(--outline)] px-1">…</span>}
-          </>
-        )}
-        {pages.map((p) => (
-          <PageButton key={p} page={p} active={p === currentPage} onClick={onPage} />
-        ))}
-        {end < totalPages && (
-          <>
-            {end < totalPages - 1 && <span className="text-[color:var(--outline)] px-1">…</span>}
-            <PageButton page={totalPages} active={false} onClick={onPage} />
-          </>
-        )}
-      </div>
-      <button
-        onClick={() => onPage(Math.min(totalPages, currentPage + 1))}
-        disabled={currentPage === totalPages}
-        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[12px] font-medium text-[color:var(--on-surface-variant)] hover:bg-[color:var(--surface-container)] disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        다음 <MatIcon name="chevron_right" size={18} />
-      </button>
-    </div>
-  );
-};
 
 const PageButton: React.FC<{ page: number; active: boolean; onClick: (p: number) => void }> = ({
   page,
