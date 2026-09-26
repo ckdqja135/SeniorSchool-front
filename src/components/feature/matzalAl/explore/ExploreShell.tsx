@@ -587,6 +587,7 @@ export default function ExploreShell({
           distanceFor={distanceFor}
           isSaved={isSaved}
           onToggleSave={handleToggleSave}
+          onNotice={showNotice}
           onClose={() => handleSelect(null)}
           translucent={mapDragging}
           style={{

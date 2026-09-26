@@ -318,6 +318,7 @@ export function RestaurantPanel({
             distanceFor={distanceFor}
             isSaved={isSaved}
             onToggleSave={onToggleSave}
+            onNotice={onNotice}
           />
         ) : (
           <div>

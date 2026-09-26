@@ -24,6 +24,8 @@ export interface RestaurantDetailContentProps {
   distanceFor: (r: ExploreRestaurant) => string | null;
   isSaved: (id: string) => boolean;
   onToggleSave: (id: string) => void;
+  /** 복사·공유 결과를 알리는 토스트 */
+  onNotice?: (message: string) => void;
   /**
    * 폭이 좁은 PC 상세 패널(340px)용. 이름을 썸네일 옆이 아니라 위쪽 전체 폭에 한 줄로 놓는다.
    * 모바일 하단 시트는 폭이 넉넉해 기존 배치를 그대로 쓴다.
@@ -40,10 +42,53 @@ export function RestaurantDetailContent({
   distanceFor,
   isSaved,
   onToggleSave,
+  onNotice,
   narrow = false,
 }: RestaurantDetailContentProps) {
   const detailHref = buildRestaurantDetailHref(restaurant);
   const saved = isSaved(restaurant.id);
+
+  // ── 길찾기 · 공유 · 주소 복사 ──
+  const copyText = async (text: string, okMessage: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      onNotice?.(okMessage);
+    } catch {
+      // 비보안 컨텍스트나 권한 거부
+      onNotice?.('복사하지 못했어요. 길게 눌러 직접 복사해주세요.');
+    }
+  };
+
+  /** 지도 렌더러가 카카오라 길찾기도 카카오맵으로 보낸다. 좌표가 없으면 이름으로 검색 */
+  const handleDirections = () => {
+    const name = encodeURIComponent(restaurant.name);
+    const url = restaurant.coord
+      ? `https://map.kakao.com/link/to/${name},${restaurant.coord.lat},${restaurant.coord.lng}`
+      : `https://map.kakao.com/link/search/${name}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleShare = async () => {
+    const url = detailHref ? new URL(detailHref, window.location.origin).toString() : window.location.href;
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({ title: restaurant.name, text: `${restaurant.name} · ${restaurant.typeLabel}`, url });
+        return;
+      } catch (err: any) {
+        if (err?.name === 'AbortError') return;   // 사용자가 공유창을 닫은 것
+      }
+    }
+    // 공유 시트를 못 쓰면 링크를 복사해 준다
+    copyText(url, '링크를 복사했어요');
+  };
+
+  const handleCopyAddress = () => {
+    if (!restaurant.addr) {
+      onNotice?.('주소 정보가 없어요');
+      return;
+    }
+    copyText(restaurant.addr, '주소를 복사했어요');
+  };
 
   const saveButton = (
     <button
@@ -124,6 +169,19 @@ export function RestaurantDetailContent({
 
       {restaurant.addr && <p className="mt-3 text-xs text-gray-500">{restaurant.addr}</p>}
 
+      {/* 길찾기 · 공유 · 주소 복사 (저장은 위 헤더에 있다) */}
+      <div className="mt-3 grid grid-cols-3 gap-1 border-y border-gray-100 py-3">
+        <ActionButton label="길찾기" primary onClick={handleDirections}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+        </ActionButton>
+        <ActionButton label="공유" onClick={handleShare}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316M18 8a3 3 0 100-6 3 3 0 000 6zm0 14a3 3 0 100-6 3 3 0 000 6z" />
+        </ActionButton>
+        <ActionButton label="주소 복사" onClick={handleCopyAddress}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        </ActionButton>
+      </div>
+
       {/* 예약 · 웨이팅: 백엔드 연동 전까지 안내만 */}
       <p className="mt-4 rounded-xl border border-dashed border-gray-200 px-3 py-2 text-xs text-gray-500">
         예약 · 웨이팅은 연동 준비 중이에요. 지금은 후기와 식당 정보를 제공해요.
@@ -203,5 +261,35 @@ export function RestaurantDetailPanel({ onClose, translucent = false, style, ...
         <RestaurantDetailContent {...content} narrow />
       </div>
     </aside>
+  );
+}
+
+/** 상세의 동작 버튼 하나 (동그란 아이콘 + 라벨). children 은 svg path */
+function ActionButton({
+  label, onClick, primary = false, children,
+}: {
+  label: string;
+  onClick: () => void;
+  primary?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className="flex flex-col items-center gap-1.5 rounded-xl py-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+    >
+      <span
+        className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
+          primary ? 'bg-rose-600 text-white hover:bg-rose-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+        }`}
+      >
+        <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+          {children}
+        </svg>
+      </span>
+      <span className="whitespace-nowrap text-[11px] font-semibold text-gray-600">{label}</span>
+    </button>
   );
 }
