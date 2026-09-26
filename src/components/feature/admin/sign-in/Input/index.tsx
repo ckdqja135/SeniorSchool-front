@@ -8,7 +8,7 @@ const SignInInput = ({
   setPassword,
   error,
 }: SignInProps) => {
-  const signInInputClassName = `p-1 border-2 rounded-md placeholder:text-gray-300 placeholder:text-medium min-w-12 w-full ${error ? "border-red-500" : "border-gray-300"}`;
+  const signInInputClassName = `w-full px-4 py-3 bg-slate-700 border rounded-xl text-white placeholder:text-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all ${error ? "border-red-500" : "border-slate-600"}`;
 
   return (
     <>
@@ -19,13 +19,12 @@ const SignInInput = ({
         placeholder='아이디를 입력해주세요'
         value={username}
         onChange={(e) => setUsername(e.target.value)}
-        error={error}
       />
       <CommonInput
         label='비밀번호'
         inputType='password'
         className={signInInputClassName}
-        placeholder='******'
+        placeholder='비밀번호를 입력해주세요'
         value={password}
         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
         error={error}

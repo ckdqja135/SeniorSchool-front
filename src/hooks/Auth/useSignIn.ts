@@ -13,15 +13,15 @@ export default function useSignIn() {
     setError("");
     try {
       const data = await signIn(username, password);
-      router.replace("/admin");
+      router.replace("/myoriadmin");
 
       localStorage.setItem("user", JSON.stringify(data.user));
       localStorage.setItem("accessToken", data.accessToken);
     } catch (error) {
       const errorMessage =
-        error instanceof Error
+        error instanceof Error && error.message.includes("서버")
           ? error.message
-          : "네트워크 오류가 발생했습니다. 다시 시도해주세요.";
+          : "아이디나 비밀번호가 일치하지 않습니다.";
 
       setError(errorMessage);
     }
