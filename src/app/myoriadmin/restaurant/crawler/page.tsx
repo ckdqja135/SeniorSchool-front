@@ -16,11 +16,28 @@ interface SourceInfo {
 interface CrawlStats {
   sources: Record<string, number>;
   totalFetched: number;
-  duplicate중복: number;
+  /** 백엔드가 보내는 키. 예전엔 `duplicate중복` 으로 읽어서 항상 비어 있었다 */
+  duplicateSkipped: number;
+  /** 같은 실행 안에서 네이버·카카오가 겹친 건수 */
+  crossSourceDuplicate?: number;
   coordFixed: number;
   saved: number;
   failed: number;
   alreadyInDB?: number;
+}
+
+/** 크롤링 진행 상황 (폴링으로 받아온다) */
+interface CrawlProgress {
+  found: boolean;
+  phase?: "fetching" | "dedup" | "geocoding" | "saving" | "preview" | "done" | "error";
+  message?: string;
+  sources?: Record<string, { status: string; fetched: number; error?: string }>;
+  totalFetched?: number;
+  alreadyInDB?: number;
+  crossSourceDuplicate?: number;
+  saved?: number;
+  failed?: number;
+  done?: boolean;
 }
 
 interface DbStats {
@@ -192,6 +209,12 @@ const RestaurantCrawlerPage: React.FC = () => {
   const [logs, setLogs] = useState<CrawlLog[]>([]);
   const [previewData, setPreviewData] = useState<any[]>([]);
   const [showPreview, setShowPreview] = useState(false);
+  /** 미리보기에서 체크한 행의 인덱스 */
+  const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
+  /** 폴링으로 받아온 진행 상황 */
+  const [crawlProgress, setCrawlProgress] = useState<CrawlProgress | null>(null);
+  /** 실행 중 발생한 오류 (버튼 안이 아니라 배너로 보여준다) */
+  const [runError, setRunError] = useState<string | null>(null);
 
   // 개별 크롤링 상태
   const [singleSource, setSingleSource] = useState("");
@@ -281,6 +304,27 @@ const RestaurantCrawlerPage: React.FC = () => {
   const fullRegion =
     region === "전체" ? "서울" : subRegion === "전체" ? region : `${region} ${subRegion}`;
 
+  // ─── 미리보기 행 선택 ───────────────────────────────────
+  const toggleRow = useCallback((idx: number) => {
+    setSelectedRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    setSelectedRows((prev) =>
+      prev.size === previewData.length ? new Set<number>() : new Set(previewData.map((_, i) => i)),
+    );
+  }, [previewData]);
+
+  const dupSuspectCount = previewData.filter(
+    (i: any) => i._duplicateOf !== null && i._duplicateOf !== undefined,
+  ).length;
+  const existsCount = previewData.filter((i: any) => !!i._existsInDb).length;
+
   // ─── 통합 크롤링 ────────────────────────────────────────
   const handleRun = useCallback(async () => {
     if (selectedSources.length === 0) {
@@ -292,7 +336,25 @@ const RestaurantCrawlerPage: React.FC = () => {
     setResult(null);
     setPreviewData([]);
     setShowPreview(false);
+    setSelectedRows(new Set());
+    setRunError(null);
+    setCrawlProgress(null);
     setProgress(dryRun ? "미리보기 수집 중..." : "크롤링 실행 중...");
+
+    // 크롤링은 한 번의 블로킹 요청이라, 같은 runId 로 진행 상황을 따로 폴링한다
+    const runId = `run_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const poll = window.setInterval(async () => {
+      try {
+        const t = localStorage.getItem("accessToken");
+        const r = await fetch(`${API_BASE_URL}/admin/crawler/progress/${runId}`, {
+          headers: { Authorization: `Bearer ${t}` },
+        });
+        const p: CrawlProgress = await r.json();
+        if (p?.found) setCrawlProgress(p);
+      } catch {
+        /* 폴링 실패는 조용히 넘긴다 — 본 요청 결과가 최종 판단 기준 */
+      }
+    }, 1000);
 
     try {
       const accessToken = localStorage.getItem("accessToken");
@@ -308,14 +370,25 @@ const RestaurantCrawlerPage: React.FC = () => {
           region: fullRegion,
           countPerSource,
           dryRun,
+          runId,
         }),
       });
 
       const data: CrawlResult = await res.json();
+      if (!res.ok || data?.success === false) {
+        throw new Error(data?.message || `서버 오류 (${res.status})`);
+      }
       setResult(data);
       if (dryRun && data.data) {
         setPreviewData(data.data);
         setShowPreview(true);
+        // 기존에 있거나 중복 의심인 행은 기본 해제 — 실수로 중복 저장되는 걸 막는다
+        setSelectedRows(new Set(
+          data.data
+            .map((item: any, idx: number) => ({ item, idx }))
+            .filter(({ item }: any) => !item._existsInDb && (item._duplicateOf === null || item._duplicateOf === undefined))
+            .map(({ idx }: any) => idx),
+        ));
       }
       setLogs((prev) =>
         [
@@ -331,51 +404,67 @@ const RestaurantCrawlerPage: React.FC = () => {
         ].slice(0, 20)
       );
       setProgress("");
-    } catch (err) {
+    } catch (err: any) {
       console.error("크롤링 실행 실패:", err);
-      setProgress("실행 중 오류가 발생했습니다.");
+      setRunError(err?.message || "실행 중 오류가 발생했습니다.");
+      setProgress("");
     } finally {
+      window.clearInterval(poll);
       setIsRunning(false);
       fetchDbStats();
     }
   }, [selectedSources, query, fullRegion, countPerSource, dryRun]);
 
+  // 체크한 행만 저장한다.
+  // 예전에는 같은 크롤링을 dryRun=false 로 다시 돌려서, 방금 검토한 목록과
+  // 실제 저장분이 달라질 수 있었다. 이제는 화면에 있는 행을 그대로 보낸다.
   const handleSavePreview = useCallback(async () => {
-    if (!window.confirm(`미리보기 ${previewData.length}건을 실제로 DB에 저장하시겠습니까?`)) return;
+    const items = previewData.filter((_, idx) => selectedRows.has(idx));
+    if (items.length === 0) {
+      alert("저장할 행을 선택해주세요.");
+      return;
+    }
+    const dupCount = items.filter(
+      (i: any) => i._existsInDb || (i._duplicateOf !== null && i._duplicateOf !== undefined),
+    ).length;
+    const warn = dupCount > 0 ? `
+(이미 있음·중복 의심 ${dupCount}건 포함)` : "";
+    if (!window.confirm(`선택한 ${items.length}건을 DB에 저장하시겠습니까?${warn}`)) return;
 
     setIsRunning(true);
+    setRunError(null);
     setProgress("DB 저장 중...");
 
     try {
       const accessToken = localStorage.getItem("accessToken");
-      const res = await fetch(`${API_BASE_URL}/admin/crawler/run`, {
+      const res = await fetch(`${API_BASE_URL}/admin/crawler/save`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          sources: selectedSources,
-          query,
-          region: fullRegion,
-          countPerSource,
-          dryRun: false,
-        }),
+        body: JSON.stringify({ items }),
       });
-      const data: CrawlResult = await res.json();
-      setResult(data);
-      setShowPreview(false);
-      setPreviewData([]);
+      const data = await res.json();
+      if (!res.ok || data?.success === false) {
+        throw new Error(data?.message || `서버 오류 (${res.status})`);
+      }
+      // 저장한 행은 목록에서 빼고 나머지는 남겨 이어서 고를 수 있게 한다
+      const rest = previewData.filter((_, idx) => !selectedRows.has(idx));
+      setPreviewData(rest);
+      setSelectedRows(new Set());
+      setShowPreview(rest.length > 0);
       setProgress("");
       alert(data.message);
-    } catch (err) {
+    } catch (err: any) {
       console.error("저장 실패:", err);
-      setProgress("저장 중 오류가 발생했습니다.");
+      setRunError(err?.message || "저장 중 오류가 발생했습니다.");
+      setProgress("");
     } finally {
       setIsRunning(false);
       fetchDbStats();
     }
-  }, [selectedSources, query, fullRegion, countPerSource, previewData.length]);
+  }, [previewData, selectedRows]);
 
   // ─── 개별 크롤링 ────────────────────────────────────────
   const handleSingleRun = useCallback(async () => {
@@ -973,6 +1062,57 @@ const RestaurantCrawlerPage: React.FC = () => {
                       )}
                     </button>
                   </div>
+
+                  {/* 진행 상황 — 예전엔 버튼 안에만 있어서 오류 문구가 보이지 않았다 */}
+                  {(isRunning || crawlProgress) && (
+                    <div className="mt-4 p-4 rounded-lg bg-[color:var(--surface-container-low)] border border-[color:var(--outline-variant)]/40">
+                      <div className="flex items-center gap-2 text-[13px] font-medium">
+                        {isRunning && <Spinner />}
+                        <span>{crawlProgress?.message || progress || "진행 중…"}</span>
+                      </div>
+                      {crawlProgress?.sources && (
+                        <ul className="mt-3 space-y-1.5">
+                          {Object.entries(crawlProgress.sources).map(([src, info]) => (
+                            <li key={src} className="flex items-center justify-between text-[12px]">
+                              <span className="flex items-center gap-2">
+                                <span className="w-4 text-center">
+                                  {info.status === "done" ? "✓" : info.status === "error" ? "✕" : "⟳"}
+                                </span>
+                                <span className="font-semibold uppercase">{src}</span>
+                                {info.error && (
+                                  <span className="text-[color:var(--error)] truncate max-w-[220px]">{info.error}</span>
+                                )}
+                              </span>
+                              <span className="font-mono text-[color:var(--outline)]">
+                                {info.status === "pending" ? "수집 중" : `${info.fetched}건`}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      {typeof crawlProgress?.totalFetched === "number" && (
+                        <p className="mt-3 pt-3 border-t border-[color:var(--outline-variant)]/40 text-[12px] text-[color:var(--outline)]">
+                          누적 {crawlProgress.totalFetched}건
+                          {typeof crawlProgress.alreadyInDB === "number" && ` · 기존 ${crawlProgress.alreadyInDB}건`}
+                          {typeof crawlProgress.crossSourceDuplicate === "number" &&
+                            ` · 중복 의심 ${crawlProgress.crossSourceDuplicate}건`}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 오류 배너 */}
+                  {runError && (
+                    <div className="mt-4 p-4 rounded-lg bg-[color:var(--error-container)] border border-[color:var(--error)]/30 flex items-start justify-between gap-3">
+                      <p className="text-[13px] font-medium text-[color:var(--error)]">{runError}</p>
+                      <button
+                        onClick={() => setRunError(null)}
+                        className="text-[color:var(--error)] text-[12px] font-semibold shrink-0"
+                      >
+                        닫기
+                      </button>
+                    </div>
+                  )}
                 </div>
               </section>
 
@@ -989,7 +1129,7 @@ const RestaurantCrawlerPage: React.FC = () => {
                       <MiniStat label="수집" value={result.stats.totalFetched} accent="var(--primary)" />
                       <MiniStat label="저장" value={result.stats.saved} accent="var(--secondary)" />
                       {result.stats.alreadyInDB != null && <MiniStat label="기존" value={result.stats.alreadyInDB} />}
-                      <MiniStat label="중복" value={result.stats.duplicate중복} />
+                      <MiniStat label="소스간 중복" value={result.stats.crossSourceDuplicate ?? 0} />
                       <MiniStat label="좌표 보정" value={result.stats.coordFixed} />
                       <MiniStat label="실패" value={result.stats.failed} accent={result.stats.failed > 0 ? "var(--error)" : undefined} />
                     </div>
@@ -1032,32 +1172,91 @@ const RestaurantCrawlerPage: React.FC = () => {
                   <div className="p-5 flex justify-between items-center border-b border-[color:var(--outline-variant)]/40">
                     <div>
                       <h4 className="text-[16px] font-semibold">수집 데이터</h4>
-                      <p className="text-[11px] text-[color:var(--outline)] mt-0.5">{previewData.length}건 수집됨</p>
+                      <p className="text-[11px] text-[color:var(--outline)] mt-0.5">
+                        {previewData.length}건 수집 · <b>{selectedRows.size}건 선택</b>
+                        {dupSuspectCount > 0 && ` · 중복 의심 ${dupSuspectCount}건`}
+                        {existsCount > 0 && ` · 이미 있음 ${existsCount}건`}
+                      </p>
                     </div>
-                    <button
-                      onClick={handleSavePreview}
-                      disabled={isRunning}
-                      className="bg-[color:var(--primary)] text-white px-5 py-2 rounded-lg text-[13px] font-semibold hover:bg-[color:var(--primary-container)] transition-colors disabled:bg-[color:var(--outline-variant)] active:scale-95"
-                    >
-                      DB 저장
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={toggleSelectAll}
+                        className="px-3 py-2 rounded-lg text-[13px] font-semibold border border-[color:var(--outline-variant)] hover:bg-[color:var(--surface-container-low)] transition-colors"
+                      >
+                        {selectedRows.size === previewData.length ? "전체 해제" : "전체 선택"}
+                      </button>
+                      <button
+                        onClick={handleSavePreview}
+                        disabled={isRunning || selectedRows.size === 0}
+                        className="bg-[color:var(--primary)] text-white px-5 py-2 rounded-lg text-[13px] font-semibold hover:bg-[color:var(--primary-container)] transition-colors disabled:bg-[color:var(--outline-variant)] active:scale-95"
+                      >
+                        선택 {selectedRows.size}건 저장
+                      </button>
+                    </div>
                   </div>
                   <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
                     <table className="w-full text-left">
                       <thead className="bg-[color:var(--surface-container-low)] sticky top-0 z-10">
                         <tr>
-                          <Th>#</Th><Th>출처</Th><Th>식당명</Th><Th>업종</Th><Th>주소</Th><Th>좌표</Th>
+                          <Th>
+                            <input
+                              type="checkbox"
+                              aria-label="전체 선택"
+                              checked={previewData.length > 0 && selectedRows.size === previewData.length}
+                              onChange={toggleSelectAll}
+                              className="w-4 h-4 accent-[color:var(--primary)] cursor-pointer"
+                            />
+                          </Th>
+                          <Th>#</Th><Th>출처</Th><Th>상태</Th><Th>식당명</Th><Th>업종</Th><Th>주소</Th><Th>좌표</Th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[color:var(--outline-variant)]/30">
                         {previewData.map((item, idx) => {
                           const p = SOURCE_PALETTE[item._source] || { bg: "bg-gray-100", text: "text-gray-600" };
+                          const isDup = item._duplicateOf !== null && item._duplicateOf !== undefined;
+                          const exists = !!item._existsInDb;
+                          const checked = selectedRows.has(idx);
                           return (
-                            <tr key={idx} className="hover:bg-[color:var(--surface-container-low)]">
+                            <tr
+                              key={idx}
+                              onClick={() => toggleRow(idx)}
+                              className={`cursor-pointer hover:bg-[color:var(--surface-container-low)] ${
+                                checked ? "bg-[color:var(--primary)]/5" : ""
+                              } ${exists || isDup ? "opacity-70" : ""}`}
+                            >
+                              <Td>
+                                <input
+                                  type="checkbox"
+                                  aria-label={`${item.restaurantName} 선택`}
+                                  checked={checked}
+                                  onChange={() => toggleRow(idx)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="w-4 h-4 accent-[color:var(--primary)] cursor-pointer"
+                                />
+                              </Td>
                               <Td className="text-[color:var(--outline)]">{idx + 1}</Td>
                               <Td>
                                 <span className={`px-2 py-0.5 text-[10px] font-bold rounded uppercase ${p.bg} ${p.text}`}>
                                   {item._source || "?"}
+                                </span>
+                              </Td>
+                              <Td className="whitespace-nowrap">
+                                {/* 둘 다 해당될 수 있다 — DB에 이미 있으면서 소스끼리도 겹치는 경우 */}
+                                <span className="flex flex-wrap gap-1">
+                                  {exists && (
+                                    <span className="px-2 py-0.5 text-[10px] font-bold rounded bg-gray-100 text-gray-600">이미 있음</span>
+                                  )}
+                                  {isDup && (
+                                    <span
+                                      className="px-2 py-0.5 text-[10px] font-bold rounded bg-amber-100 text-amber-800"
+                                      title={`${(previewData[item._duplicateOf]?.restaurantName) || ""} (${previewData[item._duplicateOf]?._source || "?"}) 와 같은 가게로 보입니다`}
+                                    >
+                                      ⚠ 중복 의심
+                                    </span>
+                                  )}
+                                  {!exists && !isDup && (
+                                    <span className="px-2 py-0.5 text-[10px] font-bold rounded bg-green-100 text-green-800">신규</span>
+                                  )}
                                 </span>
                               </Td>
                               <Td className="font-semibold">{item.restaurantName}</Td>
@@ -1241,7 +1440,7 @@ const RestaurantCrawlerPage: React.FC = () => {
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                           <MiniStat label="수집" value={singleResult.stats.totalFetched} accent="var(--primary)" />
                           <MiniStat label="저장" value={singleResult.stats.saved} accent="var(--secondary)" />
-                          <MiniStat label="중복" value={singleResult.stats.duplicate중복} />
+                          <MiniStat label="소스간 중복" value={singleResult.stats.crossSourceDuplicate ?? 0} />
                           <MiniStat label="실패" value={singleResult.stats.failed} accent={singleResult.stats.failed > 0 ? "var(--error)" : undefined} />
                         </div>
                       )}
