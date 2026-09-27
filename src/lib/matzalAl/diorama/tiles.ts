@@ -47,6 +47,12 @@ export interface RoadFeature {
    */
   sidewalk: boolean;
   bbox: [number, number, number, number];
+  /** OpenMapTiles `layer` (고가·지하 층위). 없으면 지면(0) */
+  layer?: number;
+  /** 다리 위 도로 (`brunnel === 'bridge'`). 층이 다른 도로끼리는 교차로·차선 판정을 하지 않는다 */
+  bridge?: boolean;
+  /** 일방통행 (`oneway` 1/-1). 중앙선을 긋지 않는다 */
+  oneway?: boolean;
 }
 
 export type AreaKind = 'park' | 'grass' | 'wood' | 'water' | 'pitch' | 'sand';
@@ -241,6 +247,9 @@ export async function loadTile(origin: LocalOrigin, tx: number, ty: number, sign
           width: ROAD_WIDTH[cls],
           sidewalk: ROAD_WIDTH[cls] >= 9 && cls !== 'motorway',
           bbox: bboxOf(pts),
+          layer: Number(props.layer) || 0,
+          bridge: props.brunnel === 'bridge',
+          oneway: Number(props.oneway) === 1 || Number(props.oneway) === -1,
         });
       });
     }

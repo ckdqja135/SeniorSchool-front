@@ -15,6 +15,7 @@ import type { CitySceneHandle } from '@/lib/matzalAl/diorama/cityScene';
 import type { ExploreRestaurant, ExploreViewport, LatLng, VisibleInsets } from '@/types/MatzalAl/explore';
 import type { FlyToRequest } from './KakaoExploreMap';
 import { MAP_CONTROL_DIM } from './mapControlStyles';
+import { timeMoodAt } from '@/lib/matzalAl/diorama/timeMood';
 
 /** 매장 정면 카메라 요청 (패널 핫플·후기에서 식당을 골랐을 때). 같은 id 라도 다시 잡도록 토큰을 둔다 */
 export interface FocusRequest {
@@ -78,6 +79,8 @@ export function DioramaExploreMap({
   const geocoderRef = useRef<any>(null);
   const regionTimerRef = useRef<number | null>(null);
   const [state, setState] = useState<SceneState>('loading');
+  /** 씬이 뜨기 전 배경도 지금 시간대 하늘색으로 (씬 안개색과 같은 값) */
+  const [skyColor] = useState(() => timeMoodAt().sky);
   const [error, setError] = useState<string | null>(null);
   const [tilesLoading, setTilesLoading] = useState(false);
   const [retry, setRetry] = useState(0);
@@ -207,7 +210,7 @@ export function DioramaExploreMap({
   const buttonClass = 'flex h-11 w-11 items-center justify-center text-gray-700 hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rose-400';
 
   return (
-    <div className="absolute inset-0 bg-[#cbb9ab]">
+    <div className="absolute inset-0" style={{ background: skyColor }}>
       <style>{`
         [data-pin-wrap][data-mode="hidden"] { display: none; }
         [data-pin-wrap][data-mode="compact"] [data-pin-label] { display: none !important; }
@@ -272,12 +275,12 @@ export function DioramaExploreMap({
       )}
 
       {state === 'loading' && (
-        <div className="absolute inset-0 flex items-center justify-center bg-[#cbb9ab]" role="status">
+        <div className="absolute inset-0 flex items-center justify-center" style={{ background: skyColor }} role="status">
           <div className="rounded-full bg-white/90 px-4 py-2 text-sm text-gray-700 shadow">동네를 짓는 중…</div>
         </div>
       )}
       {state === 'error' && (
-        <div className="absolute inset-0 flex items-center justify-center bg-[#cbb9ab] p-6" role="alert">
+        <div className="absolute inset-0 flex items-center justify-center p-6" style={{ background: skyColor }} role="alert">
           <div className="max-w-sm rounded-2xl bg-white p-5 text-center shadow-lg">
             <p className="text-base font-bold text-gray-900">입체 지도를 만들지 못했어요</p>
             <p className="mt-1 text-sm text-gray-600">{error}</p>

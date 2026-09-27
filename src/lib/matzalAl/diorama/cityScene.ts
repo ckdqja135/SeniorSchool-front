@@ -39,6 +39,7 @@ import {
 import { buildStorefronts, planStorefronts, SignCache, StorefrontMaterials, type StorefrontBatch, type StorefrontPlan } from './storefronts';
 import { loadTile, TILE_ZOOM, tileKeyOf, type BuildingFeature, type FootwayFeature, type RoadFeature, type TileData, type AreaFeature } from './tiles';
 import { aoBlobTexture, lightPoolTexture } from './textures';
+import { timeMoodAt, type TimeMoodName } from './timeMood';
 
 export interface CityViewport {
   center: LatLng;
@@ -71,6 +72,10 @@ export interface CitySceneHandle {
   zoomBy(factor: number): void;
   rotateBy(deltaRad: number): void;
   resetView(): void;
+  /** 개발용: 조명 시간을 한국 시각 hour(0~24)로 고정해 미리 본다. null 이면 현재 시각으로 돌아간다 */
+  previewTime(hour: number | null): void;
+  /** 지금 적용된 시간대 이름 (새벽·오전·오후·노을·저녁) */
+  timeMood(): TimeMoodName;
   resize(): void;
   dispose(): void;
 }
@@ -180,8 +185,10 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
   placeCamera(new THREE.Vector3(0, 0, 0), levelToDistance(opts.initialLevel));
 
   // ---------- 조명 ----------
-  scene.add(new THREE.HemisphereLight('#8fa3c7', '#d9b48f', 0.8));
-  scene.add(new THREE.AmbientLight('#6f7d9c', 0.35));
+  // 색·세기는 아래 applyTimeMood 가 한국 시각에 맞춰 매초 갱신한다 (여기 값은 초기값일 뿐)
+  const skyLight = new THREE.HemisphereLight('#8fa3c7', '#d9b48f', 0.8);
+  const ambientLight = new THREE.AmbientLight('#6f7d9c', 0.35);
+  scene.add(skyLight, ambientLight);
   const sun = new THREE.DirectionalLight('#ffb27a', 2.3);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
@@ -235,7 +242,8 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
   poolGeo.rotateX(-Math.PI / 2);
   // 가로등 밑동(Y.prop) 기준으로 Y.decal 높이에 깔린다 → 차도·횡단보도 위에서도 잘리지 않는다
   poolGeo.translate(0, Y.decal - Y.prop, 1.2);
-  const pools = new InstancedProp(poolGeo, new THREE.MeshBasicMaterial({ map: poolTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }), 1200);
+  const poolMat = new THREE.MeshBasicMaterial({ map: poolTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
+  const pools = new InstancedProp(poolGeo, poolMat, 1200);
   pools.mesh.renderOrder = 2;
   const hvacMat = new THREE.MeshStandardMaterial({ color: '#b8b6b2', roughness: 0.7, metalness: 0.3 });
   const hvacs = new InstancedProp(makeHvacGeometry(), hvacMat, 1200, { castShadow: true });
@@ -257,6 +265,51 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
   const bulbs = new InstancedProp(makeBulbGeometry(), bulbMat, 3000);
   const tableMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.7 });
   const tables = new InstancedProp(makeTableGeometry(), tableMat, 400, { castShadow: true });
+  // ---------- 시간대 (새벽·오전·오후·노을·저녁) ----------
+  // 창문·간판·가로등 같은 발광 재질의 '밤 세기'. 낮에는 이 값의 일부만 켠다
+  const FACADE_GLOW = Object.fromEntries(Object.entries(mats.facades).map(([k, m]) => [k, m.emissiveIntensity])) as Record<string, number>;
+  const SHOP_GLOW = mats.shopfront.emissiveIntensity;
+  const GLASS_GLOW = sfMats.glass.emissiveIntensity;
+  let timeOverride: number | null = null;
+  let lastMoodKey = '';
+  let moodName: TimeMoodName = '오후';
+  /** 한국 시각으로 하늘·안개·햇빛·주변광·노출과 불빛 세기를 맞춘다. 1초에 한 번만 다시 계산한다 */
+  const applyTimeMood = (force = false) => {
+    const now = new Date();
+    const key = timeOverride === null ? String(Math.floor(now.getTime() / 1000)) : `o${timeOverride}`;
+    if (!force && key === lastMoodKey) return;
+    lastMoodKey = key;
+    // 미리보기: 한국 시각이 hour 가 되는 임의의 Date (timeMoodAt 는 시각만 UTC+9 로 읽는다)
+    const at = timeOverride === null ? now : new Date(Date.UTC(2000, 0, 1, 0, 0, 0) + ((timeOverride - 9 + 24) % 24) * 3600_000);
+    const mood = timeMoodAt(at);
+    moodName = mood.name;
+    fogColor.set(mood.sky);
+    skyLight.color.set(mood.sky);
+    skyLight.groundColor.set(mood.ground);
+    skyLight.intensity = mood.fill;
+    ambientLight.color.set(mood.ambient);
+    ambientLight.intensity = mood.ambientPower;
+    sun.color.set(mood.sun);
+    sun.intensity = mood.sunPower;
+    renderer.toneMappingExposure = mood.exposure;
+    const glow = 0.12 + 0.88 * mood.lamps; // 낮에도 매장 안 불빛은 조금 보이게
+    headMat.emissiveIntensity = 2.2 * mood.lamps;
+    bulbMat.emissiveIntensity = 2.4 * mood.lamps;
+    carLightMat.emissiveIntensity = 0.15 + 1.45 * mood.lamps;
+    poolMat.opacity = mood.lamps;
+    lampLights.forEach((light) => {
+      light.intensity = 60 * mood.lamps;
+    });
+    (Object.keys(mats.facades) as Array<keyof typeof mats.facades>).forEach((k) => {
+      mats.facades[k].emissiveIntensity = FACADE_GLOW[k] * glow;
+    });
+    mats.shopfront.emissiveIntensity = SHOP_GLOW * glow;
+    sfMats.glass.emissiveIntensity = GLASS_GLOW * glow;
+    sfMats.lampHead.emissiveIntensity = 2.2 * mood.lamps;
+    container.dataset.timeMood = mood.name;
+  };
+  applyTimeMood(true);
+
   const aoTex = aoBlobTexture();
   const aoGeo = new THREE.PlaneGeometry(1, 1);
   aoGeo.rotateX(-Math.PI / 2);
@@ -1066,6 +1119,7 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
     last = now;
     frame += 1;
     const f0 = performance.now();
+    applyTimeMood();
 
     stepCells();
     if (propsDirty) rebuildProps();
@@ -1229,6 +1283,13 @@ export function createCityScene(container: HTMLElement, opts: CitySceneOptions):
       const l = toLocal(origin, loc.lat, loc.lng);
       userDot.position.set(l.x, 1.2, l.z);
       userDot.visible = true;
+    },
+    previewTime(hour) {
+      timeOverride = hour === null ? null : ((hour % 24) + 24) % 24;
+      applyTimeMood(true);
+    },
+    timeMood() {
+      return moodName;
     },
     zoomBy(factor) {
       const dir = camera.position.clone().sub(controls.target);
