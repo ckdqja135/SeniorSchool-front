@@ -6,6 +6,9 @@
  * - 목록은 서버에서 필터(missing)·검색(name 또는 location)·페이지(offset) 를 걸어 받는다.
  * - 행을 누르면 오른쪽 상세 패널에서 편집, 체크한 행은 '누락 필드 재수집'으로 한꺼번에 채운다.
  * - 일괄 재수집은 비어 있는 필드만 채우고 곧바로 저장한다 (있는 값은 건드리지 않는다).
+ * - '조건에 맞는 N곳 모두 선택' 이면 페이지와 상관없이 현재 필터·검색 조건 전체를 돌린다.
+ *   시작할 때 대상 목록을 먼저 다 받아 고정한다 — 채운 식당은 '메뉴 없음' 같은 필터에서 빠지므로,
+ *   offset 으로 이어 받으면 뒤쪽이 밀려 건너뛰게 된다.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Skeleton } from "@/components/common/Skeleton";
@@ -26,6 +29,10 @@ import { EnrichDetailPanel, type DetailTab } from "./EnrichDetailPanel";
 import type { MissingFilter } from "./HealthStrip";
 
 const PAGE_SIZE = 20;
+/** 전체 모드에서 대상 목록을 받을 때 한 번에 받는 개수 */
+const SNAPSHOT_PAGE = 200;
+/** 전체 모드 동시 재수집 수. 외부 사이트(식신 등)에 부담을 주지 않을 만큼만 */
+const BULK_CONCURRENCY = 2;
 /** 목록 스크롤 영역에 한 번에 보이는 최소 행 수 */
 const MIN_VISIBLE_ROWS = 10;
 
@@ -66,12 +73,23 @@ function Check({ on }: { on: boolean }) {
 
 const GRID = "grid grid-cols-[32px_minmax(0,1.6fr)_minmax(0,1fr)_62px_62px_50px_64px] gap-2.5";
 
+interface BulkState {
+  phase: "snapshot" | "run";
+  done: number;
+  total: number;
+  filled: number;
+  missed: number;
+}
+
 export function EnrichTab({
+  active = true,
   filter,
   onFilterChange,
   missing,
   onDataChanged,
 }: {
+  /** 탭이 보이는 중인지. 숨겨져 있어도 일괄 재수집은 계속 돈다 */
+  active?: boolean;
   filter: MissingFilter;
   onFilterChange: (f: MissingFilter) => void;
   missing: MissingCounts | null;
@@ -89,8 +107,11 @@ export function EnrichTab({
   const [selId, setSelId] = useState<string | null>(null);
   const [dTab, setDTab] = useState<DetailTab>("메뉴");
   const [checked, setChecked] = useState<Set<string>>(new Set());
-  const [bulk, setBulk] = useState<{ done: number; total: number; filled: number } | null>(null);
+  const [bulk, setBulk] = useState<BulkState | null>(null);
   const [bulkNote, setBulkNote] = useState<string | null>(null);
+  /** 페이지와 상관없이 '조건에 맞는 전체'를 선택한 상태 */
+  const [allMode, setAllMode] = useState(false);
+  const cancelRef = useRef(false);
 
   /** 행 목록 스크롤 영역. 페이지·필터가 바뀌면 맨 위로 되돌린다 */
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -124,25 +145,49 @@ export function EnrichTab({
     fitList();
     window.addEventListener("resize", fitList);
     return () => window.removeEventListener("resize", fitList);
-  }, [fitList, checked.size > 0, !!bulk, !!bulkNote, loading]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fitList, active, checked.size > 0, allMode, !!bulk, !!bulkNote, loading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 체크는 지금 보이는 페이지 안에서만 의미가 있다
   useEffect(() => {
     setChecked(new Set());
     listRef.current?.scrollTo({ top: 0 });
   }, [filter, q, page]);
+  // '전체 선택'은 조건이 바뀌면 풀린다 (페이지 이동은 괜찮다)
+  useEffect(() => {
+    setAllMode(false);
+  }, [filter, q, srcFilter]);
+
+  // 일괄 재수집 중에 창을 닫으면 멈추므로 한 번 묻는다
+  useEffect(() => {
+    if (!bulk) return;
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [bulk]);
+
+  /** 현재 필터·검색 조건의 목록 조회 파라미터 */
+  const listParams = useCallback(
+    (limit: number, offset: number) => {
+      const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+      const f = FILTERS.find((x) => x.key === filter);
+      if (f?.param) params.set("missing", f.param);
+      const sp = searchParamsFor(q);
+      if (sp.name) params.set("name", sp.name);
+      if (sp.location) params.set("location", sp.location);
+      return params;
+    },
+    [filter, q],
+  );
 
   const load = useCallback(async () => {
     const seq = ++reqSeq.current;
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ limit: String(PAGE_SIZE + 1), offset: String(page * PAGE_SIZE) });
-      const f = FILTERS.find((x) => x.key === filter);
-      if (f?.param) params.set("missing", f.param);
-      const sp = searchParamsFor(q);
-      if (sp.name) params.set("name", sp.name);
-      if (sp.location) params.set("location", sp.location);
+      const params = listParams(PAGE_SIZE + 1, page * PAGE_SIZE);
       const data = await apiGet<RestaurantRow[] | { data: RestaurantRow[] }>(`/restaurant?${params}`);
       if (seq !== reqSeq.current) return;
       const list = Array.isArray(data) ? data : data.data || [];
@@ -157,7 +202,7 @@ export function EnrichTab({
     } finally {
       if (seq === reqSeq.current) setLoading(false);
     }
-  }, [filter, q, page]);
+  }, [listParams, page]);
 
   useEffect(() => {
     load();
@@ -176,69 +221,136 @@ export function EnrichTab({
     setDTab(!menuN ? "메뉴" : !r.restaurantImage ? "이미지" : !r.restaurantURL ? "URL" : "메뉴");
   };
 
-  const toggleCheck = (id: string) =>
+  const toggleCheck = (id: string) => {
+    // 전체 선택 중에 하나를 빼면 '이 페이지에서 그 하나만 뺀 선택'으로 돌아간다
+    if (allMode) {
+      setAllMode(false);
+      setChecked(new Set(visible.map((r) => String(r.restaurantIdx)).filter((x) => x !== id)));
+      return;
+    }
     setChecked((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  const allOn = visible.length > 0 && visible.every((r) => checked.has(String(r.restaurantIdx)));
-  const toggleAll = () =>
+  };
+  const allOn = allMode || (visible.length > 0 && visible.every((r) => checked.has(String(r.restaurantIdx))));
+  const toggleAll = () => {
+    if (allMode) {
+      setAllMode(false);
+      setChecked(new Set());
+      return;
+    }
     setChecked((prev) => {
       const next = new Set(prev);
       visible.forEach((r) => (allOn ? next.delete(String(r.restaurantIdx)) : next.add(String(r.restaurantIdx))));
       return next;
     });
+  };
 
   const applyPatch = (id: string, patch: Partial<RestaurantRow>) =>
     setRows((prev) => prev.map((r) => (String(r.restaurantIdx) === id ? { ...r, ...patch } : r)));
 
-  /** 체크한 식당마다 빈 필드만 재수집해서 바로 저장 */
-  const runBulk = async () => {
-    const targets = rows.filter((r) => checked.has(String(r.restaurantIdx)));
-    if (targets.length === 0) return;
-    if (!window.confirm(`${targets.length}곳의 빈 필드를 다시 수집해 채울까요?\n이름이 맞는 가게에서만 가져오고, 이미 있는 값은 바꾸지 않습니다.`)) return;
+  /** 식당 한 곳의 빈 필드만 재수집해 저장. 결과: 채움 / 못 찾음 / 빈 필드 없음 */
+  const fillOne = async (r: RestaurantRow): Promise<"filled" | "missed" | "skip"> => {
+    const need: RecollectField[] = [];
+    if (parseMenu(r.restaurantMenu).length === 0) need.push("menu");
+    if (!r.restaurantImage) need.push("image");
+    if (!r.restaurantURL) need.push("url");
+    if (need.length === 0) return "skip";
+    try {
+      const res = await recollect(r, need);
+      const patch: Record<string, unknown> = {};
+      if (res.menu) patch.restaurantMenu = res.menu;
+      if (res.image) patch.restaurantImage = res.image;
+      if (res.url) patch.restaurantURL = res.url;
+      if (Object.keys(patch).length === 0) return "missed";
+      await apiSend("PUT", `/admin/restaurant/${r.restaurantIdx}`, patch);
+      applyPatch(String(r.restaurantIdx), patch as Partial<RestaurantRow>);
+      return "filled";
+    } catch {
+      return "missed";
+    }
+  };
 
-    setBulk({ done: 0, total: targets.length, filled: 0 });
+  /** 전체 모드: 조건에 맞는 식당 목록을 끝까지 받아 고정한다 */
+  const snapshotTargets = async (): Promise<RestaurantRow[]> => {
+    const out: RestaurantRow[] = [];
+    for (let offset = 0; !cancelRef.current; offset += SNAPSHOT_PAGE) {
+      const data = await apiGet<RestaurantRow[] | { data: RestaurantRow[] }>(`/restaurant?${listParams(SNAPSHOT_PAGE, offset)}`);
+      const list = Array.isArray(data) ? data : data.data || [];
+      out.push(...list);
+      setBulk({ phase: "snapshot", done: 0, total: out.length, filled: 0, missed: 0 });
+      if (list.length < SNAPSHOT_PAGE) break;
+    }
+    return srcFilter ? out.filter((r) => sourceFromUrl(r.restaurantURL) === srcFilter) : out;
+  };
+
+  /** 체크한 식당(또는 조건 전체)마다 빈 필드만 재수집해서 바로 저장 */
+  const runBulk = async () => {
+    const all = allMode;
+    const count = all ? countFor(filter, missing) : checked.size;
+    const label = all ? (count !== null && !q && !srcFilter ? `${count.toLocaleString()}곳` : "조건에 맞는 식당 전체") : `${checked.size}곳`;
+    const warn = all
+      ? "\n\n곳당 몇 초씩 걸려 전체는 오래 걸릴 수 있어요. 도중에 '중지'할 수 있고, 이 창을 닫으면 멈춥니다."
+      : "";
+    if (!window.confirm(`${label}의 빈 필드를 다시 수집해 채울까요?\n이름이 맞는 가게에서만 가져오고, 이미 있는 값은 바꾸지 않습니다.${warn}`)) return;
+
+    cancelRef.current = false;
     setBulkNote(null);
+    let targets: RestaurantRow[];
+    try {
+      if (all) {
+        setBulk({ phase: "snapshot", done: 0, total: 0, filled: 0, missed: 0 });
+        targets = await snapshotTargets();
+      } else {
+        targets = rows.filter((r) => checked.has(String(r.restaurantIdx)));
+      }
+    } catch (e) {
+      setBulk(null);
+      setBulkNote(`대상 목록을 불러오지 못했어요: ${(e as Error).message}`);
+      return;
+    }
+
+    let done = 0;
     let filled = 0;
     const misses: string[] = [];
-    for (let i = 0; i < targets.length; i++) {
-      const r = targets[i];
-      const need: RecollectField[] = [];
-      if (parseMenu(r.restaurantMenu).length === 0) need.push("menu");
-      if (!r.restaurantImage) need.push("image");
-      if (!r.restaurantURL) need.push("url");
-      if (need.length > 0) {
-        try {
-          const res = await recollect(r, need);
-          const patch: Record<string, unknown> = {};
-          if (res.menu) patch.restaurantMenu = res.menu;
-          if (res.image) patch.restaurantImage = res.image;
-          if (res.url) patch.restaurantURL = res.url;
-          if (Object.keys(patch).length > 0) {
-            await apiSend("PUT", `/admin/restaurant/${r.restaurantIdx}`, patch);
-            applyPatch(String(r.restaurantIdx), patch as Partial<RestaurantRow>);
-            filled += 1;
-          } else {
-            misses.push(r.restaurantName);
-          }
-        } catch {
-          misses.push(r.restaurantName);
-        }
+    const total = targets.length;
+    setBulk({ phase: "run", done, total, filled, missed: 0 });
+
+    let next = 0;
+    const worker = async () => {
+      while (!cancelRef.current) {
+        const i = next++;
+        if (i >= total) return;
+        const result = await fillOne(targets[i]);
+        done += 1;
+        if (result === "filled") filled += 1;
+        if (result === "missed") misses.push(targets[i].restaurantName);
+        setBulk({ phase: "run", done, total, filled, missed: misses.length });
+        // 오래 도는 동안 위 현황 줄도 조금씩 따라오게
+        if (done % 50 === 0) onDataChanged();
       }
-      setBulk({ done: i + 1, total: targets.length, filled });
-    }
+    };
+    await Promise.all(Array.from({ length: all ? BULK_CONCURRENCY : 1 }, worker));
+
+    const stopped = cancelRef.current && done < total;
     setBulk(null);
     setChecked(new Set());
+    setAllMode(false);
     setBulkNote(
-      `${targets.length}곳 중 ${filled}곳을 채웠어요.` + (misses.length ? ` 못 찾은 곳: ${misses.slice(0, 5).join(", ")}${misses.length > 5 ? ` 외 ${misses.length - 5}곳` : ""}` : ""),
+      `${stopped ? `중지했어요. ${total.toLocaleString()}곳 중 ${done.toLocaleString()}곳을 확인해` : `${total.toLocaleString()}곳 중`} ${filled.toLocaleString()}곳을 채웠어요.` +
+        (misses.length
+          ? ` 못 찾은 곳 ${misses.length.toLocaleString()}곳: ${misses.slice(0, 5).join(", ")}${misses.length > 5 ? " 외" : ""}`
+          : ""),
     );
     onDataChanged();
+    load();
   };
 
   const total = countFor(filter, missing);
+  const allLabel = total !== null && !q && !srcFilter ? `${total.toLocaleString()}곳` : "검색 결과";
   const from = page * PAGE_SIZE + (rows.length ? 1 : 0);
   const to = page * PAGE_SIZE + rows.length;
   const rangeLabel = q
@@ -313,27 +425,57 @@ export function EnrichTab({
 
       <div className="flex flex-wrap items-start gap-3">
         <div className="min-w-0 flex-[1_1_560px] overflow-hidden rounded-[14px] border border-[#E6E9F0] bg-white">
-          {(checked.size > 0 || bulk) && (
-            <div className="flex flex-wrap items-center gap-3 bg-[#151A26] px-4 py-2.5 text-white">
-              <span className="text-[13px] font-bold">
-                {bulk ? `재수집 중 ${bulk.done}/${bulk.total} · 채움 ${bulk.filled}` : `${checked.size}곳 선택됨`}
-              </span>
-              <button
-                type="button"
-                onClick={runBulk}
-                disabled={!!bulk}
-                className="whitespace-nowrap rounded-lg bg-[#1552D6] px-3 py-[7px] text-[12.5px] font-bold text-white disabled:opacity-60"
-              >
-                누락 필드 재수집
-              </button>
-              <button
-                type="button"
-                onClick={() => setChecked(new Set())}
-                disabled={!!bulk}
-                className="ml-auto whitespace-nowrap text-[12.5px] text-[#AEB5C6] hover:text-white disabled:opacity-50"
-              >
-                선택 해제
-              </button>
+          {(checked.size > 0 || allMode || bulk) && (
+            <div className="bg-[#151A26] px-4 py-2.5 text-white">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-[13px] font-bold">
+                  {bulk
+                    ? bulk.phase === "snapshot"
+                      ? `대상 불러오는 중 ${bulk.total.toLocaleString()}곳…`
+                      : `재수집 중 ${bulk.done.toLocaleString()}/${bulk.total.toLocaleString()} · 채움 ${bulk.filled.toLocaleString()} · 못 찾음 ${bulk.missed.toLocaleString()}`
+                    : allMode
+                      ? `${allLabel} 전체 선택됨`
+                      : `${checked.size}곳 선택됨`}
+                </span>
+                {!bulk && !allMode && allOn && (page > 0 || hasNext) && (
+                  <button type="button" onClick={() => setAllMode(true)} className="whitespace-nowrap text-[12.5px] font-bold text-[#8FB0FF] underline-offset-2 hover:underline">
+                    조건에 맞는 {allLabel} 모두 선택
+                  </button>
+                )}
+                {bulk ? (
+                  <button
+                    type="button"
+                    onClick={() => (cancelRef.current = true)}
+                    className="whitespace-nowrap rounded-lg bg-[#C23B3B] px-3 py-[7px] text-[12.5px] font-bold text-white hover:bg-[#A82F2F]"
+                  >
+                    중지
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={runBulk}
+                    className="whitespace-nowrap rounded-lg bg-[#1552D6] px-3 py-[7px] text-[12.5px] font-bold text-white"
+                  >
+                    누락 필드 재수집
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setChecked(new Set());
+                    setAllMode(false);
+                  }}
+                  disabled={!!bulk}
+                  className="ml-auto whitespace-nowrap text-[12.5px] text-[#AEB5C6] hover:text-white disabled:opacity-50"
+                >
+                  선택 해제
+                </button>
+              </div>
+              {bulk?.phase === "run" && bulk.total > 0 && (
+                <div className="mt-2 h-1.5 overflow-hidden rounded bg-white/15" aria-hidden>
+                  <div className="h-full rounded bg-[#4C8DFF] transition-[width]" style={{ width: `${(bulk.done / bulk.total) * 100}%` }} />
+                </div>
+              )}
             </div>
           )}
 
@@ -369,7 +511,7 @@ export function EnrichTab({
                 ) : (
                   visible.map((r) => {
                     const id = String(r.restaurantIdx);
-                    const on = checked.has(id);
+                    const on = allMode || checked.has(id);
                     const isSel = selId === id;
                     const src = sourceFromUrl(r.restaurantURL);
                     return (

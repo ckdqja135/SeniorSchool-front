@@ -94,9 +94,16 @@ export default function RestaurantCrawlerPage() {
       <div hidden={tab !== "collect"}>
         <CollectTab sources={sources} onDataChanged={refreshStats} />
       </div>
-      {tab === "enrich" && (
-        <EnrichTab filter={enrichFilter} onFilterChange={setEnrichFilter} missing={missing} onDataChanged={refreshStats} />
-      )}
+      {/* 보강 탭도 숨기기만 한다 — 일괄 재수집이 도는 중에 탭을 바꿔도 멈추지 않게 */}
+      <div hidden={tab !== "enrich"}>
+        <EnrichTab
+          active={tab === "enrich"}
+          filter={enrichFilter}
+          onFilterChange={setEnrichFilter}
+          missing={missing}
+          onDataChanged={refreshStats}
+        />
+      </div>
     </main>
   );
 }
