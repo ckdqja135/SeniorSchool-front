@@ -3,26 +3,14 @@
 import React, { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
-import { ServiceConfig } from "@/types/Services";
-import { fetchActiveServices } from "@/lib/services/serviceConfigAPI";
+import type { MenuItem } from "../adminMenu";
 import { useNavigationGuard } from "@/components/common/NavigationGuard";
 
 interface SidebarProps {
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
-}
-
-interface MenuItem {
-  icon: string;
-  label: string;
-  href: string;
-  subItems: SubMenuItem[];
-}
-
-interface SubMenuItem {
-  label: string;
-  href: string;
-  subItems?: SubMenuItem[];
+  /** 메뉴 정의 (adminMenu.buildAdminMenu). 헤더 이동 경로와 같은 목록을 쓰려고 레이아웃에서 받는다 */
+  menuItems: MenuItem[];
 }
 
 // 접힘 상태에서 아이콘 클릭 시 오른쪽으로 펼쳐지는 플라이아웃 위치
@@ -32,136 +20,9 @@ interface Flyout {
   left: number;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, menuItems }) => {
   const pathname = usePathname();
   const { requestNavigation } = useNavigationGuard();
-  const [dynamicServices, setDynamicServices] = useState<ServiceConfig[]>([]);
-
-  useEffect(() => {
-    fetchActiveServices().then(setDynamicServices).catch(() => {});
-  }, []);
-
-  // 기존 정적 메뉴
-  const staticMenuItems: MenuItem[] = [
-    {
-      icon: "📊",
-      label: "Dashboard",
-      href: "/myoriadmin",
-      subItems: [],
-    },
-    {
-      icon: "🗂️",
-      label: "자유게시판",
-      href: "/myoriadmin/freeboard",
-      subItems: [
-        { label: "자유게시판 관리", href: "/myoriadmin/freeboard" }
-      ],
-    },
-    {
-      icon: "🎓",
-      label: "학교 오빠",
-      href: "/myoriadmin/school",
-      subItems: [
-        { label: "학교 관리", href: "/myoriadmin/school/management" },
-        { label: "대학교 추가 요청 관리", href: "/myoriadmin/school/requests" },
-        { label: "후기 관리", href: "/myoriadmin/school/board" },
-      ],
-    },
-    {
-      icon: "⛪",
-      label: "교회 오빠",
-      href: "/myoriadmin/church",
-      subItems: [
-        { label: "교회 관리", href: "/myoriadmin/church" },
-        { label: "교회 추가 요청 관리", href: "/myoriadmin/church/requests" },
-        { label: "후기 관리", href: "/myoriadmin/church/board" },
-      ],
-    },
-    {
-      icon: "✍️",
-      label: "회사 오빠",
-      href: "/myoriadmin/company",
-      subItems: [
-        { label: "회사 관리", href: "/myoriadmin/company" },
-        { label: "회사 추가 요청 관리", href: "/myoriadmin/company/requests" },
-        { label: "후기 관리", href: "/myoriadmin/company/board" },
-        { label: "크롤러 관리", href: "/myoriadmin/company/crawler" },
-      ],
-    },
-    {
-      icon: "💼",
-      label: "외주 오빠",
-      href: "/myoriadmin/outsource",
-      subItems: [
-        { label: "외주업체 관리", href: "/myoriadmin/outsource" },
-        { label: "외주업체 추가 요청 관리", href: "/myoriadmin/outsource/requests" },
-        { label: "후기 관리", href: "/myoriadmin/outsource/board" },
-      ],
-    },
-    {
-      icon: "🍽️",
-      label: "맛잘알 오빠",
-      href: "/myoriadmin/restaurant",
-      subItems: [
-        { label: "식당 관리", href: "/myoriadmin/restaurant" },
-        { label: "식당 추가 요청 관리", href: "/myoriadmin/restaurant/requests" },
-        { label: "후기 관리", href: "/myoriadmin/restaurant/board" },
-        { label: "크롤러 관리", href: "/myoriadmin/restaurant/crawler" },
-      ],
-    },
-  ];
-
-  // 동적 서비스 메뉴 생성
-  const dynamicMenuItems: MenuItem[] = dynamicServices.map((svc) => ({
-    icon: svc.serviceEmoji,
-    label: svc.serviceDisplay,
-    href: `/myoriadmin/services/${svc.serviceSlug}`,
-    subItems: [
-      { label: `${svc.serviceName} 관리`, href: `/myoriadmin/services/${svc.serviceSlug}` },
-      { label: `추가 요청 관리`, href: `/myoriadmin/services/${svc.serviceSlug}/requests` },
-      { label: `후기 관리`, href: `/myoriadmin/services/${svc.serviceSlug}/board` },
-    ],
-  }));
-
-  // 하단 고정 메뉴
-  const bottomMenuItems: MenuItem[] = [
-    {
-      icon: "🛠️",
-      label: "서비스 관리",
-      href: "/myoriadmin/services",
-      subItems: [
-        { label: "서비스 목록", href: "/myoriadmin/services" },
-        { label: "서비스 추가", href: "/myoriadmin/services/create" },
-      ],
-    },
-    {
-      icon: "📈",
-      label: "접속 분석",
-      href: "/myoriadmin/analytics",
-      subItems: [],
-    },
-    {
-      icon: "👥",
-      label: "관리자 관리",
-      href: "/myoriadmin/admin",
-      subItems: [],
-    },
-    {
-      icon: "📝",
-      label: "게시글 관리",
-      href: "/myoriadmin/posts",
-      subItems: [
-        { label: "신고 게시글", href: "/myoriadmin/posts/reported" }
-      ],
-    },
-  ];
-
-  // 최종 메뉴 조합
-  const menuItems: MenuItem[] = [
-    ...staticMenuItems,
-    ...dynamicMenuItems,
-    ...bottomMenuItems,
-  ];
 
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
   const [expandedSubItem, setExpandedSubItem] = useState<string | null>(null);

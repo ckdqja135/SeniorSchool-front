@@ -1,9 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import Sidebar from "../Sidebar/index";
 import { UserProps } from "@/types/User";
+import { ServiceConfig } from "@/types/Services";
+import { fetchActiveServices } from "@/lib/services/serviceConfigAPI";
+import { buildAdminMenu, resolveBreadcrumb } from "../adminMenu";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -13,7 +17,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [user, setUser] = useState<UserProps | null>(null);
+  const [services, setServices] = useState<ServiceConfig[]>([]);
   const router = useRouter();
+  const pathname = usePathname();
+
+  // 사이드바와 헤더 이동 경로가 같은 메뉴 정의를 쓴다
+  useEffect(() => {
+    fetchActiveServices().then(setServices).catch(() => {});
+  }, []);
+  const menuItems = useMemo(() => buildAdminMenu(services), [services]);
+  const crumbs = useMemo(() => resolveBreadcrumb(pathname, menuItems), [pathname, menuItems]);
 
   useEffect(() => {
     // localStorage에서 사용자 정보 가져오기
@@ -39,10 +52,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     localStorage.setItem("adminSidebarCollapsed", String(collapsed));
   };
 
-  const handleHomeClick = () => {
-    router.push("/myoriadmin");
-  };
-
   const handleLogout = () => {
     // 로컬스토리지에서 사용자 정보 제거
     localStorage.removeItem("user");
@@ -54,25 +63,28 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      <Sidebar isCollapsed={isCollapsed} setIsCollapsed={handleToggleCollapsed} />
+      <Sidebar isCollapsed={isCollapsed} setIsCollapsed={handleToggleCollapsed} menuItems={menuItems} />
       
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Header */}
         <header className="relative z-50 bg-white/80 backdrop-blur-sm border-b border-gray-100 px-8 py-3">
           <div className="flex items-center justify-between">
-            <div
-              className="flex items-center gap-3 cursor-pointer group"
-              onClick={handleHomeClick}
-            >
-              <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                </svg>
-              </div>
-              <h1 className="text-lg font-bold text-gray-800 group-hover:text-indigo-600 transition-colors">
-                Dashboard
-              </h1>
-            </div>
+            {/* 현재 경로의 이동 경로 (예: 맛잘알 오빠 / 크롤러 관리) */}
+            <nav aria-label="현재 위치" className="flex min-w-0 items-center gap-2 text-[13.5px] text-[#7A8296]">
+              {crumbs.map((c, i) => {
+                const last = i === crumbs.length - 1;
+                return (
+                  <React.Fragment key={`${c.href}-${i}`}>
+                    {i > 0 && <span className="text-[#C3C8D4]" aria-hidden>/</span>}
+                    {last ? (
+                      <b aria-current="page" className="truncate text-[15px] font-bold text-[#151A26]">{c.label}</b>
+                    ) : (
+                      <Link href={c.href} className="truncate hover:text-[#151A26]">{c.label}</Link>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </nav>
 
             {/* User Menu */}
             <div className="relative">
