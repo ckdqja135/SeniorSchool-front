@@ -4,7 +4,7 @@
  * '스케줄러 실행' 카드 그리드.
  * 여러 개를 골라 같은 기간으로 한 번에 돌린다. 고른 순서대로 큐에 들어가 하나씩 실행된다.
  */
-import { C, STATUS_TAG, fmtDateTime, fmtDuration, type SchedulerJob } from "./shared";
+import { C, STATUS_TAG, fmtDateTime, fmtDuration, groupTag, type SchedulerJob } from "./shared";
 
 export function JobGrid({
   jobs,
@@ -110,7 +110,10 @@ export function JobGrid({
                   >
                     {on ? "✓" : ""}
                   </span>
-                  <span className="rounded-[5px] bg-[#EEF0F5] px-1.5 py-[3px] text-[10.5px] font-extrabold text-[#5A6275]">
+                  <span
+                    className="rounded-[5px] px-1.5 py-[3px] text-[10.5px] font-extrabold"
+                    style={{ color: groupTag(j.group).fg, background: groupTag(j.group).bg }}
+                  >
                     {j.group}
                   </span>
                 </div>

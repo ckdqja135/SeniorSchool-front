@@ -25,6 +25,23 @@ export const C = {
   warnBg: "#FDEBE1",
 } as const;
 
+/**
+ * 잡 카드의 분류 배지 색. 서비스마다 달라야 한 눈에 구분된다.
+ * 각 서비스의 기존 강조색을 따른다 (맛잘알 rose · 회사 purple · 교회 red · 학교 green · 외주 amber).
+ * 등록되지 않은 그룹은 회색으로 떨어진다.
+ */
+export const GROUP_TAG: Record<string, { fg: string; bg: string }> = {
+  "맛잘알 오빠": { fg: "#B4234B", bg: "#FDECF1" },
+  "회사 오빠": { fg: "#6B3FA0", bg: "#F2EBFB" },
+  "교회 오빠": { fg: "#C23B3B", bg: "#FDECEC" },
+  "학교 오빠": { fg: "#0E7A43", bg: "#E4F6EC" },
+  "외주 오빠": { fg: "#B4461A", bg: "#FDEBE1" },
+};
+
+export function groupTag(group: string): { fg: string; bg: string } {
+  return GROUP_TAG[group] ?? { fg: "#5A6275", bg: "#EEF0F5" };
+}
+
 export type RunStatus = "running" | "success" | "failed" | "canceled";
 
 export const STATUS_TAG: Record<RunStatus, { label: string; fg: string; bg: string; dot: string }> = {
