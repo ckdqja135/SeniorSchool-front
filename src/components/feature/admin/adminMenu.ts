@@ -90,6 +90,8 @@ const BOTTOM_MENU: MenuItem[] = [
       { label: "서비스 추가", href: "/myoriadmin/services/create" },
     ],
   },
+  // 여러 서비스에 걸친 정기 작업이라 서비스별 메뉴가 아니라 여기에 둔다
+  { icon: "⏱️", label: "스케줄러 실행", href: "/myoriadmin/scheduler", subItems: [] },
   { icon: "📈", label: "접속 분석", href: "/myoriadmin/analytics", subItems: [] },
   { icon: "👥", label: "관리자 관리", href: "/myoriadmin/admin", subItems: [] },
   {
