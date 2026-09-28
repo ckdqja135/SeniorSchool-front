@@ -120,21 +120,28 @@ export function togglePermission(tree: MenuNode[], perms: PermMap, node: MenuNod
   const next: PermMap = {};
   for (const k of Object.keys(perms)) next[Number(k)] = { ...perms[Number(k)] };
 
+  // master 전용 메뉴는 이 그룹에 켤 수 없으므로 전파에서 빼 둔다 —
+  // 그러지 않으면 '하위가 master 전용뿐인 묶음'이 편집 화면에서는 체크된 것처럼 보이는데
+  // 실제 사이드바에서는 보일 게 없어 사라진다.
   const applyDown = (n: MenuNode) => {
+    if (n.masterOnly) return;
     next[n.menuIdx] = { ...(next[n.menuIdx] ?? {}), [code]: checked };
     n.children.forEach(applyDown);
   };
   applyDown(node);
 
-  const recompute = (n: MenuNode): boolean => {
-    if (n.children.length === 0) return next[n.menuIdx]?.[code] === true;
-    const anyChild = n.children.map(recompute).some(Boolean);
-    next[n.menuIdx] = { ...(next[n.menuIdx] ?? {}), [code]: anyChild };
-    return anyChild;
-  };
-  tree.forEach(recompute);
+  tree.forEach((n) => recomputeBranch(n, next, code));
 
   return next;
+}
+
+/** 묶음 메뉴 = 직속 자식 중 하나라도 체크 (master 전용 자식은 세지 않는다) */
+function recomputeBranch(n: MenuNode, acc: PermMap, code: string): boolean {
+  if (n.masterOnly) return false;
+  if (n.children.length === 0) return acc[n.menuIdx]?.[code] === true;
+  const anyChild = n.children.map((c) => recomputeBranch(c, acc, code)).some(Boolean);
+  acc[n.menuIdx] = { ...(acc[n.menuIdx] ?? {}), [code]: anyChild };
+  return anyChild;
 }
 
 /** 트리 구조가 바뀐 뒤(드래그) 묶음 메뉴 체크를 다시 계산한다 */
@@ -143,13 +150,7 @@ export function recomputeAll(tree: MenuNode[], perms: PermMap, codes: string[]):
   for (const code of codes) {
     const merged: PermMap = {};
     for (const k of Object.keys(next)) merged[Number(k)] = { ...next[Number(k)] };
-    const recompute = (n: MenuNode): boolean => {
-      if (n.children.length === 0) return merged[n.menuIdx]?.[code] === true;
-      const anyChild = n.children.map(recompute).some(Boolean);
-      merged[n.menuIdx] = { ...(merged[n.menuIdx] ?? {}), [code]: anyChild };
-      return anyChild;
-    };
-    tree.forEach(recompute);
+    tree.forEach((n) => recomputeBranch(n, merged, code));
     next = merged;
   }
   return next;

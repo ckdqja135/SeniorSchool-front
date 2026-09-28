@@ -28,6 +28,11 @@ export interface MenuNode {
   children: MenuNode[];
   /** 관리자 조회에만 실린다. master 그룹 키는 들어오지 않는다(코드에서 전체 노출) */
   rolePermissions?: Record<string, boolean>;
+  /**
+   * master 전용 화면으로 가는 메뉴. 다른 그룹에는 켤 수 없다 —
+   * API 가 MasterGuard 로 잠겨 있어 켜 줘도 '권한 없음' 만 뜨므로 사이드바에서도 감춘다.
+   */
+  masterOnly?: boolean;
 }
 
 export interface AdminRow {

@@ -104,14 +104,25 @@ export function MenuTreeRow(props: MenuTreeRowProps) {
           {hasChildren ? (open ? "▼" : "▶") : ""}
         </button>
 
-        <input
-          type="checkbox"
-          checked={checked}
-          disabled={readOnly}
-          onChange={(e) => props.onTogglePerm(node, e.target.checked)}
-          className="h-[15px] w-[15px] shrink-0 cursor-pointer accent-[#1552D6] disabled:cursor-not-allowed"
-          aria-label={`${node.menuName} 노출`}
-        />
+        {/* master 전용 메뉴는 다른 그룹에 켤 수 없으니 체크박스를 아예 두지 않는다 */}
+        {node.masterOnly ? (
+          <span
+            className="flex h-[15px] w-[15px] shrink-0 items-center justify-center text-[11px] text-[#C3C8D4]"
+            title="master 전용 화면이라 다른 권한에는 노출되지 않습니다"
+            aria-label={`${node.menuName}은 master 전용`}
+          >
+            🔒
+          </span>
+        ) : (
+          <input
+            type="checkbox"
+            checked={checked}
+            disabled={readOnly}
+            onChange={(e) => props.onTogglePerm(node, e.target.checked)}
+            className="h-[15px] w-[15px] shrink-0 cursor-pointer accent-[#1552D6] disabled:cursor-not-allowed"
+            aria-label={`${node.menuName} 노출`}
+          />
+        )}
 
         <button
           type="button"
@@ -126,6 +137,11 @@ export function MenuTreeRow(props: MenuTreeRowProps) {
             <span className="ml-1.5 text-[11px] font-normal text-[#AEB5C6]">{node.menuPath}</span>
           ) : (
             <span className="ml-1.5 text-[11px] font-normal text-[#C3C8D4]">묶음</span>
+          )}
+          {node.masterOnly && (
+            <span className="ml-1.5 rounded-[5px] bg-[#EEF0F5] px-1.5 py-[1px] text-[10.5px] font-bold text-[#5A6275]">
+              master 전용
+            </span>
           )}
         </button>
 
