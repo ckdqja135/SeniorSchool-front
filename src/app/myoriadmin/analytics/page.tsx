@@ -36,6 +36,7 @@ import {
   toDateParam,
   toEvents,
 } from "@/lib/admin/trafficAnalytics";
+import { fmtCompact, fmtFull } from "@/lib/format/number";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -586,7 +587,7 @@ export default function AnalyticsPage() {
       const n = d.chAgg[c];
       const p = (n / chTotal) * 100;
       stops.push(`${PAL[i]} ${acc.toFixed(1)}% ${(acc + p).toFixed(1)}%`);
-      const seg = { name: c, n, count: `${fmt(n)}회`, pct: `${p.toFixed(0)}%`, color: PAL[i], from: acc, to: acc + p };
+      const seg = { name: c, n, count: `${fmtCompact(n)}회`, pct: `${p.toFixed(0)}%`, color: PAL[i], from: acc, to: acc + p };
       acc += p;
       return seg;
     });
@@ -611,7 +612,7 @@ export default function AnalyticsPage() {
     const ent = sortedEntries(obj);
     const tot = ent.reduce((s, e) => s + e[1], 0) || 1;
     const mx = ent[0] ? ent[0][1] : 1;
-    return ent.slice(0, 5).map(([k, v], i) => ({ name: k, n: v, tot, count: fmt(v), pct: `${Math.round((v / tot) * 100)}%`, w: `${((v / mx) * 100).toFixed(1)}%`, color: colors[i % colors.length] }));
+    return ent.slice(0, 5).map(([k, v], i) => ({ name: k, n: v, tot, count: fmtCompact(v), pct: `${Math.round((v / tot) * 100)}%`, w: `${((v / mx) * 100).toFixed(1)}%`, color: colors[i % colors.length] }));
   };
   const uaCards = [
     { title: "기기 유형", rows: mkRows(d.dev, [A, C2, C3, C4]) },
@@ -628,7 +629,7 @@ export default function AnalyticsPage() {
     n,
     path: safeDecode(p),
     label: pathLabel(p),
-    count: `${fmt(n)}회`,
+    count: `${fmtCompact(n)}회`,
     w: `${((n / mxP) * 100).toFixed(1)}%`,
   }));
 
@@ -637,7 +638,7 @@ export default function AnalyticsPage() {
   const referrers = refList.map(([h, n], i) => ({
     host: h,
     n,
-    count: fmt(n),
+    count: fmtCompact(n),
     channel: h === "(직접 유입)" ? "직접" : chan(`https://${h}`),
     w: `${((n / mxR) * 100).toFixed(1)}%`,
     color: PAL[i % PAL.length],
@@ -660,7 +661,7 @@ export default function AnalyticsPage() {
   const sessions = sFiltered.slice(spg * SESS_PER_PAGE, spg * SESS_PER_PAGE + SESS_PER_PAGE);
 
   const recent = d.human.slice().sort((a, b) => b.t.getTime() - a.t.getTime()).slice(0, 6);
-  const bots = sortedEntries(d.botAgg).map(([k, v]) => ({ name: k, count: `${fmt(v)}회` }));
+  const bots = sortedEntries(d.botAgg).map(([k, v]) => ({ name: k, n: v, count: `${fmtCompact(v)}회` }));
   const botPct = `${Math.round((d.botEv.length / Math.max(1, d.cur.length)) * 100)}%`;
   const repeats = Array.from(d.ipDays.values())
     .filter((v) => v.days.size > 1)
@@ -921,7 +922,7 @@ export default function AnalyticsPage() {
                       <span style={{ width: 9, height: 9, borderRadius: 3, background: c.color, flex: "0 0 9px" }} />
                       <span style={{ fontSize: 12.5, flex: 1 }}>{c.name}</span>
                       <span style={{ fontSize: 12.5, fontWeight: 700 }}>{c.pct}</span>
-                      <span style={{ fontSize: 11.5, color: FAINT, width: 44, textAlign: "right" }}>{c.count}</span>
+                      <span title={fmtFull(c.n)} style={{ fontSize: 11.5, color: FAINT, width: 44, textAlign: "right" }}>{c.count}</span>
                     </div>
                   ))}
                 </div>
@@ -981,7 +982,7 @@ export default function AnalyticsPage() {
                         <div style={{ height: "100%", width: p.w, background: A, borderRadius: 3 }} />
                       </div>
                     </div>
-                    <span style={{ fontSize: 13, fontWeight: 700, width: 52, textAlign: "right" }}>{p.count}</span>
+                    <span title={fmtFull(p.n)} style={{ fontSize: 13, fontWeight: 700, width: 52, textAlign: "right" }}>{p.count}</span>
                   </div>
                 ))}
               </div>
@@ -999,7 +1000,7 @@ export default function AnalyticsPage() {
                     <div style={{ ...track, width: 74, flex: "0 0 74px" }}>
                       <div style={{ height: "100%", width: r.w, background: r.color, borderRadius: 3 }} />
                     </div>
-                    <span style={{ fontSize: 13, fontWeight: 700, width: 44, textAlign: "right" }}>{r.count}</span>
+                    <span title={fmtFull(r.n)} style={{ fontSize: 13, fontWeight: 700, width: 44, textAlign: "right" }}>{r.count}</span>
                   </div>
                 ))}
               </div>

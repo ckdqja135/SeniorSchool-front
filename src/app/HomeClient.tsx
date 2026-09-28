@@ -11,6 +11,7 @@ import { OutsourceBoard } from '@/types/Outsource';
 import { ServiceConfig, DynamicBoard } from '@/types/Services';
 import { useRecentDynamicBoards } from '@/hooks/Services/useDynamicBoard';
 import { Skeleton } from '@/components/common/Skeleton';
+import { fmtCompact, fmtFull } from "@/lib/format/number";
 
 interface University {
   univName: string;
@@ -392,13 +393,13 @@ export default function HomeClient({
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
-                            <span>{post.boardHits}</span>
+                            <span title={fmtFull(post.boardHits)}>{fmtCompact(post.boardHits)}</span>
                           </span>
                           <span className="flex items-center gap-1">
                             <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                             </svg>
-                            <span>{post.boardLike}</span>
+                            <span title={fmtFull(post.boardLike)}>{fmtCompact(post.boardLike)}</span>
                           </span>
                         </div>
                       </li>
@@ -436,13 +437,13 @@ export default function HomeClient({
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
-                            <span>{post.boardHits}</span>
+                            <span title={fmtFull(post.boardHits)}>{fmtCompact(post.boardHits)}</span>
                           </span>
                           <span className="flex items-center gap-1">
                             <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                             </svg>
-                            <span>{post.boardLike}</span>
+                            <span title={fmtFull(post.boardLike)}>{fmtCompact(post.boardLike)}</span>
                           </span>
                         </div>
                       </li>
@@ -475,13 +476,13 @@ export default function HomeClient({
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
-                            <span>{post.boardHits}</span>
+                            <span title={fmtFull(post.boardHits)}>{fmtCompact(post.boardHits)}</span>
                           </span>
                           <span className="flex items-center gap-1">
                             <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                             </svg>
-                            <span>{post.boardLike}</span>
+                            <span title={fmtFull(post.boardLike)}>{fmtCompact(post.boardLike)}</span>
                           </span>
                         </div>
                       </li>
@@ -514,13 +515,13 @@ export default function HomeClient({
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
-                            <span>{post.boardHits}</span>
+                            <span title={fmtFull(post.boardHits)}>{fmtCompact(post.boardHits)}</span>
                           </span>
                           <span className="flex items-center gap-1">
                             <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                             </svg>
-                            <span>{post.boardLike}</span>
+                            <span title={fmtFull(post.boardLike)}>{fmtCompact(post.boardLike)}</span>
                           </span>
                         </div>
                       </li>
@@ -553,13 +554,13 @@ export default function HomeClient({
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
-                            <span>{post.boardHits}</span>
+                            <span title={fmtFull(post.boardHits)}>{fmtCompact(post.boardHits)}</span>
                           </span>
                           <span className="flex items-center gap-1">
                             <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                             </svg>
-                            <span>{post.boardLike}</span>
+                            <span title={fmtFull(post.boardLike)}>{fmtCompact(post.boardLike)}</span>
                           </span>
                         </div>
                       </li>
@@ -600,13 +601,13 @@ export default function HomeClient({
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
-                            <span>{board.boardHits || 0}</span>
+                            <span title={fmtFull(board.boardHits || 0)}>{fmtCompact(board.boardHits || 0)}</span>
                           </span>
                           <span className="flex items-center gap-1">
                             <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                             </svg>
-                            <span>{board.boardLike || 0}</span>
+                            <span title={fmtFull(board.boardLike || 0)}>{fmtCompact(board.boardLike || 0)}</span>
                           </span>
                         </div>
                       </li>
@@ -640,13 +641,13 @@ export default function HomeClient({
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
-                            <span>{board.boardHits}</span>
+                            <span title={fmtFull(board.boardHits)}>{fmtCompact(board.boardHits)}</span>
                           </span>
                           <span className="flex items-center gap-1">
                             <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                             </svg>
-                            <span>{board.boardLike}</span>
+                            <span title={fmtFull(board.boardLike)}>{fmtCompact(board.boardLike)}</span>
                           </span>
                         </div>
                       </li>
@@ -751,13 +752,13 @@ function DynamicServiceSection({ service }: { service: ServiceConfig }) {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
-                    <span>{board.boardHits || 0}</span>
+                    <span title={fmtFull(board.boardHits || 0)}>{fmtCompact(board.boardHits || 0)}</span>
                   </span>
                   <span className="flex items-center gap-1">
                     <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                     </svg>
-                    <span>{board.boardLike || 0}</span>
+                    <span title={fmtFull(board.boardLike || 0)}>{fmtCompact(board.boardLike || 0)}</span>
                   </span>
                 </div>
               </li>
