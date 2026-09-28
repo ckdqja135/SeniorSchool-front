@@ -8,6 +8,7 @@
  * 상위 메뉴 선택 목록에서는 자기 자신과 자기 하위를 빼고, 3단을 넘게 되는 후보도 뺀다.
  */
 import { useMemo, useState } from "react";
+import { IconPicker } from "./IconPicker";
 import { Modal, btnOutline, btnPrimary, inputCls, labelCls } from "./Modal";
 import { MAX_DEPTH, type MenuNode } from "./shared";
 import { flatten, heightOf, isDescendant } from "./treeOps";
@@ -88,7 +89,7 @@ export function MenuFormModal({
         </>
       }
     >
-      <div className="flex flex-col gap-3.5">
+      <div className="flex flex-col gap-3">
         <div>
           <label className={labelCls} htmlFor="menu-name">
             메뉴명
@@ -117,16 +118,10 @@ export function MenuFormModal({
         </div>
 
         <div>
-          <label className={labelCls} htmlFor="menu-icon">
-            아이콘 <span className="font-normal text-[#AEB5C6]">(이모지, 최상위 메뉴만 표시)</span>
-          </label>
-          <input
-            id="menu-icon"
-            className={inputCls}
-            value={menuIcon}
-            onChange={(e) => setMenuIcon(e.target.value)}
-            placeholder="🍽️"
-          />
+          <span className={labelCls}>
+            아이콘 <span className="font-normal text-[#AEB5C6]">(최상위 메뉴에만 표시)</span>
+          </span>
+          <IconPicker value={menuIcon} onChange={setMenuIcon} />
         </div>
 
         <div>

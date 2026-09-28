@@ -56,7 +56,7 @@ export function GroupModal({
     <Modal
       title="권한 관리"
       onClose={onClose}
-      width="w-[480px]"
+      width="w-[440px]"
       footer={
         <button type="button" className={btnOutline} onClick={onClose}>
           닫기

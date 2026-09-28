@@ -61,7 +61,7 @@ export function AccountFormModal({
         </>
       }
     >
-      <div className="flex flex-col gap-3.5">
+      <div className="flex flex-col gap-3">
         <div>
           <label className={labelCls} htmlFor="acc-id">
             아이디
