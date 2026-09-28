@@ -7,7 +7,8 @@ import Sidebar from "../Sidebar/index";
 import { UserProps } from "@/types/User";
 import { ServiceConfig } from "@/types/Services";
 import { fetchActiveServices } from "@/lib/services/serviceConfigAPI";
-import { buildAdminMenu, resolveBreadcrumb } from "../adminMenu";
+import { resolveBreadcrumb } from "../adminMenu";
+import { useAdminMenu } from "../useAdminMenu";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -25,7 +26,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   useEffect(() => {
     fetchActiveServices().then(setServices).catch(() => {});
   }, []);
-  const menuItems = useMemo(() => buildAdminMenu(services), [services]);
+  // 메뉴는 권한 그룹에 따라 DB에서 내려온다 (실패 시 기존 하드코딩 트리로 폴백)
+  const { menuItems, state: menuState } = useAdminMenu(services);
   const crumbs = useMemo(() => resolveBreadcrumb(pathname, menuItems), [pathname, menuItems]);
 
   useEffect(() => {
@@ -63,7 +65,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      <Sidebar isCollapsed={isCollapsed} setIsCollapsed={handleToggleCollapsed} menuItems={menuItems} />
+      <Sidebar
+        isCollapsed={isCollapsed}
+        setIsCollapsed={handleToggleCollapsed}
+        menuItems={menuItems}
+        menuState={menuState}
+      />
       
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Header */}
@@ -78,6 +85,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                     {i > 0 && <span className="text-[#C3C8D4]" aria-hidden>/</span>}
                     {last ? (
                       <b aria-current="page" className="truncate text-[15px] font-bold text-[#151A26]">{c.label}</b>
+                    ) : c.navigable === false ? (
+                      // 경로가 없는 묶음 메뉴(예: 시스템 관리)는 링크로 만들면 404 로 간다
+                      <span className="truncate">{c.label}</span>
                     ) : (
                       <Link href={c.href} className="truncate hover:text-[#151A26]">{c.label}</Link>
                     )}

@@ -25,9 +25,12 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
         return;
       }
 
-      // 토큰 유효성을 백엔드에 검증 요청
+      // 토큰 유효성을 백엔드에 검증 요청.
+      // 예전에는 master 전용 getAdminlist 로 검사하고 403 도 만료로 취급해서,
+      // 일반 admin 계정이 어드민 패널 전체에서 로그아웃됐다.
+      // verify 는 무가드라 권한과 무관하게 토큰만 본다 → 401(만료/무효)만 만료로 처리한다.
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/user/getAdminlist`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/user/verify`, {
           method: "GET",
           headers: {
             "Authorization": `Bearer ${accessToken}`,
@@ -35,7 +38,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
           },
         });
 
-        if (response.status === 401 || response.status === 403) {
+        if (response.status === 401) {
           // 토큰 만료 → 로그인 페이지로 이동
           localStorage.removeItem("user");
           localStorage.removeItem("accessToken");

@@ -3,14 +3,17 @@
 import React, { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
-import type { MenuItem } from "../adminMenu";
+import { isMenuActive, type MenuItem } from "../adminMenu";
+import type { AdminMenuState } from "../useAdminMenu";
 import { useNavigationGuard } from "@/components/common/NavigationGuard";
 
 interface SidebarProps {
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
-  /** 메뉴 정의 (adminMenu.buildAdminMenu). 헤더 이동 경로와 같은 목록을 쓰려고 레이아웃에서 받는다 */
+  /** 메뉴 정의. 헤더 이동 경로와 같은 목록을 쓰려고 레이아웃에서 받는다 */
   menuItems: MenuItem[];
+  /** 메뉴 조회 상태 — 로딩 중/그룹 미배정을 빈 사이드바와 구분해 보여준다 */
+  menuState?: AdminMenuState;
 }
 
 // 접힘 상태에서 아이콘 클릭 시 오른쪽으로 펼쳐지는 플라이아웃 위치
@@ -20,7 +23,11 @@ interface Flyout {
   left: number;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, menuItems }) => {
+/** 펼침 상태·React key 로 쓸 식별자. DB 메뉴는 menuIdx 가 있어 경로가 겹쳐도 안전하다 */
+const keyOf = (item: { menuIdx?: number; href: string }) =>
+  item.menuIdx != null ? `m${item.menuIdx}` : item.href;
+
+const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, menuItems, menuState }) => {
   const pathname = usePathname();
   const { requestNavigation } = useNavigationGuard();
 
@@ -28,16 +35,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, menuItem
   const [expandedSubItem, setExpandedSubItem] = useState<string | null>(null);
   const [flyout, setFlyout] = useState<Flyout | null>(null);
 
-  const toggleExpanded = (href: string) => {
-    setExpandedItem(expandedItem === href ? null : href);
+  const toggleExpanded = (key: string) => {
+    setExpandedItem(expandedItem === key ? null : key);
   };
 
-  const toggleSubExpanded = (href: string) => {
-    setExpandedSubItem(expandedSubItem === href ? null : href);
+  const toggleSubExpanded = (key: string) => {
+    setExpandedSubItem(expandedSubItem === key ? null : key);
   };
 
-  const isItemActive = (item: MenuItem) =>
-    item.subItems.length > 0 ? pathname.startsWith(item.href) : pathname === item.href;
+  // 묶음 메뉴는 자기 경로가 없어 하위 경로로 판정한다 (matchPaths)
+  const isItemActive = (item: MenuItem) => isMenuActive(item, pathname);
+
+  // 경로가 없는 묶음 메뉴는 이동시키지 않는다 (href 가 하위에서 빌려온 값이거나 가짜다)
+  const go = (item: { href: string; navigable?: boolean }) => {
+    if (item.navigable === false) return;
+    requestNavigation(item.href);
+  };
 
   // 접힌 상태에서 아이콘 클릭 → 오른쪽 플라이아웃 열기 (하위 메뉴가 있을 때만)
   const handleCollapsedClick = (
@@ -46,11 +59,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, menuItem
   ) => {
     if (item.subItems.length === 0) {
       setFlyout(null);
-      requestNavigation(item.href);
+      go(item);
       return;
     }
     // 이미 같은 항목이 열려 있으면 토글로 닫기
-    if (flyout?.item.href === item.href) {
+    if (flyout && keyOf(flyout.item) === keyOf(item)) {
       setFlyout(null);
       return;
     }
@@ -135,15 +148,36 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, menuItem
 
       {/* Menu Items */}
       <nav className="flex-1 p-3 overflow-y-auto overflow-x-hidden">
+        {/* 메뉴를 받는 중 — 하드코딩 트리를 미리 그리지 않아 깜빡임이 없다 */}
+        {menuState === "loading" && (
+          <ul className="space-y-2" aria-hidden>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <li key={i} className="flex items-center gap-3 p-2">
+                <span className="h-5 w-5 shrink-0 animate-pulse rounded bg-gray-700" />
+                {!isCollapsed && <span className="h-3 flex-1 animate-pulse rounded bg-gray-700" />}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {/* 메뉴는 있는데 이 계정에 보일 게 없다 → 빈 사이드바로 오해하지 않게 알려준다 */}
+        {menuState === "empty" && !isCollapsed && (
+          <p className="px-2 py-4 text-xs leading-relaxed text-gray-400 break-keep">
+            표시할 메뉴가 없습니다.
+            <br />
+            관리자에게 권한 그룹 배정을 요청해주세요.
+          </p>
+        )}
+
         <ul className="space-y-2">
           {menuItems.map((item) => {
             const active = isItemActive(item);
 
             // ── 접힌 상태: 아이콘만 표시, 클릭 시 오른쪽으로 플라이아웃 ──
             if (isCollapsed) {
-              const flyoutOpen = flyout?.item.href === item.href;
+              const flyoutOpen = flyout != null && keyOf(flyout.item) === keyOf(item);
               return (
-                <li key={item.href}>
+                <li key={keyOf(item)}>
                   <button
                     onClick={(e) => handleCollapsedClick(e, item)}
                     title={item.label}
@@ -162,11 +196,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, menuItem
 
             // ── 펼친 상태: 기존 아코디언 UI ──
             return (
-              <li key={item.href}>
+              <li key={keyOf(item)}>
                 <div>
                   {item.subItems.length > 0 ? (
                     <button
-                      onClick={() => toggleExpanded(item.href)}
+                      onClick={() => toggleExpanded(keyOf(item))}
                       className={`w-full flex items-center justify-between p-2 rounded-md transition-all duration-200 hover:bg-gray-700 ${
                         active ? "bg-gray-700 shadow-lg ring-2 ring-gray-500 ring-opacity-50" : ""
                       }`}
@@ -176,11 +210,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, menuItem
                         <span className="text-sm">{item.label}</span>
                       </div>
                       <span className="text-xs">
-                        {expandedItem === item.href ? "▼" : "▶"}
+                        {expandedItem === keyOf(item) ? "▼" : "▶"}
                       </span>
                     </button>
                   ) : (
-                    <button onClick={() => requestNavigation(item.href)} className="w-full text-left">
+                    <button onClick={() => go(item)} className="w-full text-left">
                       <div
                         className={`flex items-center p-2 rounded-md transition-all duration-200 hover:bg-gray-700 ${
                           active ? "bg-gray-700 shadow-lg ring-2 ring-gray-500 ring-opacity-50" : ""
@@ -193,30 +227,30 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, menuItem
                   )}
 
                   {/* Sub Items */}
-                  {item.subItems.length > 0 && expandedItem === item.href && (
+                  {item.subItems.length > 0 && expandedItem === keyOf(item) && (
                     <ul className="ml-8 mt-2 space-y-1">
                       {item.subItems.map((subItem) => (
-                        <li key={subItem.href}>
+                        <li key={keyOf(subItem)}>
                           {subItem.subItems && subItem.subItems.length > 0 ? (
                             <div>
                               <button
-                                onClick={() => toggleSubExpanded(subItem.href)}
+                                onClick={() => toggleSubExpanded(keyOf(subItem))}
                                 className={`w-full flex items-center justify-between p-2 text-xs rounded-md transition-all duration-200 hover:bg-gray-700 ${
                                   pathname.startsWith(subItem.href) ? "bg-gray-700 shadow-md ring-1 ring-gray-500 ring-opacity-50" : ""
                                 }`}
                               >
                                 <span>{subItem.label}</span>
                                 <span className="text-xs">
-                                  {expandedSubItem === subItem.href ? "▼" : "▶"}
+                                  {expandedSubItem === keyOf(subItem) ? "▼" : "▶"}
                                 </span>
                               </button>
 
                               {/* Third level items */}
-                              {expandedSubItem === subItem.href && (
+                              {expandedSubItem === keyOf(subItem) && (
                                 <ul className="ml-4 mt-1 space-y-1">
                                   {subItem.subItems.map((thirdItem) => (
-                                    <li key={thirdItem.href}>
-                                      <button onClick={() => requestNavigation(thirdItem.href)} className="w-full text-left">
+                                    <li key={keyOf(thirdItem)}>
+                                      <button onClick={() => go(thirdItem)} className="w-full text-left">
                                         <div
                                           className={`block p-2 text-xs rounded-md transition-all duration-200 hover:bg-gray-700 ${
                                             pathname === thirdItem.href ? "bg-gray-700 shadow-sm ring-1 ring-gray-500 ring-opacity-50" : ""
@@ -231,7 +265,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, menuItem
                               )}
                             </div>
                           ) : (
-                            <button onClick={() => requestNavigation(subItem.href)} className="w-full text-left">
+                            <button onClick={() => go(subItem)} className="w-full text-left">
                               <div
                                 className={`block p-2 text-xs rounded-md transition-all duration-200 hover:bg-gray-700 ${
                                   pathname === subItem.href ? "bg-gray-700 shadow-md ring-1 ring-gray-500 ring-opacity-50" : ""
@@ -275,7 +309,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, menuItem
             </div>
             <ul className="space-y-1 px-1">
               {flyout.item.subItems.map((subItem) => (
-                <li key={subItem.href}>
+                <li key={keyOf(subItem)}>
                   <button
                     onClick={() => navigateFromFlyout(subItem.href)}
                     className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors hover:bg-gray-700 ${
@@ -289,7 +323,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, menuItem
                   {subItem.subItems && subItem.subItems.length > 0 && (
                     <ul className="ml-3 mt-1 space-y-1 border-l border-gray-700 pl-2">
                       {subItem.subItems.map((thirdItem) => (
-                        <li key={thirdItem.href}>
+                        <li key={keyOf(thirdItem)}>
                           <button
                             onClick={() => navigateFromFlyout(thirdItem.href)}
                             className={`w-full text-left px-3 py-1.5 text-xs rounded-md transition-colors hover:bg-gray-700 ${

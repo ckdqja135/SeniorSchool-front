@@ -5,25 +5,10 @@
  * 백엔드: /admin/scheduler-run/{jobs,run,progress,queue/:id,runs}
  */
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+// 팔레트·호출 방식은 어드민 화면 공용(adminApi.ts)이다. 기존 import 경로를 살리려고 여기서 다시 내보낸다.
+import { C } from "../adminApi";
 
-/** 디자인 팔레트 (Crawler Admin.dc.html 과 동일) */
-export const C = {
-  primary: "#1552D6",
-  ink: "#151A26",
-  muted: "#7A8296",
-  faint: "#8A91A3",
-  line: "#E6E9F0",
-  lineSoft: "#EEF0F5",
-  okFg: "#0E7A43",
-  okBg: "#E4F6EC",
-  badFg: "#C23B3B",
-  badBg: "#FDECEC",
-  neutralFg: "#5A6275",
-  neutralBg: "#EEF0F5",
-  warnFg: "#B4461A",
-  warnBg: "#FDEBE1",
-} as const;
+export { API_BASE_URL, C, apiGet, apiSend } from "../adminApi";
 
 /**
  * 잡 카드의 분류 배지 색. 서비스마다 달라야 한 눈에 구분된다.
@@ -134,30 +119,3 @@ export function yesterday(): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
-// ─── API ────────────────────────────────────────────────
-
-function authHeaders(json = false): HeadersInit {
-  const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
-  return {
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...(json ? { "Content-Type": "application/json" } : {}),
-  };
-}
-
-export async function apiGet<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE_URL}${path}`, { headers: authHeaders() });
-  const data = await res.json().catch(() => null);
-  if (!res.ok) throw new Error(data?.message || `서버 오류 (${res.status})`);
-  return data as T;
-}
-
-export async function apiSend<T>(method: "POST" | "DELETE", path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    method,
-    headers: authHeaders(body !== undefined),
-    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-  });
-  const data = await res.json().catch(() => null);
-  if (!res.ok || data?.success === false) throw new Error(data?.message || `서버 오류 (${res.status})`);
-  return data as T;
-}
