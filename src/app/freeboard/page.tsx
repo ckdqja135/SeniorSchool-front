@@ -7,6 +7,7 @@ import { FreeBoardPost, FreeBoardApiResponse } from '@/types';
 import ReviewWriteModal from '@/components/common/ReviewWriteModal';
 import { createFreeboardPost, fetchFreeboardList, likeFreeboardPost, fetchFreeboardCategories, fetchFreeboardTags } from '@/lib/freeboard/freeboardAPI';
 import { Skeleton, SkeletonList } from '@/components/common/Skeleton';
+import { fmtCompact, fmtFull } from "@/lib/format/number";
 
 export default function FreeBoardPage() {
   const router = useRouter();
@@ -389,7 +390,7 @@ export default function FreeBoardPage() {
                           </div>
                         </div>
                         <div className="text-gray-500 truncate">{post.boardID || '익명'}</div>
-                        <div className="text-gray-500 truncate">{post.boardHits}</div>
+                        <div className="text-gray-500 truncate" title={fmtFull(post.boardHits)}>{fmtCompact(post.boardHits)}</div>
                         <div className="flex items-center space-x-1">
                           <button
                             onClick={(e) => {
@@ -417,7 +418,7 @@ export default function FreeBoardPage() {
                             >
                               <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                             </svg>
-                            <span className="font-medium">{post.boardLike}</span>
+                            <span className="font-medium" title={fmtFull(post.boardLike)}>{fmtCompact(post.boardLike)}</span>
                           </button>
                         </div>
                         <div className="text-gray-500 whitespace-nowrap">{formatTimeAgo(post.boardRegDate)}</div>
@@ -470,7 +471,7 @@ export default function FreeBoardPage() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                               </svg>
-                              {post.boardHits}
+                              <span title={fmtFull(post.boardHits)}>{fmtCompact(post.boardHits)}</span>
                             </span>
                           </div>
                           <button
@@ -494,7 +495,7 @@ export default function FreeBoardPage() {
                             >
                               <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                             </svg>
-                            <span className="font-medium">{post.boardLike}</span>
+                            <span className="font-medium" title={fmtFull(post.boardLike)}>{fmtCompact(post.boardLike)}</span>
                           </button>
                         </div>
                       </div>

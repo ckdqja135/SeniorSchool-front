@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { getOutsourceBoardList } from '@/lib/outsource/outsourceAPI';
 import { OutsourceBoard } from '@/types/Outsource';
 import { Skeleton, SkeletonDetailPage, SkeletonList } from '@/components/common/Skeleton';
+import { fmtCompact, fmtFull } from "@/lib/format/number";
 
 // 카카오맵 타입 선언
 declare global {
@@ -602,8 +603,8 @@ export default function OutsourceDetailByNamePage() {
                           <span>{board.boardRegDate}</span>
                         </div>
                         <div className="flex justify-between items-center text-xs text-gray-400">
-                          <span>조회수: {board.boardHits}</span>
-                          <span>좋아요: {board.boardLike}</span>
+                          <span title={fmtFull(board.boardHits)}>조회수: {fmtCompact(board.boardHits)}</span>
+                          <span title={fmtFull(board.boardLike)}>좋아요: {fmtCompact(board.boardLike)}</span>
                         </div>
                       </div>
                     ))}

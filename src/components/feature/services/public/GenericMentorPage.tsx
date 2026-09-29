@@ -8,6 +8,7 @@ import { useTopViewedEntities, useAutoSearch } from '@/hooks/Services/useDynamic
 import { useTopViewedDynamicBoards } from '@/hooks/Services/useDynamicBoard';
 import { createRequest } from '@/lib/services/dynamicBoardAPI';
 import { Skeleton, SkeletonCircle } from '@/components/common/Skeleton';
+import { fmtCompact } from '@/lib/format/number';
 
 interface GenericMentorPageProps {
   config: ServiceConfig;
@@ -508,7 +509,7 @@ export default function GenericMentorPage({ config }: GenericMentorPageProps) {
                                 {entity.name || `${config.serviceName} #${entity.entityIdx}`}
                               </h3>
                               <p className="text-xs text-gray-400 truncate">
-                                👁️ {entity.viewCount || 0}
+                                👁️ {fmtCompact(entity.viewCount || 0)}
                               </p>
                             </div>
                             <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
@@ -597,7 +598,7 @@ export default function GenericMentorPage({ config }: GenericMentorPageProps) {
                               <p className="text-xs text-gray-500 truncate">📍 {board.entityName}</p>
                             )}
                             <p className="text-xs text-gray-400 truncate">
-                              ❤️ {board.boardLike} · 👁️ {board.boardHits} · {formatTimeAgo(board.boardRegDate)}
+                              ❤️ {fmtCompact(board.boardLike)} · 👁️ {fmtCompact(board.boardHits)} · {formatTimeAgo(board.boardRegDate)}
                             </p>
                           </div>
                           <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">

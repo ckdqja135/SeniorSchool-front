@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Skeleton, SkeletonCircle } from '@/components/common/Skeleton';
+import { fmtCompact } from "@/lib/format/number";
 
 interface University {
   univName: string;
@@ -732,7 +733,7 @@ export default function SchoolPage() {
                                   {board.boardTitle}
                                 </h3>
                                 <p className="text-xs text-gray-500 truncate">📍 {board.university.univName}</p>
-                                <p className="text-xs text-gray-400 truncate">❤️ {board.boardLike} • 👁️ {board.boardHits}</p>
+                                <p className="text-xs text-gray-400 truncate">❤️ {fmtCompact(board.boardLike)} • 👁️ {fmtCompact(board.boardHits)}</p>
                               </div>
                               <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
                                 <svg className="w-2.5 h-2.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

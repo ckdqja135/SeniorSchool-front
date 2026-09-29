@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Skeleton, SkeletonDetailPage } from '@/components/common/Skeleton';
+import { fmtCompact, fmtFull } from "@/lib/format/number";
 
 interface University {
   univName: string;
@@ -769,8 +770,8 @@ export default function SchoolPage() {
                           <span className="shrink-0 whitespace-nowrap">{review.boardRegDate}</span>
                         </div>
                         <div className="flex justify-between items-center text-xs text-gray-400">
-                          <span className="whitespace-nowrap">조회수: {review.boardHits}</span>
-                          <span className="whitespace-nowrap">좋아요: {review.boardLike}</span>
+                          <span className="whitespace-nowrap" title={fmtFull(review.boardHits)}>조회수: {fmtCompact(review.boardHits)}</span>
+                          <span className="whitespace-nowrap" title={fmtFull(review.boardLike)}>좋아요: {fmtCompact(review.boardLike)}</span>
                         </div>
                       </div>
                     ))}

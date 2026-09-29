@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Outsource, OutsourceBoard } from '@/types/Outsource';
 import { useTopViewedOutsourceBoards } from '@/hooks/Outsource/useOutsource';
 import { Skeleton, SkeletonCircle } from '@/components/common/Skeleton';
+import { fmtCompact } from "@/lib/format/number";
 
 export default function OutsourceMentorPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -587,7 +588,7 @@ export default function OutsourceMentorPage() {
                               {outsource.outsourceName}
                             </h3>
                             <p className="text-xs text-gray-500 truncate">📍 {outsource.outsourceLocation}</p>
-                            <p className="text-xs text-gray-400 truncate">🏢 {outsource.outsourceType} • 🏭 {outsource.outsourceType} • 👁️ {outsource.outsourceViewCount || 0}</p>
+                            <p className="text-xs text-gray-400 truncate">🏢 {outsource.outsourceType} • 🏭 {outsource.outsourceType} • 👁️ {fmtCompact(outsource.outsourceViewCount || 0)}</p>
                           </div>
                           <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
                             <svg className="w-2.5 h-2.5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -647,7 +648,7 @@ export default function OutsourceMentorPage() {
                             {board.boardTitle}
                           </h3>
                           <p className="text-xs text-gray-500 truncate">📍 {board.outsourceName || board.outsource?.outsourceName}</p>
-                          <p className="text-xs text-gray-400 truncate">❤️ {board.boardLike} • 👁️ {board.boardHits}</p>
+                          <p className="text-xs text-gray-400 truncate">❤️ {fmtCompact(board.boardLike)} • 👁️ {fmtCompact(board.boardHits)}</p>
                         </div>
                         <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
                           <svg className="w-2.5 h-2.5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { getOutsourceBoardDetail } from '@/lib/outsource/outsourceAPI';
 import { OutsourceBoard } from '@/types/Outsource';
 import { SkeletonDetailPage } from '@/components/common/Skeleton';
+import { fmtCompact, fmtFull } from "@/lib/format/number";
 
 interface Comment {
   commentIdx: number;
@@ -1084,8 +1085,8 @@ export default function OutsourceBoardDetailPage() {
             </div>
             <div className="bg-purple-50 p-3 rounded-lg border border-purple-100">
               <span className="text-xs text-purple-700 font-bold uppercase tracking-wider mb-1 block">조회수</span>
-              <p className="text-sm font-semibold text-gray-900">
-                {board.boardHits || 0}
+              <p className="text-sm font-semibold text-gray-900" title={fmtFull(board.boardHits || 0)}>
+                {fmtCompact(board.boardHits || 0)}
               </p>
             </div>
             <div className="bg-orange-50 p-3 rounded-lg border border-orange-100">
@@ -1102,8 +1103,8 @@ export default function OutsourceBoardDetailPage() {
                 <svg className={`w-4 h-4 ${isLiked ? 'fill-current' : 'fill-none stroke-current'}`} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                 </svg>
-                <span>
-                  {board.boardLike || 0}
+                <span title={fmtFull(board.boardLike || 0)}>
+                  {fmtCompact(board.boardLike || 0)}
                 </span>
               </button>
             </div>

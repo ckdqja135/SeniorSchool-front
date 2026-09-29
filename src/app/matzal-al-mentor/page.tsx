@@ -11,6 +11,7 @@ import { requestMatzalAl } from '@/lib/matzalAl/matzalAlAPI';
 import { adaptPopularReview, isValidKoreaCoord } from '@/lib/matzalAl/exploreAdapter';
 import type { HotplaceRestaurant, PopularReview } from '@/types/MatzalAl/explore';
 import { Skeleton, SkeletonCircle } from '@/components/common/Skeleton';
+import { fmtCompact } from "@/lib/format/number";
 
 // '지도' 탭(입체 탐색): 지도 렌더러·패널 로직을 별도 컴포넌트로 분리하고, 탭을 열었을 때만 지연 로딩한다.
 // (MapLibre·카카오 SDK 코드가 카드 탭 초기 번들에 섞이지 않게 함)
@@ -1660,7 +1661,7 @@ export default function MatzalAlMentorPage() {
                                     </>
                                   )}
                                   <span className="text-xs text-gray-400">•</span>
-                                  <p className="text-xs text-gray-400 truncate">{matzalAl.matzalAlType} • 조회 {matzalAl.viewCount || 0}</p>
+                                  <p className="text-xs text-gray-400 truncate">{matzalAl.matzalAlType} • 조회 {fmtCompact(matzalAl.viewCount || 0)}</p>
                                 </div>
                               </div>
                               <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
@@ -1737,7 +1738,7 @@ export default function MatzalAlMentorPage() {
                                 {board.boardTitle}
                               </h3>
                               <p className="text-xs text-gray-500 truncate">{board.restaurant?.restaurantName || board.restaurantName || '맛집명 없음'}</p>
-                              <p className="text-xs text-gray-400 truncate">좋아요 {board.boardLike} • 조회 {board.boardHits}</p>
+                              <p className="text-xs text-gray-400 truncate">좋아요 {fmtCompact(board.boardLike)} • 조회 {fmtCompact(board.boardHits)}</p>
                             </div>
                             <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
                               <svg className="w-2.5 h-2.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

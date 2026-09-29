@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { Skeleton, SkeletonCircle } from '@/components/common/Skeleton';
 import type { PopularReview } from '@/types/MatzalAl/explore';
 import { PanelListHeader, RankBadge } from './panelListParts';
+import { fmtCompact } from '@/lib/format/number';
 
 export interface PopularReviewListProps {
   items: PopularReview[];
@@ -60,7 +61,7 @@ export function PopularReviewList({ items, loading, refreshing, onRefresh, canLo
                     <span className="block truncate text-sm font-semibold text-gray-900">{b.title}</span>
                     <span className="block truncate text-xs text-gray-500">{b.restaurantName ?? '맛집명 없음'}</span>
                     <span className="block truncate text-[11px] text-gray-400">
-                      좋아요 {b.likeCount.toLocaleString()} · 조회 {b.hitCount.toLocaleString()}
+                      좋아요 {fmtCompact(b.likeCount)} · 조회 {fmtCompact(b.hitCount)}
                     </span>
                   </span>
                 </Link>

@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Church, ChurchBoard, ApiResponse } from '@/types/Church';
 import { Skeleton, SkeletonDetailPage, SkeletonList } from '@/components/common/Skeleton';
+import { fmtCompact, fmtFull } from "@/lib/format/number";
 
 export default function ChurchDetailPage() {
   const params = useParams();
@@ -784,8 +785,8 @@ export default function ChurchDetailPage() {
                           <span>{board.boardRegDate}</span>
                         </div>
                         <div className="flex justify-between items-center text-xs text-gray-400">
-                          <span>조회수: {board.boardHits}</span>
-                          <span>좋아요: {board.boardLike}</span>
+                          <span title={fmtFull(board.boardHits)}>조회수: {fmtCompact(board.boardHits)}</span>
+                          <span title={fmtFull(board.boardLike)}>좋아요: {fmtCompact(board.boardLike)}</span>
                         </div>
                       </div>
                     ))}

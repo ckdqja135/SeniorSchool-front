@@ -7,6 +7,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { Company, CompanyBoard } from '@/types/Company';
 import { Skeleton, SkeletonDetailPage, SkeletonList } from '@/components/common/Skeleton';
+import { fmtCompact, fmtFull } from "@/lib/format/number";
 
 export default function CompanyDetailPage() {
   const params = useParams();
@@ -1530,8 +1531,8 @@ export default function CompanyDetailPage() {
                               <span>{(board as any).interviewRegDate || (board as any).regDate || (board as any).createdAt}</span>
                             </div>
                             <div className="flex justify-between items-center text-xs text-gray-400">
-                              <span>조회수: {(board as any).interviewHits || (board as any).hits || 0}</span>
-                              <span>좋아요: {(board as any).interviewLike || (board as any).likes || 0}</span>
+                              <span title={fmtFull((board as any).interviewHits || (board as any).hits || 0)}>조회수: {fmtCompact((board as any).interviewHits || (board as any).hits || 0)}</span>
+                              <span title={fmtFull((board as any).interviewLike || (board as any).likes || 0)}>좋아요: {fmtCompact((board as any).interviewLike || (board as any).likes || 0)}</span>
                             </div>
                           </>
                         ) : (
@@ -1558,8 +1559,8 @@ export default function CompanyDetailPage() {
                               <span>{(board as any).boardRegDate}</span>
                             </div>
                             <div className="flex justify-between items-center text-xs text-gray-400">
-                              <span>조회수: {(board as any).boardHits}</span>
-                              <span>좋아요: {(board as any).boardLike}</span>
+                              <span title={fmtFull((board as any).boardHits)}>조회수: {fmtCompact((board as any).boardHits)}</span>
+                              <span title={fmtFull((board as any).boardLike)}>좋아요: {fmtCompact((board as any).boardLike)}</span>
                             </div>
                           </>
                         )}

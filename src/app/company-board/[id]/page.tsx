@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CompanyBoard, CompanyComment } from '@/types/Company';
 import { SkeletonDetailPage } from '@/components/common/Skeleton';
+import { fmtCompact, fmtFull } from "@/lib/format/number";
 
 const CommentItem = ({ comment, onEdit, onDelete, onReply, onMenuToggle, isActive, onMenuClick }: {
   comment: CompanyComment;
@@ -1031,7 +1032,7 @@ export default function CompanyBoardDetailPage() {
             </div>
             <div className="bg-purple-50 p-3 rounded-lg border border-purple-100">
               <span className="text-xs text-purple-700 font-bold uppercase tracking-wider mb-1 block">조회수</span>
-              <p className="text-sm font-semibold text-gray-900">{board.boardHits}</p>
+              <p className="text-sm font-semibold text-gray-900" title={fmtFull(board.boardHits)}>{fmtCompact(board.boardHits)}</p>
             </div>
             <div className="bg-orange-50 p-3 rounded-lg border border-orange-100">
               <span className="text-xs text-orange-700 font-bold uppercase tracking-wider mb-1 block">좋아요</span>
@@ -1047,11 +1048,11 @@ export default function CompanyBoardDetailPage() {
                 <svg className={`w-4 h-4 ${isLiked ? 'fill-current' : 'fill-none stroke-current'}`} viewBox="0 0 24 24">
                   <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                 </svg>
-                <span>
+                <span title={fmtFull(likeCount)}>
                   {isLikeLoading ? (
                     <span className="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
                   ) : (
-                    likeCount
+                    fmtCompact(likeCount)
                   )}
                 </span>
               </button>

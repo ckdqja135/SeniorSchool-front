@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { DynamicEntity, ServiceConfig, EntityFieldConfig } from '@/types/Services';
+import { fmtCompact, fmtFull } from '@/lib/format/number';
 
 interface CompanyTemplateProps {
   entity: DynamicEntity;
@@ -205,7 +206,7 @@ const CompanyTemplate: React.FC<CompanyTemplateProps> = ({ entity, config }) => 
             d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
           />
         </svg>
-        <span>조회수 {entity.viewCount.toLocaleString()}</span>
+        <span title={fmtFull(entity.viewCount)}>조회수 {fmtCompact(entity.viewCount)}</span>
       </div>
 
       {/* CEO Info */}
