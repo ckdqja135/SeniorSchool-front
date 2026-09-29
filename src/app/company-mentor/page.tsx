@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Company, PopularCompany, CompanyBoard, CompanyRequest, CompanyAutoSearchResult, ApiResponse } from '@/types/Company';
 import { Skeleton, SkeletonCircle } from '@/components/common/Skeleton';
-import { fmtCompact } from "@/lib/format/number";
+import { fmtCompact, fmtFull } from "@/lib/format/number";
 
 export default function CompanyMentorPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -668,7 +668,7 @@ export default function CompanyMentorPage() {
                               {company.compName}
                             </h3>
                             <p className="text-xs text-gray-500 truncate">📍 {company.compLocation}</p>
-                            <p className="text-xs text-gray-400 truncate">🏢 {company.compType} • 🏭 {company.compIndustry} • 👁️ {fmtCompact(company.viewCount || 0)}</p>
+                            <p className="text-xs text-gray-400 truncate">🏢 {company.compType} • 🏭 {company.compIndustry} • 👁️ <span title={fmtFull(company.viewCount || 0)}>{fmtCompact(company.viewCount || 0)}</span></p>
                           </div>
                           <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
                             <svg className="w-2.5 h-2.5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -730,7 +730,7 @@ export default function CompanyMentorPage() {
                             {board.boardTitle}
                           </h3>
                           <p className="text-xs text-gray-500 truncate">🏢 {board.company?.compName || '회사명 없음'}</p>
-                          <p className="text-xs text-gray-400 truncate">❤️ {fmtCompact(board.boardLike)} • 👁️ {fmtCompact(board.boardHits)}</p>
+                          <p className="text-xs text-gray-400 truncate">❤️ <span title={fmtFull(board.boardLike)}>{fmtCompact(board.boardLike)}</span> • 👁️ <span title={fmtFull(board.boardHits)}>{fmtCompact(board.boardHits)}</span></p>
                         </div>
                         <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
                           <svg className="w-2.5 h-2.5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

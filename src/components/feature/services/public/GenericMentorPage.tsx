@@ -8,7 +8,7 @@ import { useTopViewedEntities, useAutoSearch } from '@/hooks/Services/useDynamic
 import { useTopViewedDynamicBoards } from '@/hooks/Services/useDynamicBoard';
 import { createRequest } from '@/lib/services/dynamicBoardAPI';
 import { Skeleton, SkeletonCircle } from '@/components/common/Skeleton';
-import { fmtCompact } from '@/lib/format/number';
+import { fmtCompact, fmtFull } from '@/lib/format/number';
 
 interface GenericMentorPageProps {
   config: ServiceConfig;
@@ -509,7 +509,7 @@ export default function GenericMentorPage({ config }: GenericMentorPageProps) {
                                 {entity.name || `${config.serviceName} #${entity.entityIdx}`}
                               </h3>
                               <p className="text-xs text-gray-400 truncate">
-                                👁️ {fmtCompact(entity.viewCount || 0)}
+                                👁️ <span title={fmtFull(entity.viewCount || 0)}>{fmtCompact(entity.viewCount || 0)}</span>
                               </p>
                             </div>
                             <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
@@ -598,7 +598,7 @@ export default function GenericMentorPage({ config }: GenericMentorPageProps) {
                               <p className="text-xs text-gray-500 truncate">📍 {board.entityName}</p>
                             )}
                             <p className="text-xs text-gray-400 truncate">
-                              ❤️ {fmtCompact(board.boardLike)} · 👁️ {fmtCompact(board.boardHits)} · {formatTimeAgo(board.boardRegDate)}
+                              ❤️ <span title={fmtFull(board.boardLike)}>{fmtCompact(board.boardLike)}</span> · 👁️ <span title={fmtFull(board.boardHits)}>{fmtCompact(board.boardHits)}</span> · {formatTimeAgo(board.boardRegDate)}
                             </p>
                           </div>
                           <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">

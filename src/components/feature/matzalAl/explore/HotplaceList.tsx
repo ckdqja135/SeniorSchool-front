@@ -11,7 +11,7 @@ import { useMemo } from 'react';
 import { Skeleton, SkeletonCircle } from '@/components/common/Skeleton';
 import type { HotplaceRestaurant } from '@/types/MatzalAl/explore';
 import { PanelListHeader, RankBadge } from './panelListParts';
-import { fmtCompact } from '@/lib/format/number';
+import { fmtCompact, fmtFull } from '@/lib/format/number';
 
 export interface HotplaceListProps {
   items: HotplaceRestaurant[];
@@ -120,7 +120,7 @@ export function HotplaceList({
                     <span className="block truncate text-sm font-semibold text-gray-900">{r.name}</span>
                     <span className="block truncate text-xs text-gray-500">{r.addr || '주소 정보 없음'}</span>
                     <span className="block truncate text-[11px] text-gray-400">
-                      {r.typeLabel} · 조회 {fmtCompact(r.viewCount)}
+                      {r.typeLabel} · 조회 <span title={fmtFull(r.viewCount)}>{fmtCompact(r.viewCount)}</span>
                     </span>
                   </span>
                   <span className="flex shrink-0 flex-col items-end gap-1 text-xs">
