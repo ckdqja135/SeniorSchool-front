@@ -431,7 +431,7 @@ export default function HomeClient({
                   : recentFreeBoardPosts.slice(0, 5).map((post) => (
                       <li key={post.boardIdx} onClick={() => handleFreeBoardPostClick(post)} className="flex items-center justify-between group cursor-pointer">
                         <span className="text-sm truncate min-w-0 flex-1 text-gray-600 group-hover:text-indigo-600 transition-colors">{post.boardTitle}</span>
-                        <div className="flex items-center gap-2 text-xs text-gray-400 ml-2 flex-shrink-0 leading-none tabular-nums w-16 justify-end">
+                        <div className="flex items-center gap-2 text-xs text-gray-400 ml-3 flex-shrink-0 leading-none tabular-nums min-w-24 justify-end">
                           <span className="flex items-center gap-1">
                             <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -470,7 +470,7 @@ export default function HomeClient({
                   : recentPosts.slice(0, 5).map((post) => (
                       <li key={post.boardIdx} onClick={() => handlePostClick(post)} className="flex items-center justify-between group cursor-pointer">
                         <span className="text-sm truncate min-w-0 flex-1 text-gray-600 group-hover:text-indigo-600 transition-colors">{post.boardTitle}</span>
-                        <div className="flex items-center gap-2 text-xs text-gray-400 ml-2 flex-shrink-0 leading-none tabular-nums w-16 justify-end">
+                        <div className="flex items-center gap-2 text-xs text-gray-400 ml-3 flex-shrink-0 leading-none tabular-nums min-w-24 justify-end">
                           <span className="flex items-center gap-1">
                             <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -509,7 +509,7 @@ export default function HomeClient({
                   : recentCompanyPosts.slice(0, 5).map((post) => (
                       <li key={post.boardIdx} onClick={() => handleCompanyPostClick(post)} className="flex items-center justify-between group cursor-pointer">
                         <span className="text-sm truncate min-w-0 flex-1 text-gray-600 group-hover:text-indigo-600 transition-colors">{post.boardTitle}</span>
-                        <div className="flex items-center gap-2 text-xs text-gray-400 ml-2 flex-shrink-0 leading-none tabular-nums w-16 justify-end">
+                        <div className="flex items-center gap-2 text-xs text-gray-400 ml-3 flex-shrink-0 leading-none tabular-nums min-w-24 justify-end">
                           <span className="flex items-center gap-1">
                             <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -548,7 +548,7 @@ export default function HomeClient({
                   : recentChurchPosts.slice(0, 5).map((post) => (
                       <li key={post.boardIdx} onClick={() => handleChurchPostClick(post)} className="flex items-center justify-between group cursor-pointer">
                         <span className="text-sm truncate min-w-0 flex-1 text-gray-600 group-hover:text-indigo-600 transition-colors">{post.boardTitle}</span>
-                        <div className="flex items-center gap-2 text-xs text-gray-400 ml-2 flex-shrink-0 leading-none tabular-nums w-16 justify-end">
+                        <div className="flex items-center gap-2 text-xs text-gray-400 ml-3 flex-shrink-0 leading-none tabular-nums min-w-24 justify-end">
                           <span className="flex items-center gap-1">
                             <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -595,7 +595,7 @@ export default function HomeClient({
                         className="flex items-center justify-between group cursor-pointer"
                       >
                         <span className="text-sm truncate min-w-0 flex-1 text-gray-600 group-hover:text-indigo-600 transition-colors">{board.boardTitle}</span>
-                        <div className="flex items-center gap-2 text-xs text-gray-400 ml-2 flex-shrink-0 leading-none tabular-nums w-16 justify-end">
+                        <div className="flex items-center gap-2 text-xs text-gray-400 ml-3 flex-shrink-0 leading-none tabular-nums min-w-24 justify-end">
                           <span className="flex items-center gap-1">
                             <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -635,7 +635,7 @@ export default function HomeClient({
                   : recentMatzalAlBoards.slice(0, 5).map((board: MatzalAlBoard) => (
                       <li key={board.boardIdx} onClick={() => handleMatzalAlBoardClick(board)} className="flex items-center justify-between group cursor-pointer">
                         <span className="text-sm truncate min-w-0 flex-1 text-gray-600 group-hover:text-indigo-600 transition-colors">{board.boardTitle}</span>
-                        <div className="flex items-center gap-2 text-xs text-gray-400 ml-2 flex-shrink-0 leading-none tabular-nums w-16 justify-end">
+                        <div className="flex items-center gap-2 text-xs text-gray-400 ml-3 flex-shrink-0 leading-none tabular-nums min-w-24 justify-end">
                           <span className="flex items-center gap-1">
                             <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -746,7 +746,7 @@ function DynamicServiceSection({ service }: { service: ServiceConfig }) {
                 className="flex items-center justify-between group cursor-pointer"
               >
                 <span className="text-sm truncate min-w-0 flex-1 text-gray-600 group-hover:text-indigo-600 transition-colors">{board.boardTitle}</span>
-                <div className="flex items-center gap-2 text-xs text-gray-400 ml-2 flex-shrink-0 leading-none tabular-nums w-16 justify-end">
+                <div className="flex items-center gap-2 text-xs text-gray-400 ml-3 flex-shrink-0 leading-none tabular-nums min-w-24 justify-end">
                   <span className="flex items-center gap-1">
                     <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
