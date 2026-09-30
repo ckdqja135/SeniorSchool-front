@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { isMenuActive, type MenuItem } from "../adminMenu";
@@ -34,6 +34,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, menuItem
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
   const [expandedSubItem, setExpandedSubItem] = useState<string | null>(null);
   const [flyout, setFlyout] = useState<Flyout | null>(null);
+  const flyoutRef = useRef<HTMLDivElement>(null);
+  // 화면 아래로 넘치지 않게 보정한 플라이아웃 top. 아래쪽 아이콘도 하위 메뉴가 잘리지 않게 위로 올린다
+  const [flyoutTop, setFlyoutTop] = useState<number | null>(null);
+
+  useLayoutEffect(() => {
+    if (!flyout || !flyoutRef.current) {
+      setFlyoutTop(null);
+      return;
+    }
+    const margin = 16;
+    const height = flyoutRef.current.offsetHeight;
+    setFlyoutTop(Math.max(margin, Math.min(flyout.top, window.innerHeight - height - margin)));
+  }, [flyout]);
 
   const toggleExpanded = (key: string) => {
     setExpandedItem(expandedItem === key ? null : key);
@@ -295,11 +308,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, menuItem
             onClick={() => setFlyout(null)}
           />
           <div
+            ref={flyoutRef}
             className="fixed z-[60] w-56 bg-gray-800 text-white rounded-lg shadow-2xl ring-1 ring-black/30 py-2 overflow-y-auto"
             style={{
-              top: flyout.top,
+              top: flyoutTop ?? flyout.top,
               left: flyout.left,
-              maxHeight: `calc(100vh - ${flyout.top}px - 16px)`,
+              // 스크롤은 메뉴가 화면 높이보다 길 때만 생긴다
+              maxHeight: "calc(100vh - 32px)",
             }}
           >
             {/* 헤더 (아이콘 + 대분류명) */}
