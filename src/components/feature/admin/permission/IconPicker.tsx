@@ -57,8 +57,9 @@ export function IconPicker({
 
   return (
     <div className="overflow-hidden rounded-[12px] border border-[#DDE1EA]">
-      <div className="flex flex-wrap items-center gap-2.5 border-b border-[#EEF0F5] p-2.5">
-        <div className="flex gap-0.5 rounded-[10px] bg-[#F1F3F8] p-[3px]" role="tablist" aria-label="아이콘 팩">
+      {/* 탭 줄과 검색창을 따로 두어, 탭을 바꿔도 검색창 위치·폭이 그대로이게 한다 */}
+      <div className="flex flex-col gap-2.5 border-b border-[#EEF0F5] p-2.5">
+        <div className="flex max-w-full gap-0.5 self-start overflow-x-auto rounded-[10px] bg-[#F1F3F8] p-[3px]" role="tablist" aria-label="아이콘 팩">
           {ICON_PACKS.map((p) => {
             const on = pack === p.key;
             const Home = HOME.icons[ICON_PACKS.indexOf(p)];
@@ -72,7 +73,7 @@ export function IconPicker({
                   setPack(p.key);
                   setHover(null);
                 }}
-                className="flex h-[34px] items-center gap-1.5 whitespace-nowrap rounded-[8px] px-[11px] text-[12.5px]"
+                className="flex h-[34px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[8px] px-[11px] text-[12.5px]"
                 style={{
                   background: on ? "#fff" : "transparent",
                   color: on ? "#151A26" : "#6B7389",
@@ -81,12 +82,18 @@ export function IconPicker({
                 }}
               >
                 {Home && <Home size={16} aria-hidden="true" />}
-                {p.label}
+                {/* 굵게 바뀌어도 탭 폭이 변하지 않도록 굵은 글자 폭을 미리 잡아 둔다 */}
+                <span className="grid">
+                  <span className="invisible col-start-1 row-start-1 font-bold" aria-hidden="true">
+                    {p.label}
+                  </span>
+                  <span className="col-start-1 row-start-1">{p.label}</span>
+                </span>
               </button>
             );
           })}
         </div>
-        <div className="flex h-[40px] min-w-[180px] flex-1 items-center gap-2 rounded-[9px] border border-[#E3E6EE] bg-[#FAFBFD] px-2.5 focus-within:border-[#1552D6] focus-within:shadow-[0_0_0_3px_rgba(21,82,214,.12)]">
+        <div className="flex h-[40px] w-full items-center gap-2 rounded-[9px] border border-[#E3E6EE] bg-[#FAFBFD] px-2.5 focus-within:border-[#1552D6] focus-within:shadow-[0_0_0_3px_rgba(21,82,214,.12)]">
           <Search size={16} strokeWidth={2} className="shrink-0 text-[#9AA1B2]" aria-hidden="true" />
           <input
             className="min-w-0 flex-1 border-none bg-transparent text-[13.5px] text-[#151A26] outline-none"
