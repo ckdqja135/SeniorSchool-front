@@ -202,22 +202,67 @@ html.dark .bg-black\/50 {
   background-color: rgba(0, 0, 0, 0.7) !important;
 }
 
-/* 다크 모드 - 스크롤바 */
-html.dark ::-webkit-scrollbar {
-  width: 8px;
+/* 스크롤바 (디자인: Crawler Admin) - 화살표 없는 7px 둥근 막대, 세로·가로 공통 */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
 }
 
-html.dark ::-webkit-scrollbar-track {
-  background: #1f2937;
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
+::-webkit-scrollbar-thumb {
+  background: #d5d9e2;
+  border-radius: 7px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #b9bfcc;
+}
+
+/* 다크 모드 - 같은 모양, 어두운 색 */
 html.dark ::-webkit-scrollbar-thumb {
   background: #4b5563;
-  border-radius: 4px;
 }
 
 html.dark ::-webkit-scrollbar-thumb:hover {
   background: #6b7280;
+}
+
+/* 어두운 사이드바·플라이아웃: 평소엔 막대를 숨기고 마우스를 올렸을 때만 반투명 흰색 */
+[data-sidebar-scroll] {
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+[data-sidebar-scroll]:hover {
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+}
+
+[data-sidebar-scroll]::-webkit-scrollbar {
+  width: 6px;
+}
+
+[data-sidebar-scroll]::-webkit-scrollbar-button {
+  display: none;
+}
+
+[data-sidebar-scroll]::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 6px;
+}
+
+[data-sidebar-scroll]:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* 사이드바 메뉴 위·아래를 흐리게 해서 더 스크롤할 메뉴가 있다는 걸 보여준다 */
+[data-sidebar-fade] {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 36px), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 36px), transparent 100%);
 }
 
 /* 다크 모드 - 반투명/글래스모피즘 배경 */

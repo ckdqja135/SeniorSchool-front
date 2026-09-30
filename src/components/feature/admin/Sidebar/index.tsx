@@ -160,7 +160,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, menuItem
       </div>
 
       {/* Menu Items */}
-      <nav className="flex-1 p-3 overflow-y-auto overflow-x-hidden">
+      <nav data-sidebar-scroll data-sidebar-fade className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-3 pt-3 pb-7">
         {/* 메뉴를 받는 중 — 하드코딩 트리를 미리 그리지 않아 깜빡임이 없다 */}
         {menuState === "loading" && (
           <ul className="space-y-2" aria-hidden>
@@ -309,6 +309,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, menuItem
           />
           <div
             ref={flyoutRef}
+            data-sidebar-scroll
             className="fixed z-[60] w-56 bg-gray-800 text-white rounded-lg shadow-2xl ring-1 ring-black/30 py-2 overflow-y-auto"
             style={{
               top: flyoutTop ?? flyout.top,
