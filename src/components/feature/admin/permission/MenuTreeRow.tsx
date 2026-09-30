@@ -9,6 +9,7 @@
  */
 import React from "react";
 import { C, type MenuNode, type PermMap } from "./shared";
+import { MenuIcon } from "../menuIcons";
 
 export type DropZone = "before" | "after" | "inside";
 
@@ -131,7 +132,7 @@ export function MenuTreeRow(props: MenuTreeRowProps) {
           className="min-w-0 flex-1 truncate text-left text-[14px] hover:underline"
           style={{ color: depth === 1 ? C.ink : "#4A5266", fontWeight: depth === 1 ? 700 : 500 }}
         >
-          {node.menuIcon && <span className="mr-1">{node.menuIcon}</span>}
+          {node.menuIcon && <MenuIcon value={node.menuIcon} size={15} className="mr-1.5 inline-block align-[-2px] text-[#4A5266]" />}
           {node.menuName}
           {node.menuPath ? (
             <span className="ml-1.5 text-[12px] font-normal text-[#AEB5C6]">{node.menuPath}</span>

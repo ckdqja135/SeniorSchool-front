@@ -22,6 +22,7 @@
     "chart.js": "^4.5.0",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.0.1",
+    "lucide-react": "^1.49.0",
     "next": "14.2.5",
     "pbf": "^3.3.0",
     "react": "^18.2.0",

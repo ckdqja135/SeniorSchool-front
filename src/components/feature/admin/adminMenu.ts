@@ -34,15 +34,15 @@ export interface MenuItem {
 }
 
 const STATIC_MENU: MenuItem[] = [
-  { icon: "📊", label: "Dashboard", href: "/myoriadmin", subItems: [] },
+  { icon: "dashboard", label: "Dashboard", href: "/myoriadmin", subItems: [] },
   {
-    icon: "🗂️",
+    icon: "folders",
     label: "자유게시판",
     href: "/myoriadmin/freeboard",
     subItems: [{ label: "자유게시판 관리", href: "/myoriadmin/freeboard" }],
   },
   {
-    icon: "🎓",
+    icon: "graduation-cap",
     label: "학교 오빠",
     href: "/myoriadmin/school",
     subItems: [
@@ -52,7 +52,7 @@ const STATIC_MENU: MenuItem[] = [
     ],
   },
   {
-    icon: "⛪",
+    icon: "church",
     label: "교회 오빠",
     href: "/myoriadmin/church",
     subItems: [
@@ -62,7 +62,7 @@ const STATIC_MENU: MenuItem[] = [
     ],
   },
   {
-    icon: "✍️",
+    icon: "building",
     label: "회사 오빠",
     href: "/myoriadmin/company",
     subItems: [
@@ -73,7 +73,7 @@ const STATIC_MENU: MenuItem[] = [
     ],
   },
   {
-    icon: "💼",
+    icon: "briefcase",
     label: "외주 오빠",
     href: "/myoriadmin/outsource",
     subItems: [
@@ -83,7 +83,7 @@ const STATIC_MENU: MenuItem[] = [
     ],
   },
   {
-    icon: "🍽️",
+    icon: "utensils",
     label: "맛잘알 오빠",
     href: "/myoriadmin/restaurant",
     subItems: [
@@ -97,7 +97,7 @@ const STATIC_MENU: MenuItem[] = [
 
 const BOTTOM_MENU: MenuItem[] = [
   {
-    icon: "🛠️",
+    icon: "wrench",
     label: "서비스 관리",
     href: "/myoriadmin/services",
     subItems: [
@@ -105,16 +105,16 @@ const BOTTOM_MENU: MenuItem[] = [
       { label: "서비스 추가", href: "/myoriadmin/services/create" },
     ],
   },
-  { icon: "📈", label: "접속 분석", href: "/myoriadmin/analytics", subItems: [] },
+  { icon: "chart-line", label: "접속 분석", href: "/myoriadmin/analytics", subItems: [] },
   {
-    icon: "📝",
+    icon: "file-text",
     label: "게시글 관리",
     href: "/myoriadmin/posts",
     subItems: [{ label: "신고 게시글", href: "/myoriadmin/posts/reported" }],
   },
   // 여러 서비스에 걸친 운영 기능이라 서비스별 메뉴가 아니라 여기에 묶어 둔다
   {
-    icon: "🧰",
+    icon: "toolbox",
     label: "시스템 관리",
     href: "/myoriadmin/scheduler",
     navigable: false,

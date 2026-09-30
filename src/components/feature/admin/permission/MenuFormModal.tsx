@@ -9,6 +9,7 @@
  */
 import { useMemo, useState } from "react";
 import { IconPicker } from "./IconPicker";
+import { resolveMenuIcon } from "../menuIcons";
 import { Modal, btnOutline, btnPrimary, inputCls, labelCls } from "./Modal";
 import { MAX_DEPTH, type MenuNode } from "./shared";
 import { flatten, heightOf, isDescendant } from "./treeOps";
@@ -41,7 +42,11 @@ export function MenuFormModal({
 
   const [menuName, setMenuName] = useState(editing?.menuName ?? "");
   const [menuPath, setMenuPath] = useState(editing?.menuPath ?? "");
-  const [menuIcon, setMenuIcon] = useState(editing?.menuIcon ?? "");
+  // 예전에 저장된 이모지는 대응하는 SVG 키로 바꿔서 열어, 저장하면 키로 정리되게 한다
+  const [menuIcon, setMenuIcon] = useState(() => {
+    const v = editing?.menuIcon ?? "";
+    return resolveMenuIcon(v)?.key ?? v;
+  });
   const [parentIdx, setParentIdx] = useState<number | null>(initialParent);
   const [error, setError] = useState("");
 

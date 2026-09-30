@@ -6,6 +6,7 @@ import Image from "next/image";
 import { isMenuActive, type MenuItem } from "../adminMenu";
 import type { AdminMenuState } from "../useAdminMenu";
 import { useNavigationGuard } from "@/components/common/NavigationGuard";
+import { MenuIcon } from "../menuIcons";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -201,7 +202,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, menuItem
                         : ""
                     }`}
                   >
-                    <span className="text-xl leading-none">{item.icon}</span>
+                    <MenuIcon value={item.icon} size={20} />
                   </button>
                 </li>
               );
@@ -219,7 +220,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, menuItem
                       }`}
                     >
                       <div className="flex items-center">
-                        <span className="text-xl mr-3">{item.icon}</span>
+                        <MenuIcon value={item.icon} size={20} className="mr-3" />
                         <span className="text-sm">{item.label}</span>
                       </div>
                       <span className="text-xs">
@@ -233,7 +234,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, menuItem
                           active ? "bg-gray-700 shadow-lg ring-2 ring-gray-500 ring-opacity-50" : ""
                         }`}
                       >
-                        <span className="text-xl mr-3">{item.icon}</span>
+                        <MenuIcon value={item.icon} size={20} className="mr-3" />
                         <span className="text-sm">{item.label}</span>
                       </div>
                     </button>
@@ -320,7 +321,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, menuItem
           >
             {/* 헤더 (아이콘 + 대분류명) */}
             <div className="flex items-center gap-2 px-3 pb-2 mb-1 border-b border-gray-700">
-              <span className="text-lg leading-none">{flyout.item.icon}</span>
+              <MenuIcon value={flyout.item.icon} size={18} />
               <span className="text-sm font-semibold">{flyout.item.label}</span>
             </div>
             <ul className="space-y-1 px-1">
