@@ -3,15 +3,18 @@
 /**
  * 메뉴 아이콘(SVG) 선택기.
  *
- * 아이콘 목록(menuIcons.tsx)을 격자로 보여주고, 이름·키워드로 걸러 볼 수 있다.
+ * 위쪽 탭에서 아이콘 팩(Phosphor / Tabler / Remix / Bootstrap / Material)을 고르고,
+ * 그 팩의 아이콘을 격자로 보여준다. 이름·키워드로 걸러 볼 수 있다.
  * 메뉴명에 들어간 단어로 어울리는 아이콘을 먼저 추천한다 (검색 중에는 숨김).
- * 고른 아이콘의 키가 메뉴 아이콘 값(AdminMenu.menuIcon)이 된다.
+ * 고른 아이콘의 값("팩:아이디")이 메뉴 아이콘 값(AdminMenu.menuIcon)이 된다.
  */
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
-import { MENU_ICONS, resolveMenuIcon, type MenuIconDef } from "../menuIcons";
+import { ICON_PACKS, PACK_CONCEPTS, type PackKey } from "../iconPacks";
+import { packIcon, packLabel, resolveMenuIcon, type MenuIconDef } from "../menuIcons";
 
 const P = "#1552D6";
+const HOME = PACK_CONCEPTS.find((c) => c.id === "house")!;
 
 export function IconPicker({
   value,
@@ -23,34 +26,67 @@ export function IconPicker({
   /** 추천에 쓰는 메뉴명 */
   menuName?: string;
 }) {
+  const selected = resolveMenuIcon(value);
+  const [pack, setPack] = useState<PackKey>(selected?.pack ?? "ph");
   const [query, setQuery] = useState("");
   const [hover, setHover] = useState<MenuIconDef | null>(null);
-  const selected = resolveMenuIcon(value);
   const q = query.trim().toLowerCase();
 
+  const packIcons = useMemo(
+    () => PACK_CONCEPTS.map((c) => packIcon(pack, c)).filter((d): d is MenuIconDef => d !== null),
+    [pack],
+  );
   const list = useMemo(() => {
-    if (!q) return MENU_ICONS;
-    return MENU_ICONS.filter((d) => `${d.label} ${d.keywords} ${d.key}`.toLowerCase().includes(q));
-  }, [q]);
+    if (!q) return packIcons;
+    return packIcons.filter((d) => `${d.label} ${d.keywords} ${d.key}`.toLowerCase().includes(q));
+  }, [packIcons, q]);
 
   // '관리' 는 거의 모든 메뉴명에 붙어서 추천 단어에서 뺀다. 붙여 쓴 '식당관리' 도 '식당' 으로 본다
   const words = menuName.replace(/관리/g, " ").trim().toLowerCase().split(/\s+/).filter(Boolean);
   // 메뉴명 단어가 아이콘 키워드를 품거나(맛집리뷰 ⊃ 맛집) 키워드가 단어를 품으면(식당 ⊂ 식당) 추천
   const suggest = words.length
-    ? MENU_ICONS.filter((d) =>
-        `${d.label} ${d.keywords}`
-          .toLowerCase()
-          .split(/\s+/)
-          .some((k) => words.some((w) => k.includes(w) || (k.length >= 2 && w.includes(k)))),
-      ).slice(0, 5)
+    ? packIcons
+        .filter((d) =>
+          `${d.label} ${d.keywords}`
+            .toLowerCase()
+            .split(/\s+/)
+            .some((k) => words.some((w) => k.includes(w) || (k.length >= 2 && w.includes(k)))),
+        )
+        .slice(0, 5)
     : [];
-
-  const peek = hover ?? selected;
 
   return (
     <div className="overflow-hidden rounded-[12px] border border-[#DDE1EA]">
-      <div className="border-b border-[#EEF0F5] p-2.5">
-        <div className="flex h-[40px] items-center gap-2 rounded-[9px] border border-[#E3E6EE] bg-[#FAFBFD] px-2.5 focus-within:border-[#1552D6] focus-within:shadow-[0_0_0_3px_rgba(21,82,214,.12)]">
+      <div className="flex flex-wrap items-center gap-2.5 border-b border-[#EEF0F5] p-2.5">
+        <div className="flex gap-0.5 rounded-[10px] bg-[#F1F3F8] p-[3px]" role="tablist" aria-label="아이콘 팩">
+          {ICON_PACKS.map((p) => {
+            const on = pack === p.key;
+            const Home = HOME.icons[ICON_PACKS.indexOf(p)];
+            return (
+              <button
+                key={p.key}
+                type="button"
+                role="tab"
+                aria-selected={on}
+                onClick={() => {
+                  setPack(p.key);
+                  setHover(null);
+                }}
+                className="flex h-[34px] items-center gap-1.5 whitespace-nowrap rounded-[8px] px-[11px] text-[12.5px]"
+                style={{
+                  background: on ? "#fff" : "transparent",
+                  color: on ? "#151A26" : "#6B7389",
+                  fontWeight: on ? 700 : 500,
+                  boxShadow: on ? "0 1px 3px rgba(20,26,40,.12)" : "none",
+                }}
+              >
+                {Home && <Home size={16} aria-hidden="true" />}
+                {p.label}
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex h-[40px] min-w-[180px] flex-1 items-center gap-2 rounded-[9px] border border-[#E3E6EE] bg-[#FAFBFD] px-2.5 focus-within:border-[#1552D6] focus-within:shadow-[0_0_0_3px_rgba(21,82,214,.12)]">
           <Search size={16} strokeWidth={2} className="shrink-0 text-[#9AA1B2]" aria-hidden="true" />
           <input
             className="min-w-0 flex-1 border-none bg-transparent text-[13.5px] text-[#151A26] outline-none"
@@ -76,7 +112,7 @@ export function IconPicker({
         <div className="flex flex-wrap items-center gap-2 border-b border-[#EEF0F5] bg-[#F7F9FF] px-3 py-2.5">
           <span className="whitespace-nowrap text-[12px] font-bold text-[#1552D6]">&apos;{menuName.trim()}&apos; 추천</span>
           {suggest.length === 0 ? (
-            <span className="text-[12px] text-[#8A91A3]">맞는 아이콘이 없습니다. 아래에서 골라 주세요.</span>
+            <span className="text-[12px] text-[#8A91A3]">이 팩에는 맞는 아이콘이 없습니다. 다른 팩을 선택해 보세요.</span>
           ) : (
             suggest.map((d) => {
               const on = selected?.key === d.key;
@@ -88,7 +124,7 @@ export function IconPicker({
                   className="flex h-[32px] items-center gap-1.5 whitespace-nowrap rounded-[8px] border px-2.5 text-[12px] font-semibold"
                   style={{ borderColor: on ? P : "#DCE4F7", background: on ? P : "#fff", color: on ? "#fff" : "#151A26" }}
                 >
-                  <d.Icon size={17} strokeWidth={1.8} aria-hidden="true" />
+                  <d.Icon size={17} aria-hidden="true" />
                   {d.label}
                 </button>
               );
@@ -128,7 +164,7 @@ export function IconPicker({
                     color: on ? P : "#3A4256",
                   }}
                 >
-                  <d.Icon size={24} strokeWidth={1.7} aria-hidden="true" />
+                  <d.Icon size={24} aria-hidden="true" />
                   {on && (
                     <span className="absolute right-[3px] top-[3px] flex h-[14px] w-[14px] items-center justify-center rounded-full bg-[#1552D6] text-[9px] font-extrabold text-white">
                       ✓
@@ -143,16 +179,20 @@ export function IconPicker({
 
       <div className="flex min-h-[38px] items-center justify-between gap-2.5 border-t border-[#EEF0F5] bg-[#FAFBFD] px-3 py-2 text-[12px] text-[#8A91A3]">
         <span className="flex min-w-0 items-center gap-1.5 overflow-hidden text-ellipsis whitespace-nowrap">
-          {peek ? (
+          {hover ? (
             <>
-              <peek.Icon size={16} strokeWidth={1.8} className="shrink-0 text-[#151A26]" aria-hidden="true" />
-              <b className="text-[#151A26]">{peek.label}</b>
-              {!hover && <span>선택됨</span>}
-              {!hover && (
-                <button type="button" onClick={() => onChange("")} className="ml-1 font-semibold text-[#8A91A3] underline-offset-2 hover:text-[#151A26] hover:underline">
-                  선택 해제
-                </button>
-              )}
+              <hover.Icon size={16} className="shrink-0 text-[#151A26]" aria-hidden="true" />
+              <b className="text-[#151A26]">{hover.label}</b>
+              <span>{packLabel(pack)}</span>
+            </>
+          ) : selected ? (
+            <>
+              <selected.Icon size={16} className="shrink-0 text-[#151A26]" aria-hidden="true" />
+              <b className="text-[#151A26]">{selected.label}</b>
+              <span>선택됨 · {selected.pack ? packLabel(selected.pack) : "기존 아이콘"}</span>
+              <button type="button" onClick={() => onChange("")} className="ml-1 font-semibold text-[#8A91A3] underline-offset-2 hover:text-[#151A26] hover:underline">
+                선택 해제
+              </button>
             </>
           ) : value ? (
             <span>
@@ -167,4 +207,3 @@ export function IconPicker({
     </div>
   );
 }
-

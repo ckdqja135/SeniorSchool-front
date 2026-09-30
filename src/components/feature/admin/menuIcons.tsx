@@ -1,11 +1,14 @@
 /**
  * 어드민 메뉴 아이콘 (lucide SVG).
  *
- * DB(AdminMenu.menuIcon, 최대 20자)에는 아이콘 키를 저장한다 (예: "dashboard").
+ * DB(AdminMenu.menuIcon, 최대 20자)에는 아이콘 값을 저장한다.
+ *  - "팩:아이디" (예: "ph:fork-knife"): 아이콘 팩(iconPacks.tsx)에서 고른 아이콘. 지금 선택기가 저장하는 형식
+ *  - "dashboard" 같은 키: lucide 아이콘 (기본 메뉴 정의와 그동안 저장된 값)
  * 예전에 저장된 이모지는 EMOJI_TO_KEY 로 비슷한 SVG 에 대응시켜 그대로 보여주고,
  * 대응이 없는 값은 글자 그대로 그린다. 그래서 DB 를 한꺼번에 바꾸지 않아도 된다.
  */
 import type { LucideIcon } from "lucide-react";
+import type { IconType } from "react-icons";
 import {
   Activity, Bell, Bookmark, Boxes, BriefcaseBusiness, Building2, CalendarDays, ChartColumn,
   ChartLine, ChartPie, Church, ClipboardList, Clock, Coffee, Compass, Database, FileText,
@@ -16,12 +19,29 @@ import {
   SlidersHorizontal, Soup, Sparkles, Star, Store, Tag, Target, Toolbox, TrendingUp, UserCog,
   Users, UtensilsCrossed, Workflow, Wrench,
 } from "lucide-react";
+import { ICON_PACKS, PACK_CONCEPTS, type PackConcept, type PackKey } from "./iconPacks";
 
 export interface MenuIconDef {
   key: string;        // DB 에 저장되는 값 (20자 이하)
   label: string;      // 선택기에 보이는 이름
   keywords: string;   // 검색어 (공백으로 구분)
-  Icon: LucideIcon;
+  Icon: LucideIcon | IconType;
+  /** 아이콘 팩에서 온 값이면 그 팩 (lucide 는 없음) */
+  pack?: PackKey;
+}
+
+const PACK_INDEX: Record<PackKey, number> = { ph: 0, ti: 1, ri: 2, bi: 3, ms: 4 };
+const CONCEPT_BY_ID = new Map(PACK_CONCEPTS.map((c) => [c.id, c]));
+
+/** 팩·개념으로 아이콘 정의를 만든다. 그 팩에 아이콘이 없으면 null */
+export function packIcon(pack: PackKey, concept: PackConcept): MenuIconDef | null {
+  const Icon = concept.icons[PACK_INDEX[pack]];
+  if (!Icon) return null;
+  return { key: `${pack}:${concept.id}`, label: concept.label, keywords: concept.tags, Icon, pack };
+}
+
+export function packLabel(pack: PackKey): string {
+  return ICON_PACKS.find((p) => p.key === pack)?.label ?? pack;
 }
 
 /** 선택기에 보이는 순서대로. 현재 어드민 메뉴에 쓰는 아이콘을 앞쪽에 둔다 */
@@ -123,6 +143,12 @@ const EMOJI_TO_KEY: Record<string, string> = {
 export function resolveMenuIcon(value: string | null | undefined): MenuIconDef | null {
   if (!value) return null;
   const v = value.trim();
+  const sep = v.indexOf(":");
+  if (sep > 0) {
+    const pack = v.slice(0, sep) as PackKey;
+    const concept = CONCEPT_BY_ID.get(v.slice(sep + 1));
+    return pack in PACK_INDEX && concept ? packIcon(pack, concept) : null;
+  }
   const direct = BY_KEY.get(v);
   if (direct) return direct;
   // 이모지 변형 선택자(U+FE0F)를 떼고 찾는다 (선택자가 붙은 이모지와 안 붙은 이모지를 같게 본다)
@@ -143,7 +169,8 @@ export function MenuIcon({
   const def = resolveMenuIcon(value);
   if (def) {
     const { Icon } = def;
-    return <Icon size={size} strokeWidth={1.8} aria-hidden="true" className={`shrink-0 ${className}`} />;
+    // lucide 만 선 굵기를 맞춘다. 팩 아이콘은 팩 고유의 굵기를 쓴다
+    return <Icon size={size} strokeWidth={def.pack ? undefined : 1.8} aria-hidden="true" className={`shrink-0 ${className}`} />;
   }
   if (!value) return null;
   return (
