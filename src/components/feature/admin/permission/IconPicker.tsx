@@ -3,7 +3,7 @@
 /**
  * 메뉴 아이콘(SVG) 선택기.
  *
- * 위쪽 탭에서 아이콘 팩(Phosphor / Tabler / Remix / Bootstrap / Material)을 고르고,
+ * 위쪽 탭에서 아이콘 팩(iconPacks.tsx 의 10종)을 고르고,
  * 그 팩의 아이콘을 격자로 보여준다. 이름·키워드로 걸러 볼 수 있다.
  * 메뉴명에 들어간 단어로 어울리는 아이콘을 먼저 추천한다 (검색 중에는 숨김).
  * 고른 아이콘의 값("팩:아이디")이 메뉴 아이콘 값(AdminMenu.menuIcon)이 된다.
@@ -59,7 +59,7 @@ export function IconPicker({
     <div className="overflow-hidden rounded-[12px] border border-[#DDE1EA]">
       {/* 탭 줄과 검색창을 따로 두어, 탭을 바꿔도 검색창 위치·폭이 그대로이게 한다 */}
       <div className="flex flex-col gap-2.5 border-b border-[#EEF0F5] p-2.5">
-        <div className="flex max-w-full gap-0.5 self-start overflow-x-auto rounded-[10px] bg-[#F1F3F8] p-[3px]" role="tablist" aria-label="아이콘 팩">
+        <div className="grid grid-cols-2 gap-0.5 rounded-[10px] bg-[#F1F3F8] p-[3px] min-[480px]:grid-cols-3 sm:grid-cols-5" role="tablist" aria-label="아이콘 팩">
           {ICON_PACKS.map((p) => {
             const on = pack === p.key;
             const Home = HOME.icons[ICON_PACKS.indexOf(p)];
@@ -73,7 +73,7 @@ export function IconPicker({
                   setPack(p.key);
                   setHover(null);
                 }}
-                className="flex h-[34px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[8px] px-[11px] text-[12.5px]"
+                className="flex h-[34px] min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-[8px] px-2 text-[12.5px]"
                 style={{
                   background: on ? "#fff" : "transparent",
                   color: on ? "#151A26" : "#6B7389",

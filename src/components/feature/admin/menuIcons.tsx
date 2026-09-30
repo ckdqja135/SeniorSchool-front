@@ -30,7 +30,7 @@ export interface MenuIconDef {
   pack?: PackKey;
 }
 
-const PACK_INDEX: Record<PackKey, number> = { ph: 0, ti: 1, ri: 2, bi: 3, ms: 4 };
+const PACK_INDEX = Object.fromEntries(ICON_PACKS.map((p, i) => [p.key, i])) as Record<PackKey, number>;
 const CONCEPT_BY_ID = new Map(PACK_CONCEPTS.map((c) => [c.id, c]));
 
 /** 팩·개념으로 아이콘 정의를 만든다. 그 팩에 아이콘이 없으면 null */
