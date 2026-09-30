@@ -94,21 +94,21 @@ export function MenuPanel({
   };
 
   return (
-    <section className="flex w-full flex-col overflow-hidden rounded-[14px] border border-[#E6E9F0] bg-white lg:w-[440px] lg:shrink-0">
+    <section className="flex w-full flex-col overflow-hidden rounded-[14px] border border-[#E6E9F0] bg-white lg:w-[520px] lg:shrink-0">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#EEF0F5] px-[22px] py-4">
-        <h2 className="text-[15px] font-extrabold">메뉴 목록</h2>
+        <h2 className="text-[16px] font-extrabold">메뉴 목록</h2>
         <div className="flex gap-2">
           <button
             type="button"
             onClick={openIdx.size > 0 ? () => setOpenIdx(new Set()) : expandAll}
-            className="h-[34px] rounded-[10px] border border-[#DDE1EA] bg-white px-3 text-[12.5px] font-semibold text-[#5A6275] hover:bg-[#F6F7FA]"
+            className="h-[38px] rounded-[10px] border border-[#DDE1EA] bg-white px-3 text-[12.5px] font-semibold text-[#5A6275] hover:bg-[#F6F7FA]"
           >
             {openIdx.size > 0 ? "모두 접기" : "모두 펼치기"}
           </button>
           <button
             type="button"
             onClick={onAddMenu}
-            className="h-[34px] rounded-[10px] border border-[#DDE1EA] bg-white px-3 text-[12.5px] font-semibold text-[#151A26] hover:bg-[#F6F7FA]"
+            className="h-[38px] rounded-[10px] border border-[#DDE1EA] bg-white px-3 text-[12.5px] font-semibold text-[#151A26] hover:bg-[#F6F7FA]"
           >
             + 메뉴 추가
           </button>
@@ -116,7 +116,7 @@ export function MenuPanel({
             type="button"
             onClick={onSave}
             disabled={saving || !dirty}
-            className="h-[34px] rounded-[10px] bg-[#1552D6] px-4 text-[12.5px] font-bold text-white hover:bg-[#0E3FAA] disabled:bg-[#AEB5C6]"
+            className="h-[38px] rounded-[10px] bg-[#1552D6] px-4 text-[12.5px] font-bold text-white hover:bg-[#0E3FAA] disabled:bg-[#AEB5C6]"
           >
             {saving ? "저장 중…" : "저장"}
           </button>
@@ -124,18 +124,18 @@ export function MenuPanel({
       </div>
 
       {readOnly && (
-        <p className="border-b border-[#EEF0F5] bg-[#F5F8FF] px-[22px] py-2.5 text-[12px] leading-relaxed text-[#1552D6] break-keep">
+        <p className="border-b border-[#EEF0F5] bg-[#F5F8FF] px-[22px] py-2.5 text-[13px] leading-relaxed text-[#1552D6] break-keep">
           최고 관리자(master)는 항상 모든 메뉴를 봅니다. 체크를 바꿀 필요가 없습니다.
         </p>
       )}
 
-      <div className="max-h-[560px] flex-1 overflow-y-auto p-2.5">
+      <div className="max-h-[640px] flex-1 overflow-y-auto p-2.5">
         {loading && tree.length === 0 ? (
-          <p className="py-10 text-center text-[13px] text-[#8A91A3]">불러오는 중…</p>
+          <p className="py-10 text-center text-[14px] text-[#8A91A3]">불러오는 중…</p>
         ) : tree.length === 0 ? (
-          <p className="py-10 text-center text-[13px] text-[#8A91A3]">등록된 메뉴가 없습니다.</p>
+          <p className="py-10 text-center text-[14px] text-[#8A91A3]">등록된 메뉴가 없습니다.</p>
         ) : !group ? (
-          <p className="py-10 text-center text-[13px] text-[#8A91A3]">위에서 권한을 먼저 고르세요.</p>
+          <p className="py-10 text-center text-[14px] text-[#8A91A3]">위에서 권한을 먼저 고르세요.</p>
         ) : (
           tree.map((node) => (
             <MenuTreeRow

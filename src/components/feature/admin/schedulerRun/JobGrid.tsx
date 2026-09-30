@@ -34,18 +34,18 @@ export function JobGrid({
   return (
     <section className="overflow-hidden rounded-[14px] border border-[#E6E9F0] bg-white">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#EEF0F5] px-[22px] py-4">
-        <h2 className="text-[15px] font-extrabold">스케줄러 실행</h2>
-        <span className="text-[12px] text-[#8A91A3]">실행할 스케줄러를 복수 선택하고 동일 기간으로 실행합니다</span>
+        <h2 className="text-[16px] font-extrabold">스케줄러 실행</h2>
+        <span className="text-[13px] text-[#8A91A3]">실행할 스케줄러를 복수 선택하고 동일 기간으로 실행합니다</span>
       </div>
 
       <div className="flex flex-wrap items-center gap-2.5 border-b border-[#EEF0F5] px-[22px] py-3.5">
-        <span className="text-[13px] font-semibold text-[#4A5266]">대상 기간</span>
+        <span className="text-[14px] font-semibold text-[#4A5266]">대상 기간</span>
         <input
           type="date"
           value={periodFrom}
           onChange={(e) => onPeriodChange(e.target.value, periodTo)}
           aria-label="대상 기간 시작"
-          className="h-[38px] rounded-[10px] border border-[#DDE1EA] px-2.5 text-[13px] text-[#151A26] focus:border-[#1552D6] focus:outline-none"
+          className="h-[42px] rounded-[10px] border border-[#DDE1EA] px-2.5 text-[14px] text-[#151A26] focus:border-[#1552D6] focus:outline-none"
         />
         <span className="text-[#AEB5C6]">~</span>
         <input
@@ -53,7 +53,7 @@ export function JobGrid({
           value={periodTo}
           onChange={(e) => onPeriodChange(periodFrom, e.target.value)}
           aria-label="대상 기간 종료"
-          className="h-[38px] rounded-[10px] border border-[#DDE1EA] px-2.5 text-[13px] text-[#151A26] focus:border-[#1552D6] focus:outline-none"
+          className="h-[42px] rounded-[10px] border border-[#DDE1EA] px-2.5 text-[14px] text-[#151A26] focus:border-[#1552D6] focus:outline-none"
         />
         <span className="text-[11.5px] text-[#8A91A3]">※ 기간을 받는 스케줄러에만 적용됩니다</span>
 
@@ -62,7 +62,7 @@ export function JobGrid({
             type="button"
             onClick={() => onPickedChange(allOn ? [] : jobs.map((j) => j.key))}
             disabled={loading || jobs.length === 0}
-            className="h-[38px] whitespace-nowrap rounded-[10px] border border-[#DDE1EA] bg-white px-4 text-[13px] font-semibold text-[#151A26] hover:bg-[#F6F7FA] disabled:opacity-40"
+            className="h-[42px] whitespace-nowrap rounded-[10px] border border-[#DDE1EA] bg-white px-4 text-[14px] font-semibold text-[#151A26] hover:bg-[#F6F7FA] disabled:opacity-40"
           >
             {allOn ? "선택 해제" : "전체 선택"}
           </button>
@@ -70,18 +70,18 @@ export function JobGrid({
             type="button"
             onClick={onRun}
             disabled={picked.length === 0 || running}
-            className="h-[38px] whitespace-nowrap rounded-[10px] bg-[#1552D6] px-5 text-[13px] font-bold text-white hover:bg-[#0E3FAA] disabled:bg-[#AEB5C6]"
+            className="h-[42px] whitespace-nowrap rounded-[10px] bg-[#1552D6] px-5 text-[14px] font-bold text-white hover:bg-[#0E3FAA] disabled:bg-[#AEB5C6]"
           >
             선택 실행 ({picked.length})
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3.5 p-[22px]">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-4 p-[22px]">
         {loading && jobs.length === 0 ? (
-          <div className="col-span-full py-8 text-center text-[13px] text-[#8A91A3]">불러오는 중…</div>
+          <div className="col-span-full py-8 text-center text-[14px] text-[#8A91A3]">불러오는 중…</div>
         ) : jobs.length === 0 ? (
-          <div className="col-span-full py-8 text-center text-[13px] text-[#8A91A3]">등록된 스케줄러가 없습니다.</div>
+          <div className="col-span-full py-8 text-center text-[14px] text-[#8A91A3]">등록된 스케줄러가 없습니다.</div>
         ) : (
           jobs.map((j) => {
             const on = picked.includes(j.key);
@@ -105,7 +105,7 @@ export function JobGrid({
                 <div className="flex items-start justify-between gap-2">
                   <span
                     aria-hidden
-                    className="mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border text-[11px] font-bold text-white"
+                    className="mt-0.5 flex h-[20px] w-[20px] shrink-0 items-center justify-center rounded-[5px] border text-[12px] font-bold text-white"
                     style={{ borderColor: on ? C.primary : "#CBD2E0", background: on ? C.primary : "#fff" }}
                   >
                     {on ? "✓" : ""}
@@ -118,8 +118,8 @@ export function JobGrid({
                   </span>
                 </div>
 
-                <div className="mt-2 break-keep text-[14px] font-bold text-[#151A26]">
-                  {j.label} <span className="text-[12px] font-medium text-[#8A91A3]">({j.key})</span>
+                <div className="mt-2 break-keep text-[15px] font-bold text-[#151A26]">
+                  {j.label} <span className="text-[13px] font-medium text-[#8A91A3]">({j.key})</span>
                 </div>
                 <p className="mt-1 break-keep text-[12.5px] leading-[1.5] text-[#6B7389]">{j.description}</p>
                 <div className="mt-1.5 text-[11.5px] text-[#AEB5C6]">정기 실행 {j.cron}</div>

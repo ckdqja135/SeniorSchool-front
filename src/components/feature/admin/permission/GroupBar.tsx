@@ -23,13 +23,13 @@ export function GroupBar({
     <section className="overflow-hidden rounded-[14px] border border-[#E6E9F0] bg-white">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#EEF0F5] px-[22px] py-4">
         <div className="flex items-baseline gap-2">
-          <h2 className="text-[15px] font-extrabold">권한 목록</h2>
-          <span className="text-[12px] text-[#8A91A3]">권한을 고르면 아래에서 메뉴와 계정을 설정합니다</span>
+          <h2 className="text-[16px] font-extrabold">권한 목록</h2>
+          <span className="text-[13px] text-[#8A91A3]">권한을 고르면 아래에서 메뉴와 계정을 설정합니다</span>
         </div>
         <button
           type="button"
           onClick={onManage}
-          className="h-[34px] whitespace-nowrap rounded-[10px] border border-[#DDE1EA] bg-white px-3.5 text-[13px] font-semibold text-[#151A26] hover:bg-[#F6F7FA]"
+          className="h-[38px] whitespace-nowrap rounded-[10px] border border-[#DDE1EA] bg-white px-3.5 text-[14px] font-semibold text-[#151A26] hover:bg-[#F6F7FA]"
         >
           권한 관리
         </button>
@@ -37,9 +37,9 @@ export function GroupBar({
 
       <div className="flex flex-wrap gap-2.5 p-[22px]">
         {loading && groups.length === 0 ? (
-          <span className="py-2 text-[13px] text-[#8A91A3]">불러오는 중…</span>
+          <span className="py-2 text-[14px] text-[#8A91A3]">불러오는 중…</span>
         ) : groups.length === 0 ? (
-          <span className="py-2 text-[13px] text-[#8A91A3]">등록된 권한이 없습니다.</span>
+          <span className="py-2 text-[14px] text-[#8A91A3]">등록된 권한이 없습니다.</span>
         ) : (
           groups.map((g) => {
             const on = g.groupCode === currentCode;
@@ -49,14 +49,14 @@ export function GroupBar({
                 type="button"
                 onClick={() => onSelect(g.groupCode)}
                 aria-pressed={on}
-                className="flex min-w-[164px] items-center gap-2.5 rounded-[12px] border px-4 py-2.5 text-left transition-colors"
+                className="flex min-w-[184px] items-center gap-2.5 rounded-[12px] border px-4 py-2.5 text-left transition-colors"
                 style={{
                   borderColor: on ? C.primary : "#E3E6EE",
                   background: on ? C.primary : "#F8F9FC",
                 }}
               >
                 <span
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[13px] font-bold"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[14px] font-bold"
                   style={{
                     background: on ? "rgba(255,255,255,0.22)" : "#E3E8F2",
                     color: on ? "#fff" : "#5A6275",
@@ -71,7 +71,7 @@ export function GroupBar({
                   >
                     {g.groupName}
                   </span>
-                  <span className="block text-[11px]" style={{ color: on ? "rgba(255,255,255,0.82)" : "#AEB5C6" }}>
+                  <span className="block text-[12px]" style={{ color: on ? "rgba(255,255,255,0.82)" : "#AEB5C6" }}>
                     {g.groupCode} · {g.userCount}명
                   </span>
                 </span>

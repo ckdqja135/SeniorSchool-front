@@ -352,11 +352,11 @@ export default function PermissionPage() {
 
   if (forbidden) {
     return (
-      <main className="flex w-full max-w-[1480px] flex-col gap-4 px-7 pb-6 pt-6 text-[#151A26]">
-        <h1 className="text-[22px] font-extrabold tracking-[-0.02em]">권한 관리</h1>
+      <main className="flex w-full flex-col gap-5 px-8 pb-6 pt-6 text-[#151A26]">
+        <h1 className="text-[24px] font-extrabold tracking-[-0.02em]">권한 관리</h1>
         <div className="rounded-[14px] border border-[#E6E9F0] bg-white px-[22px] py-12 text-center">
-          <p className="text-[14px] font-bold text-[#151A26]">최고 관리자(master) 계정만 사용할 수 있는 화면입니다.</p>
-          <p className="mt-1.5 text-[13px] text-[#8A91A3] break-keep">
+          <p className="text-[15px] font-bold text-[#151A26]">최고 관리자(master) 계정만 사용할 수 있는 화면입니다.</p>
+          <p className="mt-1.5 text-[14px] text-[#8A91A3] break-keep">
             권한이 필요하면 최고 관리자에게 요청해주세요.
           </p>
         </div>
@@ -365,10 +365,10 @@ export default function PermissionPage() {
   }
 
   return (
-    <main className="flex w-full max-w-[1480px] flex-col gap-4 px-7 pb-6 pt-6 text-[#151A26]">
+    <main className="flex w-full flex-col gap-5 px-8 pb-6 pt-6 text-[#151A26]">
       <div>
-        <h1 className="text-[22px] font-extrabold tracking-[-0.02em]">권한 관리</h1>
-        <p className="mt-1 text-[13px] text-[#7A8296]">
+        <h1 className="text-[24px] font-extrabold tracking-[-0.02em]">권한 관리</h1>
+        <p className="mt-1 text-[14px] text-[#7A8296]">
           권한별로 보이는 메뉴를 정하고, 어드민 계정을 관리합니다.
         </p>
       </div>
@@ -376,7 +376,7 @@ export default function PermissionPage() {
       {notice && (
         <div
           role={notice.ok ? "status" : "alert"}
-          className="flex items-start justify-between gap-3 rounded-[12px] px-3.5 py-2.5 text-[13px]"
+          className="flex items-start justify-between gap-3 rounded-[12px] px-3.5 py-2.5 text-[14px]"
           style={{
             color: notice.ok ? "#0E7A43" : "#C23B3B",
             background: notice.ok ? "#E4F6EC" : "#FDECEC",

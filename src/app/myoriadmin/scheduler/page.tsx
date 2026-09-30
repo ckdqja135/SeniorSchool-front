@@ -123,16 +123,16 @@ export default function SchedulerRunPage() {
   };
 
   return (
-    <main className="flex w-full max-w-[1480px] flex-col gap-4 px-7 pb-6 pt-6 text-[#151A26]">
+    <main className="flex w-full flex-col gap-5 px-8 pb-6 pt-6 text-[#151A26]">
       <div>
-        <h1 className="text-[22px] font-extrabold tracking-[-0.02em]">스케줄러 실행</h1>
-        <p className="mt-1 text-[13px] text-[#7A8296]">정기 작업을 지금 실행하고, 실행 기록을 확인합니다.</p>
+        <h1 className="text-[24px] font-extrabold tracking-[-0.02em]">스케줄러 실행</h1>
+        <p className="mt-1 text-[14px] text-[#7A8296]">정기 작업을 지금 실행하고, 실행 기록을 확인합니다.</p>
       </div>
 
       {notice && (
         <div
           role={notice.ok ? "status" : "alert"}
-          className="rounded-[12px] px-3.5 py-2.5 text-[13px]"
+          className="rounded-[12px] px-3.5 py-2.5 text-[14px]"
           style={{
             color: notice.ok ? "#0E7A43" : "#C23B3B",
             background: notice.ok ? "#E4F6EC" : "#FDECEC",

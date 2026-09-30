@@ -89,7 +89,7 @@ export function MenuTreeRow(props: MenuTreeRowProps) {
           }}
           onDragEnd={props.onDragEnd}
           title="드래그하여 순서·위치 변경"
-          className="cursor-grab select-none px-1 text-[13px] text-[#C3C8D4] active:cursor-grabbing"
+          className="cursor-grab select-none px-1 text-[14px] text-[#C3C8D4] active:cursor-grabbing"
         >
           ⠿
         </span>
@@ -97,7 +97,7 @@ export function MenuTreeRow(props: MenuTreeRowProps) {
         <button
           type="button"
           onClick={() => hasChildren && props.onToggleOpen(node.menuIdx)}
-          className="w-4 shrink-0 text-[10px] text-[#8A91A3]"
+          className="w-4 shrink-0 text-[11px] text-[#8A91A3]"
           aria-label={hasChildren ? (open ? "접기" : "펼치기") : undefined}
           tabIndex={hasChildren ? 0 : -1}
         >
@@ -107,7 +107,7 @@ export function MenuTreeRow(props: MenuTreeRowProps) {
         {/* master 전용 메뉴는 다른 그룹에 켤 수 없으니 체크박스를 아예 두지 않는다 */}
         {node.masterOnly ? (
           <span
-            className="flex h-[15px] w-[15px] shrink-0 items-center justify-center text-[11px] text-[#C3C8D4]"
+            className="flex h-[17px] w-[17px] shrink-0 items-center justify-center text-[12px] text-[#C3C8D4]"
             title="master 전용 화면이라 다른 권한에는 노출되지 않습니다"
             aria-label={`${node.menuName}은 master 전용`}
           >
@@ -119,7 +119,7 @@ export function MenuTreeRow(props: MenuTreeRowProps) {
             checked={checked}
             disabled={readOnly}
             onChange={(e) => props.onTogglePerm(node, e.target.checked)}
-            className="h-[15px] w-[15px] shrink-0 cursor-pointer accent-[#1552D6] disabled:cursor-not-allowed"
+            className="h-[17px] w-[17px] shrink-0 cursor-pointer accent-[#1552D6] disabled:cursor-not-allowed"
             aria-label={`${node.menuName} 노출`}
           />
         )}
@@ -128,15 +128,15 @@ export function MenuTreeRow(props: MenuTreeRowProps) {
           type="button"
           onClick={() => props.onEdit(node)}
           title="클릭하여 메뉴 수정"
-          className="min-w-0 flex-1 truncate text-left text-[13px] hover:underline"
+          className="min-w-0 flex-1 truncate text-left text-[14px] hover:underline"
           style={{ color: depth === 1 ? C.ink : "#4A5266", fontWeight: depth === 1 ? 700 : 500 }}
         >
           {node.menuIcon && <span className="mr-1">{node.menuIcon}</span>}
           {node.menuName}
           {node.menuPath ? (
-            <span className="ml-1.5 text-[11px] font-normal text-[#AEB5C6]">{node.menuPath}</span>
+            <span className="ml-1.5 text-[12px] font-normal text-[#AEB5C6]">{node.menuPath}</span>
           ) : (
-            <span className="ml-1.5 text-[11px] font-normal text-[#C3C8D4]">묶음</span>
+            <span className="ml-1.5 text-[12px] font-normal text-[#C3C8D4]">묶음</span>
           )}
           {node.masterOnly && (
             <span className="ml-1.5 rounded-[5px] bg-[#EEF0F5] px-1.5 py-[1px] text-[10.5px] font-bold text-[#5A6275]">
@@ -148,7 +148,7 @@ export function MenuTreeRow(props: MenuTreeRowProps) {
         <button
           type="button"
           onClick={() => props.onDelete(node)}
-          className="shrink-0 px-1 text-[12px] text-[#C3C8D4] hover:text-[#C23B3B]"
+          className="shrink-0 px-1 text-[13px] text-[#C3C8D4] hover:text-[#C23B3B]"
           title="메뉴 삭제"
           aria-label={`${node.menuName} 삭제`}
         >

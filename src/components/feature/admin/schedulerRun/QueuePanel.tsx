@@ -30,9 +30,9 @@ export function QueuePanel({
   return (
     <section className="overflow-hidden rounded-[14px] border border-[#E6E9F0] bg-white">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#EEF0F5] px-[22px] py-4">
-        <h2 className="text-[15px] font-extrabold">진행 상황</h2>
+        <h2 className="text-[16px] font-extrabold">진행 상황</h2>
         <div className="flex items-center gap-2.5">
-          <span className="text-[12px] text-[#8A91A3]">
+          <span className="text-[13px] text-[#8A91A3]">
             실행 중 {runningCount}건 · 대기 {waitingCount}건
           </span>
           <span
@@ -58,7 +58,7 @@ export function QueuePanel({
                 <div className="flex w-[124px] flex-col items-center">
                   <div className="relative">
                     <span
-                      className="flex h-[38px] w-[38px] items-center justify-center rounded-full text-[15px] font-bold text-white"
+                      className="flex h-[42px] w-[38px] items-center justify-center rounded-full text-[16px] font-bold text-white"
                       style={{ background: isRun ? C.primary : "#AEB5C6" }}
                     >
                       {i + 1}
@@ -70,7 +70,7 @@ export function QueuePanel({
                         disabled={canceling === it.id}
                         aria-label={`${it.jobLabel} 대기 취소`}
                         title="대기에서 빼기"
-                        className="absolute -right-1.5 -top-1.5 flex h-[18px] w-[18px] items-center justify-center rounded-full border border-[#E6E9F0] bg-white text-[10px] text-[#6B7389] shadow-sm hover:bg-[#FDECEC] hover:text-[#C23B3B] disabled:opacity-40"
+                        className="absolute -right-1.5 -top-1.5 flex h-[20px] w-[20px] items-center justify-center rounded-full border border-[#E6E9F0] bg-white text-[11px] text-[#6B7389] shadow-sm hover:bg-[#FDECEC] hover:text-[#C23B3B] disabled:opacity-40"
                       >
                         ✕
                       </button>
@@ -99,7 +99,7 @@ export function QueuePanel({
                 </div>
 
                 {i < items.length - 1 && (
-                  <span className="mt-[18px] px-1 text-[16px] text-[#CBD2E0]" aria-hidden>
+                  <span className="mt-[18px] px-1 text-[17px] text-[#CBD2E0]" aria-hidden>
                     →
                   </span>
                 )}

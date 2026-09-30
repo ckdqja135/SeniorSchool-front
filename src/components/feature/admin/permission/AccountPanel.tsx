@@ -9,7 +9,7 @@
 import { useState } from "react";
 import { C, fmtDateTime, MASTER_CODE, type AdminRow, type GroupRow } from "./shared";
 
-const GRID = "grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.1fr)_72px_minmax(0,1fr)_186px] gap-2.5";
+const GRID = "grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.1fr)_80px_minmax(0,1fr)_200px] gap-2.5";
 
 export function AccountPanel({
   admins,
@@ -50,8 +50,8 @@ export function AccountPanel({
     <section className="flex w-full min-w-0 flex-col overflow-hidden rounded-[14px] border border-[#E6E9F0] bg-white">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#EEF0F5] px-[22px] py-4">
         <div className="flex items-baseline gap-2">
-          <h2 className="text-[15px] font-extrabold">계정 목록</h2>
-          <span className="text-[12px] text-[#8A91A3]">{rows.length}명</span>
+          <h2 className="text-[16px] font-extrabold">계정 목록</h2>
+          <span className="text-[13px] text-[#8A91A3]">{rows.length}명</span>
         </div>
         <div className="flex items-center gap-2">
           <label className="flex cursor-pointer items-center gap-1.5 text-[12.5px] text-[#5A6275]">
@@ -59,14 +59,14 @@ export function AccountPanel({
               type="checkbox"
               checked={onlyCurrent}
               onChange={(e) => setOnlyCurrent(e.target.checked)}
-              className="h-[14px] w-[14px] cursor-pointer accent-[#1552D6]"
+              className="h-[16px] w-[16px] cursor-pointer accent-[#1552D6]"
             />
             선택한 권한만
           </label>
           <button
             type="button"
             onClick={onAdd}
-            className="h-[34px] rounded-[10px] bg-[#1552D6] px-4 text-[12.5px] font-bold text-white hover:bg-[#0E3FAA]"
+            className="h-[38px] rounded-[10px] bg-[#1552D6] px-4 text-[12.5px] font-bold text-white hover:bg-[#0E3FAA]"
           >
             + 계정 추가
           </button>
@@ -74,7 +74,7 @@ export function AccountPanel({
       </div>
 
       {noGroup > 0 && (
-        <p className="border-b border-[#EEF0F5] bg-[#FDEBE1] px-[22px] py-2.5 text-[12px] text-[#B4461A] break-keep">
+        <p className="border-b border-[#EEF0F5] bg-[#FDEBE1] px-[22px] py-2.5 text-[13px] text-[#B4461A] break-keep">
           권한 그룹이 없는 계정 {noGroup}명이 있습니다. 로그인해도 메뉴가 비어 보입니다.
         </p>
       )}
@@ -91,9 +91,9 @@ export function AccountPanel({
 
           <div className="max-h-[560px] overflow-y-auto">
             {loading && admins.length === 0 ? (
-              <p className="px-[22px] py-12 text-center text-[13px] text-[#8A91A3]">불러오는 중…</p>
+              <p className="px-[22px] py-12 text-center text-[14px] text-[#8A91A3]">불러오는 중…</p>
             ) : rows.length === 0 ? (
-              <p className="px-[22px] py-12 text-center text-[13px] text-[#8A91A3]">해당하는 계정이 없습니다.</p>
+              <p className="px-[22px] py-12 text-center text-[14px] text-[#8A91A3]">해당하는 계정이 없습니다.</p>
             ) : (
               rows.map((u) => {
                 const active = u.userStatus === 1;
@@ -119,7 +119,7 @@ export function AccountPanel({
                       value={selected ?? ""}
                       disabled={busy}
                       onChange={(e) => onChangeGroup(u, Number(e.target.value))}
-                      className="h-[30px] w-full cursor-pointer rounded-[8px] border border-[#DDE1EA] bg-white px-2 text-[12.5px] text-[#151A26] focus:border-[#1552D6] focus:outline-none disabled:opacity-50"
+                      className="h-[32px] w-full cursor-pointer rounded-[8px] border border-[#DDE1EA] bg-white px-2 text-[12.5px] text-[#151A26] focus:border-[#1552D6] focus:outline-none disabled:opacity-50"
                       aria-label={`${u.userId} 권한 그룹`}
                     >
                       {selected === undefined && <option value="">그룹 없음</option>}
@@ -131,7 +131,7 @@ export function AccountPanel({
                     </select>
 
                     <span
-                      className="w-fit whitespace-nowrap rounded-full px-2 py-[2px] text-[11px] font-bold"
+                      className="w-fit whitespace-nowrap rounded-full px-2 py-[2px] text-[12px] font-bold"
                       style={{
                         color: active ? C.okFg : C.badFg,
                         background: active ? C.okBg : C.badBg,

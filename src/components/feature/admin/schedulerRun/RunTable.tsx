@@ -7,7 +7,7 @@ const GRID = "grid grid-cols-[minmax(0,1.4fr)_76px_minmax(0,1fr)_minmax(0,1.1fr)
 
 function CountChip({ label, value, fg, bg }: { label: string; value: number; fg: string; bg: string }) {
   return (
-    <span className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[12px] font-semibold" style={{ background: bg }}>
+    <span className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[13px] font-semibold" style={{ background: bg }}>
       <span className="text-[#5A6275]">{label}</span>
       <span className="tabular-nums font-bold" style={{ color: fg }}>{value.toLocaleString()}</span>
     </span>
@@ -21,7 +21,7 @@ export function RunTable({ data, loading }: { data: RunsResponse | null; loading
   return (
     <section className="overflow-hidden rounded-[14px] border border-[#E6E9F0] bg-white">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#EEF0F5] px-[22px] py-4">
-        <h2 className="text-[15px] font-extrabold">스케줄러 실행 현황</h2>
+        <h2 className="text-[16px] font-extrabold">스케줄러 실행 현황</h2>
         {c && (
           <div className="flex flex-wrap gap-1.5">
             <CountChip label="전체" value={c.total} fg={C.ink} bg="#F1F3F8" />
@@ -46,9 +46,9 @@ export function RunTable({ data, loading }: { data: RunsResponse | null; loading
 
           <div className="max-h-[420px] overflow-y-auto">
             {loading && rows.length === 0 ? (
-              <div className="px-[22px] py-12 text-center text-[13px] text-[#8A91A3]">불러오는 중…</div>
+              <div className="px-[22px] py-12 text-center text-[14px] text-[#8A91A3]">불러오는 중…</div>
             ) : rows.length === 0 ? (
-              <div className="px-[22px] py-12 text-center text-[13px] text-[#8A91A3]">아직 실행 기록이 없습니다.</div>
+              <div className="px-[22px] py-12 text-center text-[14px] text-[#8A91A3]">아직 실행 기록이 없습니다.</div>
             ) : (
               rows.map((r) => {
                 const tag = STATUS_TAG[r.status] ?? STATUS_TAG.canceled;
@@ -57,7 +57,7 @@ export function RunTable({ data, loading }: { data: RunsResponse | null; loading
                   <div key={r.runIdx} className={`${GRID} items-center border-b border-[#F2F3F7] px-[22px] py-[11px] text-[12.5px]`}>
                     <span className="min-w-0 truncate font-bold text-[#151A26]" title={`${r.jobLabel} (${r.jobKey})`}>
                       {r.jobLabel}
-                      {r.trigger === "cron" && <span className="ml-1 text-[11px] font-medium text-[#AEB5C6]">정기</span>}
+                      {r.trigger === "cron" && <span className="ml-1 text-[12px] font-medium text-[#AEB5C6]">정기</span>}
                     </span>
                     <span className="flex items-center gap-1.5 whitespace-nowrap font-semibold" style={{ color: tag.fg }}>
                       <span className="h-1.5 w-1.5 rounded-full" style={{ background: tag.dot }} aria-hidden />
