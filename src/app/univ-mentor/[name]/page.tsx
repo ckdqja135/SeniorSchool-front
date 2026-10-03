@@ -605,32 +605,31 @@ export default function SchoolPage() {
                   <span className="min-w-0 text-right text-sm font-bold text-gray-900">{university.univLocate}</span>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
-                  <div className="flex flex-col gap-2 p-3 bg-white rounded-xl border border-gray-100 hover:border-green-200 transition-all duration-200">
-                    <div className="flex items-center gap-2">
-                      <div className="shrink-0 w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0">
-                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
-                      </div>
-                      <span className="shrink-0 whitespace-nowrap text-xs text-gray-500 font-medium">구분</span>
+                {/* 구분·설립도 위치·총장과 같은 한 줄 카드 (왼쪽 라벨, 오른쪽 값) */}
+                <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-green-200 transition-all duration-200">
+                  <div className="flex items-center gap-3">
+                    <div className="shrink-0 w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
+                      <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
                     </div>
-                    <span className="text-sm font-bold text-gray-900 truncate text-right">{university.univType}</span>
+                    <span className="shrink-0 whitespace-nowrap text-sm text-gray-500 font-medium">구분</span>
                   </div>
+                  <span className="min-w-0 text-right text-sm font-bold text-gray-900">{university.univType}</span>
+                </div>
 
-                  <div className="flex flex-col gap-2 p-3 bg-white rounded-xl border border-gray-100 hover:border-green-200 transition-all duration-200">
-                    <div className="flex items-center gap-2">
-                      <div className="shrink-0 w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
-                        <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <span className="shrink-0 whitespace-nowrap text-xs text-gray-500 font-medium">설립</span>
+                <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-green-200 transition-all duration-200">
+                  <div className="flex items-center gap-3">
+                    <div className="shrink-0 w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
+                      <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
                     </div>
-                    <span className="text-sm font-bold text-gray-900 text-right">
-                      {university.univEstablish ? `${university.univEstablish}년` : '정보 없음'}
-                    </span>
+                    <span className="shrink-0 whitespace-nowrap text-sm text-gray-500 font-medium">설립</span>
                   </div>
+                  <span className="min-w-0 text-right text-sm font-bold text-gray-900">
+                    {university.univEstablish ? `${university.univEstablish}년` : '정보 없음'}
+                  </span>
                 </div>
 
                 <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-green-200 transition-all duration-200">

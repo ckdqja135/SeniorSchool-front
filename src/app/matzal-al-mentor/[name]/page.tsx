@@ -765,14 +765,15 @@ export default function RestaurantDetailPage() {
                     />
                     
                     {/* 검색 버튼 */}
+                    {/* 모바일에선 세로로 쌓여 입력칸과 같은 폭·높이가 되도록 (다른 상세 페이지 검색 버튼과 같은 크기) */}
                     <button
                       type="submit"
-                      className="px-1.5 sm:px-3 md:px-6 py-1 sm:py-1.5 md:py-2.5 bg-gradient-to-r from-sky-400 to-sky-500 hover:from-sky-500 hover:to-sky-600 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 sm:hover:scale-105 flex items-center space-x-0.5 sm:space-x-1 md:space-x-2"
+                      className="flex min-w-[100px] items-center justify-center gap-2 px-6 py-2 bg-gradient-to-r from-sky-400 to-sky-500 hover:from-sky-500 hover:to-sky-600 text-white text-sm rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 sm:hover:scale-105"
                     >
-                      <svg className="w-2.5 h-2.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                       </svg>
-                      <span className="text-xs sm:text-sm font-semibold">검색</span>
+                      <span>검색</span>
                     </button>
                   </form>
                 </div>
