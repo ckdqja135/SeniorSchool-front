@@ -282,7 +282,7 @@ export default function GenericMentorPage({ config }: GenericMentorPageProps) {
               <div className="relative" ref={searchRef}>
                 <div className="flex items-center bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/20 overflow-hidden mx-2 sm:mx-0">
                   {/* Search icon */}
-                  <div className="pl-3 sm:pl-6 pr-2 sm:pr-4 text-gray-400">
+                  <div className="shrink-0 pl-3 sm:pl-6 pr-2 sm:pr-4 text-gray-400">
                     <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
@@ -297,14 +297,14 @@ export default function GenericMentorPage({ config }: GenericMentorPageProps) {
                     onKeyDown={handleKeyDown}
                     placeholder={`찾고 싶은 ${config.serviceName}을(를) 입력해보세요...`}
                     required
-                    className="flex-1 px-2 sm:px-4 py-3 sm:py-4 text-sm sm:text-base font-medium text-gray-900 bg-transparent border-0 focus:outline-none focus:ring-0 placeholder-gray-400 placeholder:text-xs sm:placeholder:text-sm"
+                    className="min-w-0 flex-1 px-2 sm:px-4 py-3 sm:py-4 text-sm sm:text-base font-medium text-gray-900 bg-transparent border-0 focus:outline-none focus:ring-0 placeholder-gray-400 placeholder:text-xs sm:placeholder:text-sm"
                     autoComplete="off"
                   />
 
                   {/* Search button */}
                   <button
                     type="submit"
-                    className={`px-3 sm:px-6 py-3 sm:py-4 bg-gradient-to-r ${colors.gradient} hover:opacity-90 text-white font-semibold text-sm sm:text-base transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 flex items-center space-x-1 sm:space-x-2 whitespace-nowrap min-w-[70px] sm:min-w-[80px]`}
+                    className={`shrink-0 justify-center px-3 sm:px-6 py-3 sm:py-4 bg-gradient-to-r ${colors.gradient} hover:opacity-90 text-white font-semibold text-sm sm:text-base transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 flex items-center space-x-1 sm:space-x-2 whitespace-nowrap min-w-[70px] sm:min-w-[80px]`}
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
