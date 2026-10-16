@@ -18,6 +18,7 @@ import {
   clockStr,
   countBy,
   deltaStr,
+  maskIp,
   fmt,
   host,
   kst,
@@ -160,6 +161,29 @@ function Chip({ c }: { c: string }) {
     >
       {c}
     </span>
+  );
+}
+
+/**
+ * 가린 IP. 누르면 전체 IP 를 보여 주고 다시 누르면 가린다 (악성 방문 확인용).
+ * 목록에 기본으로 전체 IP 가 깔리지 않게 하려는 것 — 원본은 백엔드가 90일 보관 후 지운다.
+ */
+function MaskedIp({ ip, style }: { ip: string; style?: React.CSSProperties }) {
+  const [shown, setShown] = useState(false);
+  if (!ip) return <span style={style}>-</span>;
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        setShown((v) => !v);
+      }}
+      title={shown ? "눌러서 IP 가리기" : "눌러서 전체 IP 보기"}
+      aria-label={shown ? `IP ${ip}, 눌러서 가리기` : "가린 IP, 눌러서 전체 IP 보기"}
+      style={{ font: "inherit", color: "inherit", background: "none", border: 0, padding: 0, margin: 0, cursor: "pointer", textAlign: "left", maxWidth: "100%", ...style }}
+    >
+      {shown ? ip : maskIp(ip)}
+    </button>
   );
 }
 
@@ -1051,7 +1075,7 @@ export default function AnalyticsPage() {
                         <div style={{ width: 30, height: 30, borderRadius: 9, background: avBg, color: avFg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, flex: "0 0 30px" }}>{av}</div>
                         <div style={{ minWidth: 0 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
-                            <span style={{ fontFamily: MONO, fontSize: 12.5, fontWeight: 500 }}>{s.ip || "-"}</span>
+                            <MaskedIp ip={s.ip} style={{ fontFamily: MONO, fontSize: 12.5, fontWeight: 500 }} />
                             <span style={{ fontSize: 11, color: "#6B7080", background: "#F3F4F7", padding: "2px 7px", borderRadius: 6 }}>
                               {s.info.br} · {s.info.os}
                             </span>
@@ -1106,7 +1130,9 @@ export default function AnalyticsPage() {
                         <div style={{ fontSize: 10.5, color: FAINTER, marginTop: 2 }}>{pathLabel(e.path)}</div>
                       </div>
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontFamily: MONO, fontSize: 12, ...ell }}>{e.ip || "-"}</div>
+                        <div style={{ fontFamily: MONO, fontSize: 12, ...ell }}>
+                          <MaskedIp ip={e.ip} />
+                        </div>
                         <div title={e.ua} style={{ fontSize: 10.5, color: FAINTER, marginTop: 2, ...ell }}>
                           {e.info.br} · {e.info.os}
                         </div>
@@ -1137,7 +1163,7 @@ export default function AnalyticsPage() {
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div title={safeDecode(e.path)} style={{ fontFamily: MONO, fontSize: 11.5, color: "#2B2F3C", ...ell }}>{safeDecode(e.path)}</div>
                       <div style={{ fontSize: 10.5, color: FAINTER, marginTop: 2, ...ell }}>
-                        {e.ip || "-"} · {e.info.br}
+                        <MaskedIp ip={e.ip} /> · {e.info.br}
                       </div>
                     </div>
                   </div>
@@ -1170,7 +1196,9 @@ export default function AnalyticsPage() {
                 {repeats.length === 0 && <div style={{ fontSize: 12, color: FAINTER }}>재방문 없음</div>}
                 {repeats.map((r, i) => (
                   <div key={i} style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                    <span style={{ fontFamily: MONO, fontSize: 11.5, flex: 1, minWidth: 0, ...ell }}>{r.ip || "-"}</span>
+                    <span style={{ fontFamily: MONO, fontSize: 11.5, flex: 1, minWidth: 0, ...ell }}>
+                      <MaskedIp ip={r.ip} />
+                    </span>
                     <span style={{ fontSize: 10.5, color: MUTED }}>{r.days.size}일</span>
                     <span style={{ fontSize: 12, fontWeight: 700 }}>{r.n}회</span>
                   </div>

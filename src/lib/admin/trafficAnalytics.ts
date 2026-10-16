@@ -12,6 +12,25 @@ export interface RawLog {
   createdAt: string;
 }
 
+/**
+ * 화면 표시용 IP 가리기. 접속 IP 는 개인정보라 목록에는 앞부분만 보여 준다 (원본은 DB 에 90일 보관).
+ * IPv4 는 앞 두 자리(211.234.*.*), IPv6 는 앞 두 묶음(2001:db8:*)만 남긴다.
+ * 방문자 구분·검색은 가리기 전 원본으로 한다.
+ */
+export function maskIp(ip: string): string {
+  if (!ip) return "";
+  if (ip.includes(".")) {
+    const p = ip.split(".");
+    return p.length === 4 ? `${p[0]}.${p[1]}.*.*` : ip.replace(/[^.]+$/, "*");
+  }
+  if (ip.includes(":")) {
+    // '::' 축약 뒤쪽은 끝자리라 보여 주면 안 된다 — 축약 앞부분에서만 두 묶음까지 남긴다 (fe80::1 → fe80:*)
+    const head = ip.split("::")[0].split(":").filter(Boolean).slice(0, 2);
+    return head.length > 0 ? `${head.join(":")}:*` : "*";
+  }
+  return ip.length > 4 ? `${ip.slice(0, 4)}*` : "*";
+}
+
 export interface UAInfo {
   bot: boolean;
   br: string;
