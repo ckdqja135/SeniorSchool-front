@@ -9,7 +9,7 @@ export const signIn = async (
   username: string,
   password: string,
 ): Promise<SignInResponse> => {
-  const baseUrl = "https://api.reviewhub.life";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
   const url = `${baseUrl}/admin/user/signIn`;
   
   console.log("API 요청 URL:", url);
